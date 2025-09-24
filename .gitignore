@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# History tracked files
+.history
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
