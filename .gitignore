@@ -28,6 +28,9 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# history file
+/.history
+
 # local env files
 .env*.local
 
