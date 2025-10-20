@@ -41,12 +41,12 @@ export default function Screen() {
         </View>
         <View className="flex-row gap-2">
           <Link href="https://reactnativereusables.com" asChild>
-            <Button>
+            <Button radius="full">
               <Text>Browse the Docs</Text>
             </Button>
           </Link>
           <Link href="https://github.com/founded-labs/react-native-reusables" asChild>
-            <Button variant="ghost">
+            <Button variant="ghost" radius="full">
               <Text>Star the Repo</Text>
               <Icon as={StarIcon} />
             </Button>
@@ -70,6 +70,7 @@ function ThemeToggle() {
       onPressIn={toggleColorScheme}
       size="icon"
       variant="ghost"
+      radius="full"
       className="ios:size-9 rounded-full web:mx-4">
       <Icon as={THEME_ICONS[colorScheme ?? 'light']} className="size-5" />
     </Button>
