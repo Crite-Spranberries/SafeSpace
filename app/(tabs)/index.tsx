@@ -8,6 +8,7 @@ import * as React from 'react';
 import { Image, type ImageStyle, View } from 'react-native';
 import { StyleSheet, ScrollView } from 'react-native';
 import { Card } from '@/components/ui/card';
+import MapOnDetail from '@/components/ui/MapOnDetail';
 
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -37,7 +38,9 @@ export default function Screen() {
       <ScrollView>
         <View style={styles.pageContainer}>
           <Text>Put top navigation notifs & help here</Text>
-          <Text>Put location here</Text>
+          <View className="w-full max-w-md">
+            <MapOnDetail />
+          </View>
           <Link href="../create_report" asChild>
             <Button>
               <Text>Create Report</Text>
