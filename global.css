@@ -54,5 +54,15 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    --violet-300: #ad85ea;
+    --violet-500: #8449df;
+    --violet-700: #5e349e;
+    --violet-800: #371f5e;
+    --white-500: #ffffff;
+    --white-600: #e8e8e8;
+    --white-700: #b5b5b5;
+    --white-800: #8c8c8c;
+    --white-900: #6b6b6b;
   }
 }
