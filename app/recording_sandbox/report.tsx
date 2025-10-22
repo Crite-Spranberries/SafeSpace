@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
 import { CommentCard } from '@/components/ui/CommentCard';
+import MapOnDetail from '@/components/ui/MapOnDetail';
 
 export default function Report() {
   return (
@@ -16,6 +17,9 @@ export default function Report() {
         <View style={styles.container}>
           <Text>Title generated based on summary</Text>
           <Text>Location</Text>
+          <View className="w-full max-w-md">
+            <MapOnDetail />
+          </View>
           <Text>Tags</Text>
 
           <View style={styles.tagAlign}>
