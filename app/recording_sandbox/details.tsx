@@ -1,17 +1,21 @@
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
-import { Link } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
 
-const audioSource = require('@/assets/audio/test_audio.mp3');
-
 export default function Details() {
-  const player = useAudioPlayer(audioSource);
+  // Get audioUri passed as URL param
+  const { audioUri } = useLocalSearchParams();
+
+  // Fallback audio source if param missing
+  const defaultAudioSource = require('@/assets/audio/test_audio.mp3');
+
+  // Use the recorded audio URI if provided, else fallback
+  const player = useAudioPlayer(audioUri ? { uri: audioUri } : defaultAudioSource);
   const [status, setStatus] = useState('Stopped');
 
   useEffect(() => {

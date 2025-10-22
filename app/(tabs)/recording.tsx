@@ -1,14 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
-import { Link } from 'expo-router';
-import { StyleSheet, View, Image } from 'react-native';
-import { X } from 'lucide-react-native';
-import { Check } from 'lucide-react-native';
+import { Link, useRouter } from 'expo-router';
+import { StyleSheet, View, Image, Alert } from 'react-native';
+import { X, Check } from 'lucide-react-native';
 import { PlayPauseButton } from '@/components/ui/PlayPause_button';
 import { Switch } from '@/components/ui/switch';
+import {
+  useAudioRecorder,
+  AudioModule,
+  RecordingPresets,
+  setAudioModeAsync,
+  useAudioRecorderState,
+  setIsAudioActiveAsync,
+} from 'expo-audio';
 
-// Generated calculations for time formatting
 function formatTime(seconds: number) {
   const h = Math.floor(seconds / 3600)
     .toString()
@@ -20,14 +26,18 @@ function formatTime(seconds: number) {
   return `${h}:${m}:${s}`;
 }
 
-// Generated calculations for the dummy timelapse/stamp simulation. For elapsed time and clearing it when cancelled.
 export default function Recording() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [segments, setSegments] = useState<{ uri: string; duration: number }[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(audioRecorder);
+  const router = useRouter();
+  const [isChecked, setIsChecked] = useState(false);
 
   useEffect(() => {
-    if (isPlaying) {
+    if (recorderState.isRecording) {
       intervalRef.current = setInterval(() => {
         setElapsedSeconds((prev) => prev + 1);
       }, 1000);
@@ -35,20 +45,113 @@ export default function Recording() {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
     };
-  }, [isPlaying]);
+  }, [recorderState.isRecording]);
+
+  const startRecording = async () => {
+    try {
+      await setAudioModeAsync({
+        allowsRecording: true, // or false as needed
+        playsInSilentMode: true, // MUST be true with duckOthers on iOS
+        interruptionMode: 'duckOthers', // acceptable with playsInSilentMode: true
+      });
+      await setIsAudioActiveAsync(true);
+      await audioRecorder.prepareToRecordAsync();
+      await audioRecorder.record();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        Alert.alert('Error starting recording', error.message);
+      } else {
+        Alert.alert('Error starting recording', String(error));
+      }
+    }
+  };
+
+  const stopRecording = async () => {
+    try {
+      await audioRecorder.stop();
+      const uri = audioRecorder.uri!;
+      const duration = elapsedSeconds - segments.reduce((sum, seg) => sum + seg.duration, 0);
+      setSegments((prev) => [...prev, { uri, duration }]);
+
+      // Switch audio mode to playback mode for louder iOS playback
+      await setAudioModeAsync({
+        allowsRecording: false,
+        playsInSilentMode: true,
+        interruptionMode: 'duckOthers',
+      });
+      await setIsAudioActiveAsync(true);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        Alert.alert('Error stopping recording', error.message);
+      } else {
+        Alert.alert('Error stopping recording', String(error));
+      }
+    }
+  };
+
+  const toggleRecording = () => {
+    if (recorderState.isRecording) stopRecording();
+    else startRecording();
+  };
+
+  const saveRecording = () => {
+    if (segments.length === 0) {
+      Alert.alert('No recording to save');
+      return;
+    }
+    const lastSegment = segments[segments.length - 1];
+    router.push({
+      pathname: '/recording_sandbox/details',
+      params: {
+        audioUri: lastSegment.uri,
+        totalDuration: elapsedSeconds.toString(),
+      },
+    });
+  };
+
+  const cancelRecording = () => {
+    setElapsedSeconds(0);
+    setSegments([]);
+    setIsPlaying(false);
+    if (recorderState.isRecording) {
+      audioRecorder.stop();
+    }
+  };
+
   const togglePlayback = () => {
     setIsPlaying((prev) => !prev);
   };
 
-  // Switch state
-  const [isChecked, setIsChecked] = useState(false);
+  const handlePlayPausePress = () => {
+    togglePlayback();
+    toggleRecording();
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const status = await AudioModule.requestRecordingPermissionsAsync();
+        if (!status.granted) {
+          Alert.alert('Permission to access microphone was denied');
+        }
+        // Set audio mode for recording initially
+        await setAudioModeAsync({
+          allowsRecording: true,
+          playsInSilentMode: false,
+          interruptionMode: 'duckOthers',
+        });
+        await setIsAudioActiveAsync(true);
+      } catch (error) {
+        console.warn('Audio permission or mode setup failed:', error);
+      }
+    })();
+  }, []);
 
   return (
     <View style={styles.columnOrientation}>
@@ -56,36 +159,24 @@ export default function Recording() {
         source={require('@/assets/images/dummy-wave-graphic.png')}
         style={{ width: 200, height: 200 }}
       />
-
       <View style={styles.rowOrientation}>
         <Text>Enable Video</Text>
-        <Switch checked={isChecked} onCheckedChange={(checked) => setIsChecked(checked)} />
+        <Switch checked={isChecked} onCheckedChange={setIsChecked} />
       </View>
-
       <Text variant="h2">{formatTime(elapsedSeconds)}</Text>
-      {/*This is the play/pause activated simulated timestamp*/}
       <View style={styles.controls}>
-        <Button
-          variant="cancelRecording"
-          size="customRecordingSmall"
-          onPress={() => {
-            setElapsedSeconds(0); // Reset the timer to 0
-            setIsPlaying(false); // Set play state to paused
-          }}>
+        <Button variant="cancelRecording" size="customRecordingSmall" onPress={cancelRecording}>
           <X />
         </Button>
-        <PlayPauseButton isPlaying={isPlaying} onPress={togglePlayback} />
-        <Link href="/recording_sandbox/details" asChild>
-          <Button variant="saveRecording" size="customRecordingSmall">
-            <Check />
-          </Button>
-        </Link>
+        <PlayPauseButton isPlaying={isPlaying} onPress={handlePlayPausePress} />
+        <Button variant="saveRecording" size="customRecordingSmall" onPress={saveRecording}>
+          <Check />
+        </Button>
       </View>
     </View>
   );
 }
 
-// To style the bottom control positioning.
 const styles = StyleSheet.create({
   controls: {
     flexDirection: 'row',
@@ -96,7 +187,7 @@ const styles = StyleSheet.create({
   },
   columnOrientation: {
     flexDirection: 'column',
-    justifyContent: 'space-evenly',
+    justifyContent: 'space-around',
     alignItems: 'center',
     padding: 20,
   },
@@ -106,9 +197,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 15,
     padding: 20,
-  },
-  video: {
-    width: 350,
-    height: 275,
   },
 });
