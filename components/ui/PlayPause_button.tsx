@@ -13,7 +13,7 @@ export function PlayPauseButton({ isPlaying, onPress }: PlayPauseButtonProps) {
     <Button
       variant={isPlaying ? 'pauseRecording' : 'startRecording'}
       radius="sm"
-      size="icon"
+      size="customRecordingLarge"
       onPress={onPress}>
       <View pointerEvents="none">{isPlaying ? <Pause /> : <Play />}</View>
     </Button>

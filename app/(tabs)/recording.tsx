@@ -55,6 +55,7 @@ export default function Recording() {
       <View style={styles.controls}>
         <Button
           variant="cancelRecording"
+          size="customRecordingSmall"
           onPress={() => {
             setElapsedSeconds(0); // Reset the timer to 0
             setIsPlaying(false); // Set play state to paused
@@ -63,7 +64,7 @@ export default function Recording() {
         </Button>
         <PlayPauseButton isPlaying={isPlaying} onPress={togglePlayback} />
         <Link href="/recording_sandbox/details" asChild>
-          <Button variant="saveRecording">
+          <Button variant="saveRecording" size="customRecordingSmall">
             <Check />
           </Button>
         </Link>
@@ -75,16 +76,14 @@ export default function Recording() {
 // To style the bottom control positioning.
 const styles = StyleSheet.create({
   controls: {
-    flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-evenly',
     alignItems: 'center',
-    width: 156,
+    height: 200,
+    gap: 16,
   },
   columnOrientation: {
-    flex: 1,
     flexDirection: 'column',
-    width: 'auto',
     justifyContent: 'space-evenly',
     alignItems: 'center',
     padding: 20,

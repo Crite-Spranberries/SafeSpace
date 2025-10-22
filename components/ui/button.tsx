@@ -45,7 +45,7 @@ const buttonVariants = cva(
         ),
         // Custom button variants for recording page
         cancelRecording: cn(
-          'bg-white-700 shadow-sm shadow-black/5 active:bg-sky-600',
+          'size:customRecordingSmall bg-white-700 shadow-sm shadow-black/5 active:bg-sky-600',
           Platform.select({
             web: 'hover:bg-sky-600 focus-visible:ring-sky-500/30 dark:hover:bg-accent/50',
           })
@@ -63,7 +63,7 @@ const buttonVariants = cva(
           })
         ),
         saveRecording: cn(
-          'bg-white-500 shadow-sm shadow-black/5 active:bg-sky-600',
+          'size:customRecordingSmall bg-white-500 shadow-sm shadow-black/5 active:bg-sky-600',
           Platform.select({
             web: 'hover:bg-sky-600 focus-visible:ring-sky-500/30 dark:hover:bg-accent/50',
           })
@@ -74,6 +74,9 @@ const buttonVariants = cva(
         sm: cn('h-9 gap-1.5 rounded-md px-3 sm:h-8', Platform.select({ web: 'has-[>svg]:px-2.5' })),
         lg: cn('h-11 rounded-md px-6 sm:h-10', Platform.select({ web: 'has-[>svg]:px-4' })),
         icon: 'h-10 w-10 sm:h-9 sm:w-9',
+        // Custom button variant sizes
+        customRecordingSmall: 'h-[fill] w-[78] px-2 py-2',
+        customRecordingLarge: 'h-[fill] w-[173px] px-2 py-2',
       },
       radius: {
         none: 'rounded-none',
@@ -122,6 +125,8 @@ const buttonTextVariants = cva(
         sm: '',
         lg: '',
         icon: '',
+        customRecordingSmall: '',
+        customRecordingLarge: '',
       },
       radius: {
         none: 'rounded-none',
