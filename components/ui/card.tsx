@@ -39,7 +39,7 @@ function Card({
               </Badge>
             ))}
           </View>
-          <Text className={cn('font-semibold leading-none', 'text-card-title')}>{title}</Text>
+          <Text className={cn('py-2 font-semibold leading-none', 'text-card-title')}>{title}</Text>
           <Text className={cn('text-sm text-muted-foreground')}>{location}</Text>
           <Text className={cn('text-sm text-muted-foreground')}>{description}</Text>
         </View>
