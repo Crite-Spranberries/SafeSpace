@@ -12,21 +12,7 @@ export default function Profile() {
 
   return (
     <View style={styles.pageContainer}>
-      <Text>Put top navigation notifs & help here</Text>
-      <Text>Put location here</Text>
-      <Link href="../create_report" asChild>
-        <Button>
-          <Text>Create Report</Text>
-        </Button>
-      </Link>
-      <Text>Reports Near You</Text>
-      <Card
-        tags={tags}
-        title="Title goes here"
-        location="Location goes here"
-        description="AI Description goes here"
-        onDetailsPress={onDetails}
-      />
+      <Text>WIP.</Text>
     </View>
   );
 }
@@ -35,6 +21,7 @@ const styles = StyleSheet.create({
   pageContainer: {
     margin: 10,
     flexDirection: 'column',
+    alignContent: 'center',
     gap: 24,
   },
 });

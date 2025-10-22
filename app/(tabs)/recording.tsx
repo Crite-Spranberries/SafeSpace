@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { Link } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Image } from 'react-native';
 import { X } from 'lucide-react-native';
 import { Check } from 'lucide-react-native';
 import { PlayPauseButton } from '@/components/ui/PlayPause_button';
+import { Switch } from '@/components/ui/switch';
 
 // Generated calculations for time formatting
 function formatTime(seconds: number) {
@@ -46,11 +47,21 @@ export default function Recording() {
     setIsPlaying((prev) => !prev);
   };
 
+  // Switch state
+  const [isChecked, setIsChecked] = useState(false);
+
   return (
     <View style={styles.columnOrientation}>
-      <Text>Put placeholder visuals of recording audio here and video toggle</Text>
-      <Text>Put enable video toggle button here</Text>
-      <Text>{formatTime(elapsedSeconds)}</Text>
+      <Image
+        source={require('@/assets/images/dummy-wave-graphic.png')}
+        style={{ width: 200, height: 200 }}
+      />
+      <View style={styles.rowOrientation}>
+        <Text>Enable Video</Text>
+        <Switch checked={isChecked} onCheckedChange={(checked) => setIsChecked(checked)} />
+      </View>
+
+      <Text variant="h2">{formatTime(elapsedSeconds)}</Text>
       {/*This is the play/pause activated simulated timestamp*/}
       <View style={styles.controls}>
         <Button
@@ -87,5 +98,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-evenly',
     alignItems: 'center',
     padding: 20,
+  },
+  rowOrientation: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    gap: 15,
+    padding: 20,
+  },
+  video: {
+    width: 350,
+    height: 275,
   },
 });

@@ -4,6 +4,9 @@ import { Link } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { DescriptionCard } from '@/components/ui/DescriptionCard';
 
 const audioSource = require('@/assets/audio/test_audio.mp3');
 
@@ -41,8 +44,23 @@ export default function Details() {
             <Text>Replay Sound</Text>
           </Button>
         </View>
+        <Text>Tags</Text>
+        <View style={styles.tagAlign}>
+          <Badge>
+            <Text>Longshore</Text>
+          </Badge>
+          <Badge>
+            <Text>Harassment</Text>
+          </Badge>
+          <Badge>
+            <Text>Warning</Text>
+          </Badge>
+        </View>
 
-        <View style={styles.buttonJustify}>
+        <Text>AI Transcript</Text>
+        <DescriptionCard description="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book." />
+
+        <View style={styles.bottomButtonAlign}>
           <Button>
             <Text>Edit</Text>
           </Button>
@@ -59,12 +77,18 @@ export default function Details() {
 
 const styles = StyleSheet.create({
   container: {
+    flexDirection: 'column',
     justifyContent: 'center',
     margin: 10,
   },
-  buttonJustify: {
+  bottomButtonAlign: {
     alignContent: 'center',
     justifyContent: 'space-evenly',
     flexDirection: 'row',
+  },
+  tagAlign: {
+    alignContent: 'center',
+    flexDirection: 'row',
+    gap: 24,
   },
 });
