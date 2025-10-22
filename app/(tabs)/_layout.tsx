@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Icon } from '@/components/ui/icon';
-import { House, Newspaper, CircleUserRound, FolderLock } from 'lucide-react-native';
+import { House, Newspaper, CircleUserRound, FolderLock, AudioLines } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 
@@ -20,6 +20,13 @@ export default function TabLayout() {
         options={{
           title: 'Posts',
           tabBarIcon: () => <Icon as={Newspaper} size={24} />,
+        }}
+      />
+      <Tabs.Screen
+        name="recording"
+        options={{
+          title: 'Recording',
+          tabBarIcon: () => <Icon as={AudioLines} size={24} />,
         }}
       />
       <Tabs.Screen
