@@ -30,13 +30,11 @@ export default function Recording() {
       intervalRef.current = setInterval(() => {
         setElapsedSeconds((prev) => prev + 1);
       }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+    } else if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
-    // Cleanup on unmount or toggle
+
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -44,7 +42,6 @@ export default function Recording() {
       }
     };
   }, [isPlaying]);
-
   const togglePlayback = () => {
     setIsPlaying((prev) => !prev);
   };
@@ -53,7 +50,7 @@ export default function Recording() {
     <View style={styles.columnOrientation}>
       <Text>Put placeholder visuals of recording audio here and video toggle</Text>
       <Text>Put enable video toggle button here</Text>
-      <Text>{formatTime(elapsedSeconds)}</Text>{' '}
+      <Text>{formatTime(elapsedSeconds)}</Text>
       {/*This is the play/pause activated simulated timestamp*/}
       <View style={styles.controls}>
         <Button
