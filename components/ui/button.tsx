@@ -75,8 +75,8 @@ const buttonVariants = cva(
         lg: cn('h-11 rounded-md px-6 sm:h-10', Platform.select({ web: 'has-[>svg]:px-4' })),
         icon: 'h-10 w-10 sm:h-9 sm:w-9',
         // Custom button variant sizes
-        customRecordingSmall: 'h-[fill] w-[78] px-2 py-2',
-        customRecordingLarge: 'h-[fill] w-[173px] px-2 py-2',
+        customRecordingSmall: 'h-[96px] w-[78px] px-2 py-2',
+        customRecordingLarge: 'h-[96px] w-[173px] px-2 py-2',
       },
       radius: {
         none: 'rounded-none',

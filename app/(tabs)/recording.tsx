@@ -56,6 +56,7 @@ export default function Recording() {
         source={require('@/assets/images/dummy-wave-graphic.png')}
         style={{ width: 200, height: 200 }}
       />
+
       <View style={styles.rowOrientation}>
         <Text>Enable Video</Text>
         <Switch checked={isChecked} onCheckedChange={(checked) => setIsChecked(checked)} />

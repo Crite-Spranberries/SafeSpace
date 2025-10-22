@@ -6,7 +6,7 @@ import { MoonStarIcon, StarIcon, SunIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Image, type ImageStyle, View } from 'react-native';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, ScrollView } from 'react-native';
 import { Card } from '@/components/ui/card';
 
 const LOGO = {
@@ -34,23 +34,25 @@ export default function Screen() {
 
   return (
     <>
-      <View style={styles.pageContainer}>
-        <Text>Put top navigation notifs & help here</Text>
-        <Text>Put location here</Text>
-        <Link href="../create_report" asChild>
-          <Button>
-            <Text>Create Report</Text>
-          </Button>
-        </Link>
-        <Text>Reports Near You</Text>
-        <Card
-          tags={tags}
-          title="Title goes here"
-          location="Location goes here"
-          description="AI Description goes here"
-          onDetailsPress={onDetails}
-        />
-      </View>
+      <ScrollView>
+        <View style={styles.pageContainer}>
+          <Text>Put top navigation notifs & help here</Text>
+          <Text>Put location here</Text>
+          <Link href="../create_report" asChild>
+            <Button>
+              <Text>Create Report</Text>
+            </Button>
+          </Link>
+          <Text>Reports Near You</Text>
+          <Card
+            tags={tags}
+            title="Title goes here"
+            location="Location goes here"
+            description="AI Description goes here"
+            onDetailsPress={onDetails}
+          />
+        </View>
+      </ScrollView>
     </>
   );
 }

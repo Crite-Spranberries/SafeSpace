@@ -58,7 +58,7 @@ export default function Details() {
         </View>
 
         <Text>AI Transcript</Text>
-        <DescriptionCard description="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book." />
+        <DescriptionCard description="Parsed data from the audio would ideally go here." />
 
         <View style={styles.bottomButtonAlign}>
           <Button>
