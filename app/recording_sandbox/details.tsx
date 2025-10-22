@@ -28,7 +28,7 @@ export default function Details() {
   return (
     <>
       <View style={styles.container}>
-        <Text variant="h3">Audio Status: {status}</Text>
+        <Text variant="h4">"Voice Recording": {status}</Text>
         <View style={styles.container}>
           <Button onPress={() => player.play()}>
             <Text>Play Sound</Text>
@@ -60,7 +60,6 @@ export default function Details() {
 const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
-    backgroundColor: '#ecf0f1',
     margin: 10,
   },
   buttonJustify: {
