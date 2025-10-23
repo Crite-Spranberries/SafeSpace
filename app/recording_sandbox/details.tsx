@@ -137,19 +137,6 @@ export default function Details() {
           </Button>
         </View>
 
-        <Text>Tags</Text>
-        <View style={styles.tagAlign}>
-          <Badge>
-            <Text>Longshore</Text>
-          </Badge>
-          <Badge>
-            <Text>Harassment</Text>
-          </Badge>
-          <Badge>
-            <Text>Warning</Text>
-          </Badge>
-        </View>
-
         <Text>AI Transcript</Text>
         <DescriptionCard description={audTranscribed} />
 
