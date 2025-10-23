@@ -1,45 +1,40 @@
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { Link, useLocalSearchParams } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
 import { Badge } from '@/components/ui/badge';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
-// import fs from "fs";
-// import OpenAI from "openai";
 import * as FileSystem from 'expo-file-system/legacy';
 import { Asset } from 'expo-asset';
 import { ScrollView } from 'react-native';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
 
-// const defaultAudioSource = require('@/assets/audio/test_audio.mp3');
-
-// const defaultAudioSource = await Asset.fromModule(require('@/assets/audio/default.m4a')).uri;
-
 export default function Details() {
-  // Get audioUri passed as URL param
   const { audioUri } = useLocalSearchParams();
-  const [defAud, setDefAud] = useState<any>(null);
+  const [defAud, setDefAud] = useState<string | null>(null);
+  const [activeUri, setActiveUri] = useState<string | null>(null);
+  const [status, setStatus] = useState('Stopped');
+  const [audTranscribed, setAudTranscribed] = useState<string>(
+    'Parsed data from the audio would ideally go here.'
+  );
 
+  // Load default audio file for fallback playback
   useEffect(() => {
     const init = async () => {
-
       const [{ localUri }] = await Asset.loadAsync(require('@/assets/audio/default.m4a'));
-      setDefAud(localUri)
-    }
+      setDefAud(localUri);
+      setActiveUri(localUri);
+    };
     init();
-  }, [])
+  }, []);
 
-  // Fallback audio source if param missing
-
-  // Use the recorded audio URI if provided, else fallback
-  const player = useAudioPlayer({ uri: defAud ? defAud : "" });
-  const [status, setStatus] = useState('Stopped');
-  const [audTranscribed, setAudTranscribed] = useState<string>("Parsed data from the audio would ideally go here.");
+  // Initialize player based on activeUri
+  const player = useAudioPlayer({ uri: activeUri ?? '' });
 
   useEffect(() => {
     const subscription = player.addListener('playbackStatusUpdate', (statusUpdate) => {
@@ -51,87 +46,86 @@ export default function Details() {
             : 'Stopped'
       );
     });
-
     return () => subscription?.remove();
   }, [player]);
 
+  // Unified transcription handler for recorded/default files
   const Transcribe = async (def: boolean = false) => {
-    // const filePath = defaultAudioSource; // path to your local audio file
-    // const fileData = fs.readFileSync(filePath);
-    console.log("what is defaut sr", audioUri);
-    // return;
-    // return;
-    // const _sound = await fetch(audioUri);
-    // const _buff = await _sound.arrayBuffer();
+    const _auduri = def ? defAud : typeof audioUri === 'string' ? audioUri : null;
 
-    // const transcription = await openai.audio.transcriptions.create({
-    //   file: audioUri,
-    //   model: "gpt-4o-transcribe",
-    //   response_format: "text",
-    // });
-    // console.log("what is buff", _buff)
-    // const _resp = await fetch("https://m3rcwp4vofeta3kqelrykbgosi0rswzn.lambda-url.ca-central-1.on.aws/", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "audio/*",
-    //   },
-    //   body: _buff,
-    // });
-
-    // const _json = await _resp.json();
-    // console.log("wht is response", _json);
-    let _auduri: string | string[] | null = audioUri;
-    if (def) {
-      _auduri = typeof defAud === "string" ? defAud : null;
-      // _auduri = await FileSystem.getContentUriAsync(_auduri);
-      console.log("what is aud", _auduri);
+    if (!_auduri) {
+      Alert.alert('Missing audio to transcribe');
+      return;
     }
-    if (typeof _auduri === "string") {
-      console.log('start transcribe');
+
+    try {
       const _resp = await FileSystem.uploadAsync(
-        "https://api.openai.com/v1/audio/transcriptions",
+        'https://api.openai.com/v1/audio/transcriptions',
         _auduri,
         {
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-          },
-
-          // Options specifying how to upload the file.
+          headers: { Authorization: `Bearer ${apiKey}` },
           httpMethod: 'POST',
           uploadType: FileSystem.FileSystemUploadType.MULTIPART,
           fieldName: 'file',
           mimeType: 'audio/m4a',
-          parameters: {
-            model: 'gpt-4o-mini-transcribe',
-          },
+          parameters: { model: 'gpt-4o-mini-transcribe' },
         }
       );
 
-      const _json = JSON.parse(_resp.body)
-      console.log("what is resp", _json);
+      const _json = JSON.parse(_resp.body);
       if (_json.text) {
         setAudTranscribed(_json.text);
-
-        try {
-          const jsonValue = JSON.stringify(_json.text);
-          await AsyncStorage.setItem('transcribe', jsonValue);
-        } catch (e) {
-          // saving error
-        }
+        await AsyncStorage.setItem('transcribe', JSON.stringify(_json.text));
       }
+    } catch (err) {
+      Alert.alert('Transcription Error', String(err));
     }
-  }
+  };
+
+  // Playback functions
+  const playRecording = () => {
+    if (typeof audioUri === 'string') {
+      setActiveUri(audioUri);
+      player.play();
+    } else {
+      Alert.alert('No recording available');
+    }
+  };
+
+  const playDefault = () => {
+    if (defAud) {
+      setActiveUri(defAud);
+      player.play();
+    } else {
+      Alert.alert('Default audio not loaded');
+    }
+  };
 
   return (
     <ScrollView>
       <View style={styles.container}>
-        <View style={{ flexDirection: "row", gap: 2 }}>
-          <Button disabled={!audioUri} onPress={() => Transcribe(false)}><Text>Transcribe Recording</Text></Button>
-          <Button onPress={() => Transcribe(true)}><Text>Transcribe Default</Text></Button>
+        <View style={{ flexDirection: 'row', gap: 4 }}>
+          <Button
+            disabled={!audioUri}
+            onPress={() => {
+              Transcribe(false);
+              playRecording();
+            }}>
+            <Text>Transcribe Recording</Text>
+          </Button>
+          <Button
+            onPress={() => {
+              Transcribe(true);
+              playDefault();
+            }}>
+            <Text>Transcribe Default</Text>
+          </Button>
         </View>
-        <Text variant="h4">"Voice Recording": {status}</Text>
+
+        <Text variant="h4">Voice Recording: {status}</Text>
+
         <View style={styles.container}>
-          <Button onPress={() => player.play()}>
+          <Button onPress={playRecording}>
             <Text>Play Sound</Text>
           </Button>
           <Button
@@ -142,6 +136,7 @@ export default function Details() {
             <Text>Replay Sound</Text>
           </Button>
         </View>
+
         <Text>Tags</Text>
         <View style={styles.tagAlign}>
           <Badge>
@@ -190,7 +185,3 @@ const styles = StyleSheet.create({
     gap: 24,
   },
 });
-function async(arg0: boolean) {
-  throw new Error('Function not implemented.');
-}
-
