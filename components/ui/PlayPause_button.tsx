@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { View } from 'react-native';
 import { Pause } from 'lucide-react-native';
-import { Play } from 'lucide-react-native';
+import { Disc } from 'lucide-react-native';
 
 type PlayPauseButtonProps = {
   isPlaying: boolean;
@@ -15,7 +15,7 @@ export function PlayPauseButton({ isPlaying, onPress }: PlayPauseButtonProps) {
       radius="sm"
       size="customRecordingLarge"
       onPress={onPress}>
-      <View pointerEvents="none">{isPlaying ? <Pause /> : <Play />}</View>
+      <View pointerEvents="none">{isPlaying ? <Pause /> : <Disc />}</View>
     </Button>
   );
 }

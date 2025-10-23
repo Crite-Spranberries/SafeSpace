@@ -103,13 +103,13 @@ export default function Recording() {
   const saveRecording = () => {
     if (segments.length === 0) {
       Alert.alert('No recording to save');
-      return;
-    }
-    const lastSegment = segments[segments.length - 1];
+      // return;
+    } else {}
+    const lastSegment = segments.length >0 ? segments[segments.length - 1] : null;
     router.push({
       pathname: '/recording_sandbox/details',
       params: {
-        audioUri: lastSegment.uri,
+        audioUri: lastSegment !== null ? lastSegment.uri : null,
         totalDuration: elapsedSeconds.toString(),
       },
     });

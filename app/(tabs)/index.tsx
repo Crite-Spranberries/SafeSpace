@@ -9,7 +9,8 @@ import { Image, type ImageStyle, View } from 'react-native';
 import { StyleSheet, ScrollView } from 'react-native';
 import { Card } from '@/components/ui/card';
 import MapOnDetail from '@/components/ui/MapOnDetail';
-
+// import Details from '../recording_sandbox/details';
+import Recording from './recording';
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
   dark: require('@/assets/images/react-native-reusables-dark.png'),
@@ -35,7 +36,7 @@ export default function Screen() {
 
   return (
     <>
-      <ScrollView>
+      {/* <ScrollView>
         <View style={styles.pageContainer}>
           <Text>Put top navigation notifs & help here</Text>
           <View className="w-full max-w-md">
@@ -55,7 +56,8 @@ export default function Screen() {
             onDetailsPress={onDetails}
           />
         </View>
-      </ScrollView>
+      </ScrollView> */}
+      <Recording />
     </>
   );
 }
