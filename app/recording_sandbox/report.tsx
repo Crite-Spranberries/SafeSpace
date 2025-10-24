@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
-import { Link } from 'expo-router';
+import { Link, Stack } from 'expo-router';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
@@ -10,9 +10,14 @@ import { DescriptionCard } from '@/components/ui/DescriptionCard';
 import { CommentCard } from '@/components/ui/CommentCard';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 
+const SCREEN_OPTIONS = {
+  title: 'Report',
+};
+
 export default function Report() {
   return (
     <>
+      <Stack.Screen options={SCREEN_OPTIONS} />
       <ScrollView>
         <View style={styles.container}>
           <Text>Title generated based on summary</Text>

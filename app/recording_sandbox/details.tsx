@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
-import { Link } from 'expo-router';
+import { Link, Stack } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
@@ -9,6 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
 
 const audioSource = require('@/assets/audio/test_audio.mp3');
+
+const SCREEN_OPTIONS = {
+  title: 'Recording Details',
+  headerBackTitle: 'Back',
+};
 
 export default function Details() {
   const player = useAudioPlayer(audioSource);
@@ -30,6 +35,7 @@ export default function Details() {
 
   return (
     <>
+      <Stack.Screen options={SCREEN_OPTIONS} />
       <View style={styles.container}>
         <Text variant="h4">"Voice Recording": {status}</Text>
         <View style={styles.container}>
