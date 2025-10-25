@@ -31,12 +31,12 @@ const buttonVariants = cva(
           })
         ),
         lightGrey: cn(
-          'bg-white-500/ active:bg-lightGrey/80 shadow-sm shadow-black/5',
-          Platform.select({ web: 'hover:bg-lightGrey/80' })
+          'bg-white-500/50 shadow-sm shadow-black/5 active:bg-white-500/30',
+          Platform.select({ web: 'hover:bg-white-5000/30' })
         ),
         darkGrey: cn(
-          'bg-darkGrey active:bg-darkGrey/80 shadow-sm shadow-black/5',
-          Platform.select({ web: 'hover:bg-darkGrey/80' })
+          'bg-white-500/30 shadow-sm shadow-black/5 active:bg-white-500/10',
+          Platform.select({ web: 'hover:bg-white-500/10' })
         ),
         ghost: cn(
           'active:bg-accent dark:active:bg-accent/50',

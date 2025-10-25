@@ -42,7 +42,7 @@ export default function Screen() {
             <MapOnDetail />
           </View>
           <Link href="../create_report" asChild>
-            <Button variant="lightGrey" size="lg">
+            <Button variant="darkGrey" size="lg">
               <Text>Create Report</Text>
             </Button>
           </Link>
