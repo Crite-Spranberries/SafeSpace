@@ -2,7 +2,6 @@ import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Platform, Pressable } from 'react-native';
-import StyleSheet from 'global.css';
 import { useState } from 'react';
 
 const buttonVariants = cva(
@@ -26,14 +25,18 @@ const buttonVariants = cva(
           })
         ),
         outline: cn(
-          'border border-border bg-background shadow-sm shadow-black/5 active:bg-accent dark:border-input dark:bg-input/30 dark:active:bg-input/50',
+          'border border-white-500 bg-transparent active:bg-accent dark:active:bg-input/50',
           Platform.select({
             web: 'hover:bg-accent dark:hover:bg-input/50',
           })
         ),
-        secondary: cn(
-          'bg-secondary shadow-sm shadow-black/5 active:bg-secondary/80',
-          Platform.select({ web: 'hover:bg-secondary/80' })
+        lightGrey: cn(
+          'bg-white-500/ active:bg-lightGrey/80 shadow-sm shadow-black/5',
+          Platform.select({ web: 'hover:bg-lightGrey/80' })
+        ),
+        darkGrey: cn(
+          'bg-darkGrey active:bg-darkGrey/80 shadow-sm shadow-black/5',
+          Platform.select({ web: 'hover:bg-darkGrey/80' })
         ),
         ghost: cn(
           'active:bg-accent dark:active:bg-accent/50',
@@ -68,6 +71,12 @@ const buttonVariants = cva(
             web: 'hover:bg-sky-600 focus-visible:ring-sky-500/30 dark:hover:bg-accent/50',
           })
         ),
+        purple: cn(
+          'bg-violet-500 shadow-sm shadow-black/5 active:bg-violet-500/80',
+          Platform.select({
+            web: 'hover:bg-violet-500/80 focus-visible:ring-violet-500/30 dark:hover:bg-accent/50',
+          })
+        ),
       },
       size: {
         default: cn('h-10 px-4 py-2 sm:h-9', Platform.select({ web: 'has-[>svg]:px-3' })),
@@ -95,10 +104,7 @@ const buttonVariants = cva(
 );
 
 const buttonTextVariants = cva(
-  cn(
-    'text-sm font-medium text-foreground',
-    Platform.select({ web: 'pointer-events-none transition-colors' })
-  ),
+  cn('text-sm font-medium', Platform.select({ web: 'pointer-events-none transition-colors' })),
   {
     variants: {
       variant: {
@@ -119,6 +125,9 @@ const buttonTextVariants = cva(
         startRecording: 'text-white',
         saveRecording: 'text-white',
         success: 'text-white',
+        purple: '!text-white',
+        lightGrey: '!text-white',
+        darkGrey: '!text-white',
       },
       size: {
         default: '',
