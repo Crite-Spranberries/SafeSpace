@@ -7,12 +7,16 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Image, ImageBackground, type ImageStyle, View } from 'react-native';
 import { StyleSheet, ScrollView } from 'react-native';
-import { Card } from '@/components/ui/card';
 import MapOnDetail from '@/components/ui/MapOnDetail';
+import ReportCard from '@/components/ui/ReportCard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // import Details from '../recording_sandbox/details';
 import Recording from './recording';
+import { AppText } from '@/components/ui/AppText';
+
+
+
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
   dark: require('@/assets/images/react-native-reusables-dark.png'),
@@ -31,7 +35,7 @@ const IMAGE_STYLE: ImageStyle = {
 
 export default function Screen() {
   const { colorScheme } = useColorScheme();
-  const tags = ['Tag #1', 'Tag #2'];
+  const tags = ['Tag name 1', 'Tag name 2'];
   const onDetails = () => {
     // handle details button pressed
   };
@@ -51,12 +55,14 @@ export default function Screen() {
                 <Text>Create Report</Text>
               </Button>
             </Link>
-            <Text>Reports Near You</Text>
-            <Card
+            <AppText style={styles.reportSectionHeader} weight="bold">Reports Near You</AppText>
+            <ReportCard
               tags={tags}
-              title="Title goes here"
-              location="Location goes here"
-              description="AI Description goes here"
+              title="Title generated based on summary"
+              location="123 Location Street, Vancouver"
+              excerpt="AI Summary Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in."
+              likes={67}
+              comments={67}
               onDetailsPress={onDetails}
             />
           </View>
@@ -90,7 +96,7 @@ const styles = StyleSheet.create({
   pageContainer: {
     margin: 10,
     flexDirection: 'column',
-    gap: 24,
+    gap: 16,
   },
   background: {
     position: 'absolute',
@@ -98,5 +104,10 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     height: '100%',
+  },
+  reportSectionHeader: {
+    
+    fontSize: 24,
+    color: '#FFFFFF',
   },
 });
