@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
 import { CommentCard } from '@/components/ui/CommentCard';
 import MapOnDetail from '@/components/ui/MapOnDetail';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const SCREEN_OPTIONS = {
   title: 'Report',
@@ -17,6 +18,7 @@ const SCREEN_OPTIONS = {
 export default function Report() {
   return (
     <>
+      <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
       <Stack.Screen options={SCREEN_OPTIONS} />
       <ScrollView>
         <View style={styles.container}>
@@ -68,5 +70,12 @@ const styles = StyleSheet.create({
     alignContent: 'center',
     flexDirection: 'row',
     gap: 24,
+  },
+  background: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
   },
 });

@@ -7,6 +7,8 @@ import { X } from 'lucide-react-native';
 import { Check } from 'lucide-react-native';
 import { PlayPauseButton } from '@/components/ui/PlayPause_button';
 import { Switch } from '@/components/ui/switch';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Generated calculations for time formatting
 function formatTime(seconds: number) {
@@ -51,37 +53,42 @@ export default function Recording() {
   const [isChecked, setIsChecked] = useState(false);
 
   return (
-    <View style={styles.columnOrientation}>
-      <Image
-        source={require('@/assets/images/dummy-wave-graphic.png')}
-        style={{ width: 200, height: 200 }}
-      />
+    <>
+      <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.columnOrientation}>
+          <Image
+            source={require('@/assets/images/dummy-wave-graphic.png')}
+            style={{ width: 200, height: 200 }}
+          />
 
-      <View style={styles.rowOrientation}>
-        <Text>Enable Video</Text>
-        <Switch checked={isChecked} onCheckedChange={(checked) => setIsChecked(checked)} />
-      </View>
+          <View style={styles.rowOrientation}>
+            <Text>Enable Video</Text>
+            <Switch checked={isChecked} onCheckedChange={(checked) => setIsChecked(checked)} />
+          </View>
 
-      <Text variant="h2">{formatTime(elapsedSeconds)}</Text>
-      {/*This is the play/pause activated simulated timestamp*/}
-      <View style={styles.controls}>
-        <Button
-          variant="cancelRecording"
-          size="customRecordingSmall"
-          onPress={() => {
-            setElapsedSeconds(0); // Reset the timer to 0
-            setIsPlaying(false); // Set play state to paused
-          }}>
-          <X />
-        </Button>
-        <PlayPauseButton isPlaying={isPlaying} onPress={togglePlayback} />
-        <Link href="/recording_sandbox/details" asChild>
-          <Button variant="saveRecording" size="customRecordingSmall">
-            <Check />
-          </Button>
-        </Link>
-      </View>
-    </View>
+          <Text variant="h2">{formatTime(elapsedSeconds)}</Text>
+          {/*This is the play/pause activated simulated timestamp*/}
+          <View style={styles.controls}>
+            <Button
+              variant="cancelRecording"
+              size="customRecordingSmall"
+              onPress={() => {
+                setElapsedSeconds(0); // Reset the timer to 0
+                setIsPlaying(false); // Set play state to paused
+              }}>
+              <X />
+            </Button>
+            <PlayPauseButton isPlaying={isPlaying} onPress={togglePlayback} />
+            <Link href="/recording_sandbox/details" asChild>
+              <Button variant="saveRecording" size="customRecordingSmall">
+                <Check />
+              </Button>
+            </Link>
+          </View>
+        </View>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -110,5 +117,12 @@ const styles = StyleSheet.create({
   video: {
     width: 350,
     height: 275,
+  },
+  background: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
   },
 });

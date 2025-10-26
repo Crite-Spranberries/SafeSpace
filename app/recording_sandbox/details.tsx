@@ -7,6 +7,7 @@ import { useAudioPlayer } from 'expo-audio';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const audioSource = require('@/assets/audio/test_audio.mp3');
 
@@ -35,6 +36,7 @@ export default function Details() {
 
   return (
     <>
+      <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
       <Stack.Screen options={SCREEN_OPTIONS} />
       <View style={styles.container}>
         <Text variant="h4">"Voice Recording": {status}</Text>
@@ -96,5 +98,12 @@ const styles = StyleSheet.create({
     alignContent: 'center',
     flexDirection: 'row',
     gap: 24,
+  },
+  background: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
   },
 });
