@@ -11,7 +11,8 @@ import { Card } from '@/components/ui/card';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+// import Details from '../recording_sandbox/details';
+import Recording from './recording';
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
   dark: require('@/assets/images/react-native-reusables-dark.png'),
