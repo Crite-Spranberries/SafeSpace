@@ -2,6 +2,8 @@ import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Platform, Pressable } from 'react-native';
+import StyleSheet from 'global.css';
+import { useState } from 'react';
 
 const buttonVariants = cva(
   cn(
@@ -37,13 +39,44 @@ const buttonVariants = cva(
           'active:bg-accent dark:active:bg-accent/50',
           Platform.select({ web: 'hover:bg-accent dark:hover:bg-accent/50' })
         ),
-        link: '',
+        success: cn(
+          'bg-green-500 shadow-sm shadow-black/5 active:bg-green-600',
+          Platform.select({ web: 'hover:bg-green-600 focus-visible:ring-green-500/30' })
+        ),
+        // Custom button variants for recording page
+        cancelRecording: cn(
+          'size:customRecordingSmall bg-white-700 shadow-sm shadow-black/5 active:bg-sky-600',
+          Platform.select({
+            web: 'hover:bg-sky-600 focus-visible:ring-sky-500/30 dark:hover:bg-accent/50',
+          })
+        ),
+        pauseRecording: cn(
+          'bg-violet-500 shadow-sm shadow-black/5 active:bg-sky-600',
+          Platform.select({
+            web: 'hover:bg-sky-600 focus-visible:ring-sky-500/30 dark:hover:bg-accent/50',
+          })
+        ),
+        startRecording: cn(
+          'bg-violet-300 shadow-sm shadow-black/5 active:bg-sky-600',
+          Platform.select({
+            web: 'hover:bg-sky-600 focus-visible:ring-sky-500/30 dark:hover:bg-accent/50',
+          })
+        ),
+        saveRecording: cn(
+          'size:customRecordingSmall bg-white-500 shadow-sm shadow-black/5 active:bg-sky-600',
+          Platform.select({
+            web: 'hover:bg-sky-600 focus-visible:ring-sky-500/30 dark:hover:bg-accent/50',
+          })
+        ),
       },
       size: {
         default: cn('h-10 px-4 py-2 sm:h-9', Platform.select({ web: 'has-[>svg]:px-3' })),
         sm: cn('h-9 gap-1.5 rounded-md px-3 sm:h-8', Platform.select({ web: 'has-[>svg]:px-2.5' })),
         lg: cn('h-11 rounded-md px-6 sm:h-10', Platform.select({ web: 'has-[>svg]:px-4' })),
         icon: 'h-10 w-10 sm:h-9 sm:w-9',
+        // Custom button variant sizes
+        customRecordingSmall: 'h-[96px] w-[78px] px-2 py-2',
+        customRecordingLarge: 'h-[96px] w-[173px] px-2 py-2',
       },
       radius: {
         none: 'rounded-none',
@@ -81,12 +114,19 @@ const buttonTextVariants = cva(
           'text-primary group-active:underline',
           Platform.select({ web: 'underline-offset-4 hover:underline group-hover:underline' })
         ),
+        cancelRecording: 'text-white',
+        pauseRecording: 'text-white',
+        startRecording: 'text-white',
+        saveRecording: 'text-white',
+        success: 'text-white',
       },
       size: {
         default: '',
         sm: '',
         lg: '',
         icon: '',
+        customRecordingSmall: '',
+        customRecordingLarge: '',
       },
       radius: {
         none: 'rounded-none',
