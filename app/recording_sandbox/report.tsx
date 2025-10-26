@@ -127,4 +127,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 24,
   },
+  background: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
+  },
 });

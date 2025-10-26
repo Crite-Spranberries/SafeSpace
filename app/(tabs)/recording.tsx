@@ -6,6 +6,8 @@ import { StyleSheet, View, Image, Alert } from 'react-native';
 import { X, Check } from 'lucide-react-native';
 import { PlayPauseButton } from '@/components/ui/PlayPause_button';
 import { Switch } from '@/components/ui/switch';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   useAudioRecorder,
   AudioModule,
@@ -154,7 +156,10 @@ export default function Recording() {
   }, []);
 
   return (
-    <View style={styles.columnOrientation}>
+    <>
+      <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.columnOrientation}>
       <Image
         source={require('@/assets/images/dummy-wave-graphic.png')}
         style={{ width: 200, height: 200 }}
@@ -174,6 +179,8 @@ export default function Recording() {
         </Button>
       </View>
     </View>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -197,5 +204,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 15,
     padding: 20,
+  },
+  video: {
+    width: 350,
+    height: 275,
+  },
+  background: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
   },
 });

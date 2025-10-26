@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
 import { Badge } from '@/components/ui/badge';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Asset } from 'expo-asset';
 import { ScrollView } from 'react-native';
@@ -13,6 +14,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+
+const SCREEN_OPTIONS = {
+  title: 'Recording Details',
+  headerBackTitle: 'Back',
+};
 
 export default function Details() {
   const { audioUri } = useLocalSearchParams();
@@ -170,5 +176,12 @@ const styles = StyleSheet.create({
     alignContent: 'center',
     flexDirection: 'row',
     gap: 24,
+  },
+  background: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
   },
 });

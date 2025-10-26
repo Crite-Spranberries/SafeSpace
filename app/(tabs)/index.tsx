@@ -5,10 +5,12 @@ import { Link, Stack } from 'expo-router';
 import { MoonStarIcon, StarIcon, SunIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Image, type ImageStyle, View } from 'react-native';
+import { Image, ImageBackground, type ImageStyle, View } from 'react-native';
 import { StyleSheet, ScrollView } from 'react-native';
 import { Card } from '@/components/ui/card';
 import MapOnDetail from '@/components/ui/MapOnDetail';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 // import Details from '../recording_sandbox/details';
 import Recording from './recording';
 const LOGO = {
@@ -33,31 +35,33 @@ export default function Screen() {
   const onDetails = () => {
     // handle details button pressed
   };
-
+  // background: linear-gradient(180deg, #371F5E 0%, #000 30.29%);
   return (
     <>
-      {/* <ScrollView>
-        <View style={styles.pageContainer}>
-          <Text>Put top navigation notifs & help here</Text>
-          <View className="w-full max-w-md">
-            <MapOnDetail />
+      <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView>
+          <View style={styles.pageContainer}>
+            <Text>Put top navigation notifs & help here</Text>
+            <View className="w-full max-w-md">
+              <MapOnDetail />
+            </View>
+            <Link href="../create_report" asChild>
+              <Button variant="default">
+                <Text>Create Report</Text>
+              </Button>
+            </Link>
+            <Text>Reports Near You</Text>
+            <Card
+              tags={tags}
+              title="Title goes here"
+              location="Location goes here"
+              description="AI Description goes here"
+              onDetailsPress={onDetails}
+            />
           </View>
-          <Link href="../create_report" asChild>
-            <Button>
-              <Text>Create Report</Text>
-            </Button>
-          </Link>
-          <Text>Reports Near You</Text>
-          <Card
-            tags={tags}
-            title="Title goes here"
-            location="Location goes here"
-            description="AI Description goes here"
-            onDetailsPress={onDetails}
-          />
-        </View>
-      </ScrollView> */}
-      <Recording />
+        </ScrollView>
+      </SafeAreaView>
     </>
   );
 }
@@ -87,5 +91,12 @@ const styles = StyleSheet.create({
     margin: 10,
     flexDirection: 'column',
     gap: 24,
+  },
+  background: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: '100%',
   },
 });
