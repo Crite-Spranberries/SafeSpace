@@ -52,8 +52,10 @@ export default function Screen() {
               <MapOnHome />
             </View>
             <Link href="../create_report" asChild>
-              <Button variant="default">
-                <Text>Create Report</Text>
+              <Button radius="full" className="h-[52px]">
+                <AppText style={{ fontSize: 20, lineHeight: 24 }} weight="medium">
+                  Create Report
+                </AppText>
               </Button>
             </Link>
             <AppText style={styles.reportSectionHeader} weight="bold">
