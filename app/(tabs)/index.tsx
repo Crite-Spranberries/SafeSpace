@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { Text } from '@/components/ui/text';
 import { Link, Stack } from 'expo-router';
 import { MoonStarIcon, StarIcon, SunIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
@@ -34,7 +33,6 @@ const IMAGE_STYLE: ImageStyle = {
 
 export default function Screen() {
   const { colorScheme } = useColorScheme();
-  const tags = ['Discrimination', 'Harassment'];
   const onDetails = () => {
     // handle details button pressed
   };
@@ -62,27 +60,27 @@ export default function Screen() {
               Reports Near You
             </AppText>
             <ReportCard
-              tags={tags}
+              tags={['Discrimination', 'Pay Inequality']}
               title="Unequal Pay for Equal Work"
-              location="456 Government St, Victoria, BC"
+              location="456 Government St, Burnaby, BC"
               excerpt="I noticed that my male colleagues receive higher pay for the same tasks. When I raised the issue, I was ignored and sometimes subtly threatened. It made me feel undervalued and hesitant to speak up again."
               likes={108}
               comments={56}
               onDetailsPress={onDetails}
             />
             <ReportCard
-              tags={tags}
+              tags={['Discrimination', 'Harassment']}
               title="Misgendered During Training"
-              location="123 Granville St, Vancouver, BC"
+              location="123 Granville St, Burnaby, BC"
               excerpt="During a recent apprenticeship training, my supervisor repeatedly referred to me with the wrong pronouns despite me correcting them multiple times."
               likes={42}
               comments={16}
               onDetailsPress={onDetails}
             />
             <ReportCard
-              tags={tags}
+              tags={['Discrimination', 'Safety']}
               title="Unsafe Equipment Access"
-              location="789 Bernard Ave, Kelowna, BC"
+              location="789 Bernard Ave, Burnaby, BC"
               excerpt="The workshop layout makes it unsafe for me as a non-binary person to access certain machinery without constant supervision, which is stressful and humiliating."
               likes={37}
               comments={27}
