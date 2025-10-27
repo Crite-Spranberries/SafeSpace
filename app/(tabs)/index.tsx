@@ -7,7 +7,7 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Image, ImageBackground, type ImageStyle, View } from 'react-native';
 import { StyleSheet, ScrollView } from 'react-native';
-import MapOnDetail from '@/components/ui/MapOnDetail';
+import MapOnHome from '@/components/ui/MapOnHome';
 import ReportCard from '@/components/ui/ReportCard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -43,13 +43,13 @@ export default function Screen() {
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ position: 'absolute', top: 60, left: 16, right: 16, zIndex: 10 }}>
+        <View style={{ position: 'absolute', top: 60, left: 0, right: 0, zIndex: 10 }}>
           <HomeTopBar />
         </View>
-        <ScrollView contentContainerStyle={{ paddingTop: 55 }}>
+        <ScrollView contentContainerStyle={{ paddingTop: 70 }}>
           <View style={styles.pageContainer}>
             <View className="w-full max-w-md">
-              <MapOnDetail />
+              <MapOnHome />
             </View>
             <Link href="../create_report" asChild>
               <Button variant="default">
