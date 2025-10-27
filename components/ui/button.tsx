@@ -87,6 +87,7 @@ const buttonVariants = cva(
         customRecordingSmall: 'h-[96px] w-[78px] px-2 py-2',
         customRecordingLarge: 'h-[96px] w-[173px] px-2 py-2',
         multiLine: 'h-auto px-6 py-6',
+        auto: 'grow px-4 py-2',
       },
       radius: {
         none: 'rounded-none',
@@ -138,6 +139,7 @@ const buttonTextVariants = cva(
         customRecordingSmall: '',
         customRecordingLarge: '',
         multiLine: '',
+        auto: '',
       },
       radius: {
         none: 'rounded-none',
