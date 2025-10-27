@@ -66,8 +66,8 @@ export default function Screen() {
               title="Unequal Pay for Equal Work"
               location="456 Government St, Victoria, BC"
               excerpt="I noticed that my male colleagues receive higher pay for the same tasks. When I raised the issue, I was ignored and sometimes subtly threatened. It made me feel undervalued and hesitant to speak up again."
-              likes={67}
-              comments={67}
+              likes={108}
+              comments={56}
               onDetailsPress={onDetails}
             />
             <ReportCard
@@ -75,8 +75,8 @@ export default function Screen() {
               title="Misgendered During Training"
               location="123 Granville St, Vancouver, BC"
               excerpt="During a recent apprenticeship training, my supervisor repeatedly referred to me with the wrong pronouns despite me correcting them multiple times."
-              likes={67}
-              comments={67}
+              likes={42}
+              comments={16}
               onDetailsPress={onDetails}
             />
             <ReportCard
@@ -84,8 +84,8 @@ export default function Screen() {
               title="Unsafe Equipment Access"
               location="789 Bernard Ave, Kelowna, BC"
               excerpt="The workshop layout makes it unsafe for me as a non-binary person to access certain machinery without constant supervision, which is stressful and humiliating."
-              likes={67}
-              comments={67}
+              likes={37}
+              comments={27}
               onDetailsPress={onDetails}
             />
             <Button variant="outline" className="h-[48px] rounded-[12px]">
