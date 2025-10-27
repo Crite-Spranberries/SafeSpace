@@ -16,7 +16,7 @@ const MapOnHome: React.FC = () => {
       </ImageBackground>
 
       <View style={styles.addressBar}>
-        <AppText style={styles.addressText}>BCIT, Burnaby</AppText>
+        <AppText style={styles.addressText}>BCIT Burnaby Campus, Burnaby</AppText>
       </View>
     </View>
   );

@@ -34,7 +34,7 @@ const IMAGE_STYLE: ImageStyle = {
 
 export default function Screen() {
   const { colorScheme } = useColorScheme();
-  const tags = ['Tag name 1', 'Tag name 2'];
+  const tags = ['Discrimination', 'Harassment'];
   const onDetails = () => {
     // handle details button pressed
   };
@@ -42,17 +42,17 @@ export default function Screen() {
   return (
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ position: 'absolute', top: 60, left: 0, right: 0, zIndex: 10 }}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <View style={{ position: 'absolute', top: 60, left: 16, right: 16, zIndex: 10 }}>
           <HomeTopBar />
         </View>
-        <ScrollView contentContainerStyle={{ paddingTop: 70 }}>
+        <ScrollView contentContainerStyle={{ paddingTop: 70, paddingBottom: 5 }}>
           <View style={styles.pageContainer}>
             <View className="w-full max-w-md">
               <MapOnHome />
             </View>
             <Link href="../create_report" asChild>
-              <Button radius="full" className="h-[52px]">
+              <Button radius="full" className="mt-2 h-[52px]">
                 <AppText style={{ fontSize: 20, lineHeight: 24 }} weight="medium">
                   Create Report
                 </AppText>
@@ -63,31 +63,36 @@ export default function Screen() {
             </AppText>
             <ReportCard
               tags={tags}
-              title="Title generated based on summary"
-              location="123 Location Street, Vancouver"
-              excerpt="AI Summary Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in."
+              title="Unequal Pay for Equal Work"
+              location="456 Government St, Victoria, BC"
+              excerpt="I noticed that my male colleagues receive higher pay for the same tasks. When I raised the issue, I was ignored and sometimes subtly threatened. It made me feel undervalued and hesitant to speak up again."
               likes={67}
               comments={67}
               onDetailsPress={onDetails}
             />
             <ReportCard
               tags={tags}
-              title="Title generated based on summary"
-              location="123 Location Street, Vancouver"
-              excerpt="AI Summary Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in."
+              title="Misgendered During Training"
+              location="123 Granville St, Vancouver, BC"
+              excerpt="During a recent apprenticeship training, my supervisor repeatedly referred to me with the wrong pronouns despite me correcting them multiple times."
               likes={67}
               comments={67}
               onDetailsPress={onDetails}
             />
             <ReportCard
               tags={tags}
-              title="Title generated based on summary"
-              location="123 Location Street, Vancouver"
-              excerpt="AI Summary Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in."
+              title="Unsafe Equipment Access"
+              location="789 Bernard Ave, Kelowna, BC"
+              excerpt="The workshop layout makes it unsafe for me as a non-binary person to access certain machinery without constant supervision, which is stressful and humiliating."
               likes={67}
               comments={67}
               onDetailsPress={onDetails}
             />
+            <Button variant="outline" className="h-[48px] rounded-[12px]">
+              <AppText style={{ fontSize: 16, lineHeight: 20, color: '#FFFFFF' }} weight="medium">
+                View More
+              </AppText>
+            </Button>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -117,7 +122,7 @@ function ThemeToggle() {
 
 const styles = StyleSheet.create({
   pageContainer: {
-    margin: 10,
+    padding: 16,
     flexDirection: 'column',
     gap: 16,
   },

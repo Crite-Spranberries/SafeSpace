@@ -30,14 +30,18 @@ export default function ReportCard({
     <View style={styles.wrapper}>
       <View style={styles.card}>
         <View style={styles.topBlock}>
-          <AppText style={styles.tags}>{tags.join(', ')}</AppText>
+          <AppText style={styles.tags} numberOfLines={1}>
+            {tags.join(', ')}
+          </AppText>
         </View>
 
-        <AppText style={styles.title} weight="medium">{title}</AppText>
-        {location ? <AppText style={styles.location} >{location}</AppText> : null}
+        <AppText numberOfLines={1} style={styles.title} weight="medium">
+          {title}
+        </AppText>
+        {location ? <AppText style={styles.location}>{location}</AppText> : null}
 
         {excerpt ? (
-          <AppText numberOfLines={3} ellipsizeMode="tail" style={styles.excerpt}>
+          <AppText numberOfLines={4} ellipsizeMode="tail" style={styles.excerpt}>
             {excerpt}
           </AppText>
         ) : null}
@@ -55,8 +59,10 @@ export default function ReportCard({
           </View>
 
           <TouchableOpacity style={styles.detailsBtn} onPress={onDetailsPress} activeOpacity={0.8}>
-            <AppText style={styles.detailsText} weight="medium">Details</AppText>
-            <Icon as={ArrowRight} color="#5E349E" size={18}  strokeWidth={2.6}/>
+            <AppText style={styles.detailsText} weight="medium">
+              Details
+            </AppText>
+            <Icon as={ArrowRight} color="#5E349E" size={18} strokeWidth={2.6} />
           </TouchableOpacity>
         </View>
       </View>
@@ -74,8 +80,8 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
     borderWidth: 1,
     borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   topBlock: {
     flexDirection: 'row',
@@ -96,16 +102,15 @@ const styles = StyleSheet.create({
     color: '#333333',
     fontSize: 16,
     lineHeight: 20,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   excerpt: {
     color: '#000000',
     fontSize: 16,
     lineHeight: 20,
-    marginBottom: 16,
   },
   rowBottom: {
-    marginTop: 12,
+    marginTop: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
