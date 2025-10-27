@@ -14,8 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // import Details from '../recording_sandbox/details';
 import Recording from './recording';
 import { AppText } from '@/components/ui/AppText';
-
-
+import HomeTopBar from '@/components/ui/HomeTopBar';
 
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -44,9 +43,11 @@ export default function Screen() {
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
       <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView>
+        <View style={{ position: 'absolute', top: 60, left: 16, right: 16, zIndex: 10 }}>
+          <HomeTopBar />
+        </View>
+        <ScrollView contentContainerStyle={{ paddingTop: 55 }}>
           <View style={styles.pageContainer}>
-            <Text>Put top navigation notifs & help here</Text>
             <View className="w-full max-w-md">
               <MapOnDetail />
             </View>
@@ -55,7 +56,27 @@ export default function Screen() {
                 <Text>Create Report</Text>
               </Button>
             </Link>
-            <AppText style={styles.reportSectionHeader} weight="bold">Reports Near You</AppText>
+            <AppText style={styles.reportSectionHeader} weight="bold">
+              Reports Near You
+            </AppText>
+            <ReportCard
+              tags={tags}
+              title="Title generated based on summary"
+              location="123 Location Street, Vancouver"
+              excerpt="AI Summary Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in."
+              likes={67}
+              comments={67}
+              onDetailsPress={onDetails}
+            />
+            <ReportCard
+              tags={tags}
+              title="Title generated based on summary"
+              location="123 Location Street, Vancouver"
+              excerpt="AI Summary Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in."
+              likes={67}
+              comments={67}
+              onDetailsPress={onDetails}
+            />
             <ReportCard
               tags={tags}
               title="Title generated based on summary"
@@ -106,7 +127,6 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   reportSectionHeader: {
-    
     fontSize: 24,
     color: '#FFFFFF',
   },
