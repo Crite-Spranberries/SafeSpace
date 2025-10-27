@@ -82,10 +82,12 @@ const buttonVariants = cva(
         default: cn('h-10 px-4 py-2 sm:h-9', Platform.select({ web: 'has-[>svg]:px-3' })),
         sm: cn('h-9 gap-1.5 rounded-md px-3 sm:h-8', Platform.select({ web: 'has-[>svg]:px-2.5' })),
         lg: cn('h-11 rounded-md px-6 sm:h-10', Platform.select({ web: 'has-[>svg]:px-4' })),
-        icon: 'h-10 w-10 sm:h-9 sm:w-9',
+        icon: 'h-10 w-10 px-6 py-6 sm:h-9 sm:w-9',
         // Custom button variant sizes
         customRecordingSmall: 'h-[96px] w-[78px] px-2 py-2',
         customRecordingLarge: 'h-[96px] w-[173px] px-2 py-2',
+        multiLine: 'h-auto px-6 py-6',
+        auto: 'grow px-4 py-2',
       },
       radius: {
         none: 'rounded-none',
@@ -136,6 +138,8 @@ const buttonTextVariants = cva(
         icon: '',
         customRecordingSmall: '',
         customRecordingLarge: '',
+        multiLine: '',
+        auto: '',
       },
       radius: {
         none: 'rounded-none',
