@@ -28,7 +28,11 @@ export default function Profile() {
 
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <View style={styles.buttonContainer}>
-          <Button variant="purple" radius="full" size="lg">
+          <Button
+            variant="purple"
+            radius="full"
+            size="lg"
+            onPress={() => router.push('/create_report')}>
             <Text>Create Report</Text>
             <Icon as={Plus} size={20} color="#fff" />
           </Button>
