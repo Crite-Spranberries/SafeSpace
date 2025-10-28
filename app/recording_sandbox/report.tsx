@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
-import { Link, usePathname } from 'expo-router';
+import { Link, router, usePathname } from 'expo-router';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
@@ -9,23 +9,24 @@ import { Badge } from '@/components/ui/badge';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
 import { CommentCard } from '@/components/ui/CommentCard';
 import MapOnDetail from '@/components/ui/MapOnDetail';
-import { RetrieveResponse } from "roughlyai";
+import { RetrieveResponse } from 'roughlyai';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 
 export default function Report() {
   const path = usePathname();
-  const [report, setReport] = useState<string>("");
+  const [report, setReport] = useState<string>('');
   useEffect(() => {
-    console.log("effect", path)
+    console.log('effect', path);
     const init = async () => {
-      console.log("init");
+      console.log('init');
       try {
         const value = await AsyncStorage.getItem('transcribe');
-        console.log("value", typeof window);
+        console.log('value', typeof window);
         if (value !== null) {
           // value previously stored
           // this.window = null
-          
+
           // const _url = await PromptModel({
           //   prompt: `Using "report_template.txt" as a template, create a report for the following transcript:
           //   ${value}`,
@@ -33,32 +34,35 @@ export default function Report() {
           //   dir: "2025Projects/safespace",
           //   model: "gpt-4.1-mini"
           // });
-          const _resp = await fetch("https://m3rcwp4vofeta3kqelrykbgosi0rswzn.lambda-url.ca-central-1.on.aws/", {
-            method:"POST",
-            body:JSON.stringify({
-              prompt: `Using "report_template.txt" as a template, create a report for the following transcript:
+          const _resp = await fetch(
+            'https://m3rcwp4vofeta3kqelrykbgosi0rswzn.lambda-url.ca-central-1.on.aws/',
+            {
+              method: 'POST',
+              body: JSON.stringify({
+                prompt: `Using "report_template.txt" as a template, create a report for the following transcript:
               ${value}
               
               For information missing, respond with "Not Provided". Make an educated guess for "Trades field", "Type of Report", "Type of Discrimination", and "Incident Details" based on the transcript.`,
-              project_name:"safespace"
-            })
-          })
+                project_name: 'safespace',
+              }),
+            }
+          );
 
           const _json_string = await _resp.json();
-          const _json:{url:string} = JSON.parse(_json_string);
+          const _json: { url: string } = JSON.parse(_json_string);
 
-          console.log("what is _json", _json.url);
+          console.log('what is _json', _json.url);
           // console.log("url", _url)
           const _report: any = await RetrieveResponse(_json.url);
           setReport(_report.answer);
         }
-      } catch (e:any) {
+      } catch (e: any) {
         // error reading value
-        console.log("what is error", e.message);
+        console.log('what is error', e.message);
       }
-    }
+    };
     init();
-  }, [path])
+  }, [path]);
   return (
     <>
       <ScrollView>
@@ -82,18 +86,14 @@ export default function Report() {
             </Badge>
           </View>
           <View>
-            <View style={{flexDirection:"column", gap:5}}>
-              {
-              (()=>{
-                const lines = report.split('\n')
+            <View style={{ flexDirection: 'column', gap: 5 }}>
+              {(() => {
+                const lines = report.split('\n');
                 let output = lines.map((line, index) => {
-                  return <Text key={`line_${index}`}>{line || <>&nbsp;</>}</Text>
-                })
-                return <>
-                  {output}
-                </>
-              })()
-              }
+                  return <Text key={`line_${index}`}>{line || <>&nbsp;</>}</Text>;
+                });
+                return <>{output}</>;
+              })()}
             </View>
           </View>
           {/* <View>
@@ -105,6 +105,9 @@ export default function Report() {
             <CommentCard description="Commenty input comment saying commenty things about something. In the land of comments, the comments run dry in the absence of authentic comments. There are more comments to be found, but many fail to have appeared in terms of comments." />
           </View> */}
         </View>
+        <Button onPress={() => router.push('/(tabs)')}>
+          <Text>Home</Text>
+        </Button>
       </ScrollView>
     </>
   );
