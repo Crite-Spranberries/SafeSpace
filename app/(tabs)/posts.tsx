@@ -46,6 +46,15 @@ export default function Profile() {
           <SearchSettings />
           <View style={styles.pageContainer}>
             <ReportCard
+              tags={['Harassment', 'Site Safety']}
+              title="Onsite Harassment Concern Near Coffee Bar"
+              location="123 Construction Avenue, Vancouver"
+              excerpt="In the past week, a male individual was observed frequently interacting in ways that have made several tradeswomen uncomfortable. The individual is described as having brunette, curly hair, approximately 180 cm tall, and often seen near the coffee bar area."
+              likes={108}
+              comments={56}
+              onDetailsPress={onDetails}
+            />
+            <ReportCard
               tags={['Discrimination', 'Pay Inequality']}
               title="Unequal Pay for Equal Work"
               location="456 Government St, Burnaby, BC"

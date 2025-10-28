@@ -31,6 +31,10 @@ const badgeVariants = cva(
           'h-10 bg-white-500/30 shadow-sm shadow-black/5 active:bg-white-500/10',
           Platform.select({ web: '[a&]:hover:bg-white-500/10' })
         ),
+        lightGrey: cn(
+          'h-10 bg-white-500/70 shadow-sm shadow-black/5 active:bg-white-500/50',
+          Platform.select({ web: '[a&]:hover:bg-white-500/50' })
+        ),
       },
     },
     defaultVariants: {
@@ -47,6 +51,7 @@ const badgeTextVariants = cva('text-xs font-medium', {
       destructive: 'text-white',
       outline: 'text-foreground',
       darkGrey: 'text-foreground',
+      lightGrey: 'text-background',
     },
   },
   defaultVariants: {

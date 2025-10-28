@@ -54,6 +54,7 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => <Icon as={FolderLock} size={24} color={color} />,
           }}
         />
+
         <Tabs.Screen
           name="profile"
           options={{

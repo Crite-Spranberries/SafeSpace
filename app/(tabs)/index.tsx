@@ -36,7 +36,7 @@ export default function Screen() {
   const { colorScheme } = useColorScheme();
   const router = useRouter();
   const onDetails = () => {
-    router.push('/recording_sandbox/report');
+    router.push('/create_report/report');
   };
   // background: linear-gradient(180deg, #371F5E 0%, #000 30.29%);
   return (
@@ -62,10 +62,10 @@ export default function Screen() {
               Reports Near You
             </AppText>
             <ReportCard
-              tags={['Discrimination', 'Pay Inequality']}
-              title="Unequal Pay for Equal Work"
-              location="456 Government St, Burnaby, BC"
-              excerpt="I noticed that my male colleagues receive higher pay for the same tasks. When I raised the issue, I was ignored and sometimes subtly threatened. It made me feel undervalued and hesitant to speak up again."
+              tags={['Harassment', 'Site Safety']}
+              title="Onsite Harassment Concern Near Coffee Bar"
+              location="123 Construction Avenue, Vancouver"
+              excerpt="In the past week, a male individual was observed frequently interacting in ways that have made several tradeswomen uncomfortable. The individual is described as having brunette, curly hair, approximately 180 cm tall, and often seen near the coffee bar area."
               likes={108}
               comments={56}
               onDetailsPress={onDetails}
