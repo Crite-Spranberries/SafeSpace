@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Recording from './recording';
 import { AppText } from '@/components/ui/AppText';
 import HomeTopBar from '@/components/ui/HomeTopBar';
+import { useRouter } from 'expo-router';
 
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -33,8 +34,9 @@ const IMAGE_STYLE: ImageStyle = {
 
 export default function Screen() {
   const { colorScheme } = useColorScheme();
+  const router = useRouter();
   const onDetails = () => {
-    // handle details button pressed
+    router.push('/recording_sandbox/report');
   };
   // background: linear-gradient(180deg, #371F5E 0%, #000 30.29%);
   return (
