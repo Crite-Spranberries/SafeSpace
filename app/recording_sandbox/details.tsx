@@ -26,7 +26,7 @@ export default function Details() {
   const [activeUri, setActiveUri] = useState<string | null>(null);
   const [status, setStatus] = useState('Stopped');
   const [audTranscribed, setAudTranscribed] = useState<string>(
-    'Parsed data from the audio would ideally go here.'
+    'Transcripter awaiting audio to parse.'
   );
 
   // Load default audio file for fallback playback
@@ -124,11 +124,11 @@ export default function Details() {
               Transcribe(true);
               playDefault();
             }}>
-            <Text>Transcribe Default</Text>
+            <Text>Transcribe Sample</Text>
           </Button>
         </View>
 
-        <Text variant="h4">Voice Recording: {status}</Text>
+        <Text variant="h4">Recording Preview: {status}</Text>
 
         <View style={styles.container}>
           <Button onPress={playRecording}>
