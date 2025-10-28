@@ -1,18 +1,33 @@
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet, ScrollView } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import RecordingCard from '@/components/ui/RecordingCard';
 import ReportCard from '@/components/ui/ReportCard';
 import SearchSettings from '@/components/ui/searchSettings';
 import Tabs from '@/components/ui/tabs';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { Modal } from '@/components/ui/modal';
+import { Text } from '@/components/ui/text';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export default function RecordingsPage() {
+  const [modalOpen, setModalOpen] = useState(false);
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const [activeTab, setActiveTab] = useState<'recordings' | 'reports'>('recordings');
+  const [password, setPassword] = useState('');
   const router = useRouter();
+
+  useFocusEffect(
+    useCallback(() => {
+      setModalOpen(true);
+      return () => {
+        // Cleanup function - you can add logic here if needed
+      };
+    }, [])
+  );
 
   const handleTabChange = (tab: 'recordings' | 'reports') => {
     setActiveTab(tab);
@@ -33,6 +48,41 @@ export default function RecordingsPage() {
         <ScrollView
           contentContainerStyle={{ paddingTop: 70, paddingBottom: 5 }}
           scrollEnabled={scrollEnabled}>
+          <Modal isOpen={modalOpen}>
+            <View style={styles.modalContent}>
+              <Text variant="h4" style={styles.modalTitle}>
+                Enter Passcode
+              </Text>
+              <Input
+                placeholder="Enter password..."
+                secureTextEntry={true}
+                value={password}
+                onChangeText={setPassword}
+                style={styles.modalInput}
+              />
+              <View style={styles.modalButtonContainer}>
+                <Pressable style={styles.cancelButtonStyle} onPress={() => setModalOpen(false)}>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={
+                    password ? styles.confirmButtonEnabledStyle : styles.confirmButtonDisabledStyle
+                  }
+                  onPress={() => setModalOpen(false)}
+                  disabled={!password}>
+                  <Text
+                    style={
+                      password ? styles.confirmButtonEnabledText : styles.confirmButtonDisabledText
+                    }>
+                    Confirm
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+          <Pressable onPress={() => setModalOpen(true)}>
+            <Text style={styles.openModalText}>Open Modal</Text>
+          </Pressable>
           <Tabs onTabChange={handleTabChange} tab={activeTab} style={{ marginBottom: 16 }} />
           <SearchSettings />
           <View style={styles.pageContainer}>
@@ -137,5 +187,86 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     marginBottom: 16,
+  },
+  modalContent: {
+    width: '100%',
+    alignItems: 'center',
+    borderRadius: 12,
+    backgroundColor: '#cfcfcfff',
+    padding: 16,
+  },
+  modalTitle: {
+    textAlign: 'center',
+    color: '#000',
+    marginBottom: 16,
+  },
+  modalInput: {
+    width: '100%',
+    marginBottom: 16,
+    borderColor: '#ccc',
+  },
+  modalButtonContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  modalButton: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  confirmButtonDisabled: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+  },
+  confirmButtonEnabled: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+  },
+  cancelButtonStyle: {
+    flex: 1,
+    height: 48,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#fff',
+    backgroundColor: '#E8E8E8',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#7C3AED',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  confirmButtonDisabledStyle: {
+    flex: 1,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: '#8A8A8A',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmButtonDisabledText: {
+    color: '#6B7280',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  confirmButtonEnabledStyle: {
+    flex: 1,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: '#7C3AED',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmButtonEnabledText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  openModalText: {
+    color: '#000',
   },
 });
