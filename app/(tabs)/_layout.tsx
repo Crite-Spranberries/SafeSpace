@@ -48,7 +48,7 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="mylogs"
+          name="myLogs"
           options={{
             title: 'My Logs',
             tabBarIcon: ({ color }) => <Icon as={FolderLock} size={24} color={color} />,

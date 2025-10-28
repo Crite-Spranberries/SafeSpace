@@ -77,6 +77,10 @@ const buttonVariants = cva(
             web: 'hover:bg-violet-500/80 focus-visible:ring-violet-500/30 dark:hover:bg-accent/50',
           })
         ),
+        switch: cn(
+          'bg-white-500 shadow-sm shadow-black/5 active:bg-white-500/80',
+          Platform.select({ web: 'hover:bg-white-500/80' })
+        ),
       },
       size: {
         default: cn('h-10 px-4 py-2 sm:h-9', Platform.select({ web: 'has-[>svg]:px-3' })),
@@ -88,6 +92,7 @@ const buttonVariants = cva(
         customRecordingLarge: 'h-[96px] w-[173px] px-2 py-2',
         multiLine: 'h-auto px-6 py-6',
         auto: 'grow px-4 py-2',
+        iconSmall: 'h-10 w-10 px-2 py-2',
       },
       radius: {
         none: 'rounded-none',
@@ -130,6 +135,7 @@ const buttonTextVariants = cva(
         purple: '!text-white',
         lightGrey: '!text-white',
         darkGrey: '!text-white',
+        switch: 'text-foreground',
       },
       size: {
         default: '',
@@ -140,6 +146,7 @@ const buttonTextVariants = cva(
         customRecordingLarge: '',
         multiLine: '',
         auto: '',
+        iconSmall: '',
       },
       radius: {
         none: 'rounded-none',
