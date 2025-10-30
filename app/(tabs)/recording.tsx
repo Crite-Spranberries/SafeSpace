@@ -106,8 +106,9 @@ export default function Recording() {
     if (segments.length === 0) {
       Alert.alert('No recording to save');
       // return;
-    } else {}
-    const lastSegment = segments.length >0 ? segments[segments.length - 1] : null;
+    } else {
+    }
+    const lastSegment = segments.length > 0 ? segments[segments.length - 1] : null;
     router.push({
       pathname: '/recording_sandbox/details',
       params: {
@@ -160,25 +161,25 @@ export default function Recording() {
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.columnOrientation}>
-      <Image
-        source={require('@/assets/images/dummy-wave-graphic.png')}
-        style={{ width: 200, height: 200 }}
-      />
-      <View style={styles.rowOrientation}>
-        <Text>Enable Video</Text>
-        <Switch checked={isChecked} onCheckedChange={setIsChecked} />
-      </View>
-      <Text variant="h2">{formatTime(elapsedSeconds)}</Text>
-      <View style={styles.controls}>
-        <Button variant="cancelRecording" size="customRecordingSmall" onPress={cancelRecording}>
-          <X />
-        </Button>
-        <PlayPauseButton isPlaying={isPlaying} onPress={handlePlayPausePress} />
-        <Button variant="saveRecording" size="customRecordingSmall" onPress={saveRecording}>
-          <Check />
-        </Button>
-      </View>
-    </View>
+          <Image
+            source={require('@/assets/images/dummy-wave-graphic.png')}
+            style={{ width: 200, height: 200 }}
+          />
+          <View style={styles.rowOrientation}>
+            <Text>Enable Video</Text>
+            <Switch checked={isChecked} onCheckedChange={setIsChecked} />
+          </View>
+          <Text variant="h2">{formatTime(elapsedSeconds)}</Text>
+          <View style={styles.controls}>
+            <Button variant="cancelRecording" size="customRecordingSmall" onPress={cancelRecording}>
+              <X />
+            </Button>
+            <PlayPauseButton isPlaying={isPlaying} onPress={handlePlayPausePress} />
+            <Button variant="saveRecording" size="customRecordingSmall" onPress={saveRecording}>
+              <Check />
+            </Button>
+          </View>
+        </View>
       </SafeAreaView>
     </>
   );
@@ -193,9 +194,12 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   columnOrientation: {
+    flex: 1,
+    marginTop: 100,
     flexDirection: 'column',
     justifyContent: 'space-around',
     alignItems: 'center',
+
     padding: 20,
   },
   rowOrientation: {
