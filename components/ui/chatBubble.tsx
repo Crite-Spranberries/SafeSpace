@@ -2,6 +2,7 @@ import { ModalProps, View } from 'react-native';
 import { AppText } from './AppText';
 import { Button } from './button';
 import { StyleSheet } from 'react-native';
+import { useState } from 'react';
 
 type Props = ModalProps & {
   text: string;
@@ -10,6 +11,11 @@ type Props = ModalProps & {
 };
 
 export default function ChatBubble({ text, type, withButtons }: Props) {
+  const [selectedButton, setSelectedButton] = useState<number | null>(null);
+
+  const handleButtonPress = (index: number) => {
+    setSelectedButton(selectedButton === index ? null : index);
+  };
   return (
     <View
       style={
@@ -23,8 +29,13 @@ export default function ChatBubble({ text, type, withButtons }: Props) {
       {withButtons && (
         <View style={styles.buttonsContainer}>
           {withButtons.map((button, index) => (
-            <Button key={index} style={styles.button} onPress={() => {}}>
-              <AppText>{button}</AppText>
+            <Button
+              key={index}
+              style={[styles.button, selectedButton === index && styles.buttonSelected]}
+              onPress={() => handleButtonPress(index)}>
+              <AppText style={selectedButton === index && styles.buttonTextSelected}>
+                {button}
+              </AppText>
             </Button>
           ))}
         </View>
@@ -67,6 +78,12 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: '#E8E8E8',
     minWidth: '48%',
+  },
+  buttonSelected: {
+    backgroundColor: '#5E349E',
+  },
+  buttonTextSelected: {
+    color: '#fff',
   },
   safiText: {
     color: 'white',

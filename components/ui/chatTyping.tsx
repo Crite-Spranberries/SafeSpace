@@ -23,6 +23,7 @@ export default function ChatTyping() {
 const styles = StyleSheet.create({
   container: {
     padding: 10,
+    paddingBottom: 20,
     borderTopWidth: 1,
     borderTopColor: '#eee',
     backgroundColor: '#fff',
@@ -30,6 +31,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    overflow: 'hidden',
   },
   input: {
     backgroundColor: '#E8E8E8',
@@ -37,7 +39,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 10,
     margin: 10,
-    width: '85%',
+    flex: 1,
   },
   button: {
     backgroundColor: '#D9C7F5',
