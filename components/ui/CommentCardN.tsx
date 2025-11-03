@@ -1,63 +1,27 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, ImageSourcePropType } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Icon } from '@/components/ui/icon';
-import { Heart, MessageCircleMore, ArrowRight, Globe, EyeOff, PenLine } from 'lucide-react-native';
+import { Heart, MessageCircleMore } from 'lucide-react-native';
 import { AppText } from './AppText';
 
-type ReportCardProps = {
-  tags?: string[];
-  title: string;
-  location?: string;
+type CommentCardProps = {
   excerpt?: string;
-  image?: ImageSourcePropType;
   likes?: number;
   comments?: number;
   onPress?: () => void;
   onDetailsPress?: () => void;
-  /** Optional status in the top-right*/
-  status?: 'Posted' | 'Private' | 'Draft';
 };
 
-export default function ReportCard({
-  tags = [],
-  title,
-  location,
+export default function CommentCardN({
   excerpt,
   likes = 0,
   comments = 0,
   onPress,
   onDetailsPress,
-  status,
-}: ReportCardProps) {
+}: CommentCardProps) {
   return (
     <View style={styles.wrapper}>
       <View style={styles.card}>
-        <View style={styles.topBlock}>
-          <AppText style={styles.tags} numberOfLines={1}>
-            {tags.join(', ')}
-          </AppText>
-
-          {status ? (
-            <View style={styles.topRight}>
-              <AppText style={styles.topRightText} numberOfLines={1}>
-                {status}
-              </AppText>
-              <Icon
-                as={status === 'Posted' ? Globe : status === 'Private' ? EyeOff : PenLine}
-                color="#5E349E"
-                size={14}
-                strokeWidth={2.2}
-                style={{ marginLeft: 6 }}
-              />
-            </View>
-          ) : null}
-        </View>
-
-        <AppText numberOfLines={1} style={styles.title} weight="medium">
-          {title}
-        </AppText>
-        {location ? <AppText style={styles.location}>{location}</AppText> : null}
-
         {excerpt ? (
           <AppText numberOfLines={4} ellipsizeMode="tail" style={styles.excerpt}>
             {excerpt}
@@ -78,9 +42,8 @@ export default function ReportCard({
 
           <TouchableOpacity style={styles.detailsBtn} onPress={onDetailsPress} activeOpacity={0.8}>
             <AppText style={styles.detailsText} weight="medium">
-              Details
+              Reply
             </AppText>
-            <Icon as={ArrowRight} color="#5E349E" size={18} strokeWidth={2.6} />
           </TouchableOpacity>
         </View>
       </View>
@@ -128,7 +91,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   rowBottom: {
-    marginTop: 16,
+    marginTop: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -149,7 +112,7 @@ const styles = StyleSheet.create({
   },
   detailsBtn: {
     backgroundColor: 'rgba(255,255,255,0.7)',
-    paddingHorizontal: 16,
+    paddingHorizontal: 28,
     paddingVertical: 8,
     borderRadius: 999,
     flexDirection: 'row',
