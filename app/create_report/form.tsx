@@ -1,7 +1,14 @@
 import { Text } from '@/components/ui/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StyleSheet, View } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  Pressable,
+} from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Button } from '@/components/ui/button';
 import { useNavigation } from 'expo-router';
@@ -49,190 +56,193 @@ export default function Form() {
       <LinearGradient colors={['#371F5E', '#000']} style={styles.background} />
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={styles.pageContainer}>
-        <View style={{ gap: 16 }}>
-          <StatusBar state={currentPage} />
+        <Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }}>
+          <View style={{ gap: 16 }}>
+            <StatusBar state={currentPage} />
 
-          {currentPage === 1 && (
-            <>
-              <Text variant="h3" style={{ textAlign: 'center', marginBottom: 8 }}>
-                General Information
-              </Text>
-              <View>
-                <Text>Location</Text>
-                <Input
-                  placeholder="Location"
-                  style={styles.input}
-                  placeholderTextColor="#6B6B6B"
-                  value={formData.location}
-                  onChangeText={(value) => setFormData({ ...formData, location: value })}
-                />
-              </View>
-              <View>
-                <Text>Date and Time</Text>
-                <Input
-                  placeholder="Date and Time"
-                  style={styles.input}
-                  placeholderTextColor="#6B6B6B"
-                  value={formData.dateTime}
-                  onChangeText={(value) => setFormData({ ...formData, dateTime: value })}
-                />
-              </View>
-              <View>
-                <Text>Trades Field</Text>
-                <Input
-                  placeholder="Trades Field"
-                  style={styles.input}
-                  placeholderTextColor="#6B6B6B"
-                  value={formData.tradesField}
-                  onChangeText={(value) => setFormData({ ...formData, tradesField: value })}
-                />
-              </View>
-
-              <Text>Type of Report</Text>
-              <View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Button
-                    variant={formData.reportType === 'Harassment' ? 'purple' : 'darkGrey'}
-                    style={{ flex: 1, marginRight: 8 }}
-                    onPress={() => setFormData({ ...formData, reportType: 'Harassment' })}>
-                    <Text>Harassment</Text>
-                  </Button>
-                  <Button
-                    variant={formData.reportType === 'Safety Hazards' ? 'purple' : 'darkGrey'}
-                    style={{ flex: 1 }}
-                    onPress={() => setFormData({ ...formData, reportType: 'Safety Hazards' })}>
-                    <Text>Safety Hazards</Text>
-                  </Button>
+            {currentPage === 1 && (
+              <>
+                <Text variant="h3" style={{ textAlign: 'center', marginBottom: 8 }}>
+                  General Information
+                </Text>
+                <View>
+                  <Text>Location</Text>
+                  <Input
+                    placeholder="Location"
+                    style={styles.input}
+                    placeholderTextColor="#6B6B6B"
+                    value={formData.location}
+                    onChangeText={(value) => setFormData({ ...formData, location: value })}
+                  />
                 </View>
-                <View
-                  style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                <View>
+                  <Text>Date and Time</Text>
+                  <Input
+                    placeholder="Date and Time"
+                    style={styles.input}
+                    placeholderTextColor="#6B6B6B"
+                    value={formData.dateTime}
+                    onChangeText={(value) => setFormData({ ...formData, dateTime: value })}
+                  />
+                </View>
+                <View>
+                  <Text>Trades Field</Text>
+                  <Input
+                    placeholder="Trades Field"
+                    style={styles.input}
+                    placeholderTextColor="#6B6B6B"
+                    value={formData.tradesField}
+                    onChangeText={(value) => setFormData({ ...formData, tradesField: value })}
+                  />
+                </View>
+
+                <Text>Type of Report</Text>
+                <View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Button
+                      variant={formData.reportType === 'Harassment' ? 'purple' : 'darkGrey'}
+                      style={{ flex: 1, marginRight: 8 }}
+                      onPress={() => setFormData({ ...formData, reportType: 'Harassment' })}>
+                      <Text>Harassment</Text>
+                    </Button>
+                    <Button
+                      variant={formData.reportType === 'Safety Hazards' ? 'purple' : 'darkGrey'}
+                      style={{ flex: 1 }}
+                      onPress={() => setFormData({ ...formData, reportType: 'Safety Hazards' })}>
+                      <Text>Safety Hazards</Text>
+                    </Button>
+                  </View>
+                  <View
+                    style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                    <Button
+                      variant={formData.reportType === 'Discrimination' ? 'purple' : 'darkGrey'}
+                      style={{ flex: 1, marginRight: 8 }}
+                      onPress={() => setFormData({ ...formData, reportType: 'Discrimination' })}>
+                      <Text>Discrimination</Text>
+                    </Button>
+                    <Button
+                      variant={formData.reportType === 'Violence' ? 'purple' : 'darkGrey'}
+                      style={{ flex: 1 }}
+                      onPress={() => setFormData({ ...formData, reportType: 'Violence' })}>
+                      <Text>Violence</Text>
+                    </Button>
+                  </View>
+                </View>
+              </>
+            )}
+
+            {currentPage === 2 && (
+              <>
+                <Text variant="h3" style={{ textAlign: 'center', marginBottom: 8 }}>
+                  Incident Details
+                </Text>
+                <Text>Type of harassment</Text>
+                <View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Button
+                      variant={formData.harassmentType === 'Verbal' ? 'purple' : 'darkGrey'}
+                      style={{ flex: 1, marginRight: 8 }}
+                      onPress={() => setFormData({ ...formData, harassmentType: 'Verbal' })}>
+                      <Text>Verbal</Text>
+                    </Button>
+                    <Button
+                      variant={formData.harassmentType === 'Physical' ? 'purple' : 'darkGrey'}
+                      style={{ flex: 1 }}
+                      onPress={() => setFormData({ ...formData, harassmentType: 'Physical' })}>
+                      <Text>Physical</Text>
+                    </Button>
+                  </View>
+                  <View
+                    style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                    <Button
+                      variant={formData.harassmentType === 'Visual' ? 'purple' : 'darkGrey'}
+                      style={{ flex: 1, marginRight: 8 }}
+                      onPress={() => setFormData({ ...formData, harassmentType: 'Visual' })}>
+                      <Text>Visual</Text>
+                    </Button>
+                    <Button
+                      variant={formData.harassmentType === 'Online' ? 'purple' : 'darkGrey'}
+                      style={{ flex: 1 }}
+                      onPress={() => setFormData({ ...formData, harassmentType: 'Online' })}>
+                      <Text>Online</Text>
+                    </Button>
+                  </View>
+                </View>
+                <View>
+                  <Text>Severity</Text>
+                  <Input
+                    placeholder="Should be a dropdown but don't have time..."
+                    style={styles.input}
+                    placeholderTextColor="#6B6B6B"
+                    value={formData.severity}
+                    onChangeText={(value) => setFormData({ ...formData, severity: value })}
+                  />
+                </View>
+                <View>
+                  <Text>Briefly describe the incident:</Text>
+                  <Input
+                    placeholder="Start typing..."
+                    style={[styles.input, { height: 120, paddingTop: 12 }]}
+                    placeholderTextColor="#6B6B6B"
+                    multiline
+                    value={formData.description}
+                    onChangeText={(value) => setFormData({ ...formData, description: value })}
+                  />
+                </View>
+              </>
+            )}
+
+            {currentPage === 3 && (
+              <>
+                <Text variant="h3" style={{ textAlign: 'center', marginBottom: 8 }}>
+                  Witnesses / Evidence
+                </Text>
+                <View>
+                  <Text>Describe those who were involved:</Text>
+                  <Input
+                    placeholder="Avoid naming people directly"
+                    style={[styles.input, { height: 80, paddingTop: 12 }]}
+                    placeholderTextColor="#6B6B6B"
+                    multiline
+                    value={formData.documentation}
+                    onChangeText={(value) => setFormData({ ...formData, documentation: value })}
+                  />
+                </View>
+                <View>
+                  <Text>Witnesses, if any:</Text>
+                  <Input
+                    placeholder="Avoid naming people directly"
+                    style={[styles.input, { height: 80, paddingTop: 12 }]}
+                    placeholderTextColor="#6B6B6B"
+                    multiline
+                    value={formData.documentation}
+                    onChangeText={(value) => setFormData({ ...formData, documentation: value })}
+                  />
+                </View>
+                <View>
+                  <Text>Attach any supporting evidence you have:</Text>
                   <Button
                     variant={formData.reportType === 'Discrimination' ? 'purple' : 'darkGrey'}
-                    style={{ flex: 1, marginRight: 8 }}
+                    size="lg"
                     onPress={() => setFormData({ ...formData, reportType: 'Discrimination' })}>
-                    <Text>Discrimination</Text>
+                    <Icon as={Plus} size={24} color="#fff" style={{ marginRight: 8 }} />
+                    <Text>Add from your phone</Text>
                   </Button>
+                </View>
+                <View>
                   <Button
                     variant={formData.reportType === 'Violence' ? 'purple' : 'darkGrey'}
-                    style={{ flex: 1 }}
+                    size="lg"
                     onPress={() => setFormData({ ...formData, reportType: 'Violence' })}>
-                    <Text>Violence</Text>
+                    <Icon as={FolderLock} size={24} color="#fff" style={{ marginRight: 8 }} />
+                    <Text>Choose from My Logs</Text>
                   </Button>
                 </View>
-              </View>
-            </>
-          )}
+              </>
+            )}
+          </View>
+        </Pressable>
 
-          {currentPage === 2 && (
-            <>
-              <Text variant="h3" style={{ textAlign: 'center', marginBottom: 8 }}>
-                Incident Details
-              </Text>
-              <Text>Type of harassment</Text>
-              <View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Button
-                    variant={formData.harassmentType === 'Verbal' ? 'purple' : 'darkGrey'}
-                    style={{ flex: 1, marginRight: 8 }}
-                    onPress={() => setFormData({ ...formData, harassmentType: 'Verbal' })}>
-                    <Text>Verbal</Text>
-                  </Button>
-                  <Button
-                    variant={formData.harassmentType === 'Physical' ? 'purple' : 'darkGrey'}
-                    style={{ flex: 1 }}
-                    onPress={() => setFormData({ ...formData, harassmentType: 'Physical' })}>
-                    <Text>Physical</Text>
-                  </Button>
-                </View>
-                <View
-                  style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-                  <Button
-                    variant={formData.harassmentType === 'Visual' ? 'purple' : 'darkGrey'}
-                    style={{ flex: 1, marginRight: 8 }}
-                    onPress={() => setFormData({ ...formData, harassmentType: 'Visual' })}>
-                    <Text>Visual</Text>
-                  </Button>
-                  <Button
-                    variant={formData.harassmentType === 'Online' ? 'purple' : 'darkGrey'}
-                    style={{ flex: 1 }}
-                    onPress={() => setFormData({ ...formData, harassmentType: 'Online' })}>
-                    <Text>Online</Text>
-                  </Button>
-                </View>
-              </View>
-              <View>
-                <Text>Severity</Text>
-                <Input
-                  placeholder="Should be a dropdown but don't have time..."
-                  style={styles.input}
-                  placeholderTextColor="#6B6B6B"
-                  value={formData.severity}
-                  onChangeText={(value) => setFormData({ ...formData, severity: value })}
-                />
-              </View>
-              <View>
-                <Text>Briefly describe the incident:</Text>
-                <Input
-                  placeholder="Start typing..."
-                  style={[styles.input, { height: 120, paddingTop: 12 }]}
-                  placeholderTextColor="#6B6B6B"
-                  multiline
-                  value={formData.description}
-                  onChangeText={(value) => setFormData({ ...formData, description: value })}
-                />
-              </View>
-            </>
-          )}
-
-          {currentPage === 3 && (
-            <>
-              <Text variant="h3" style={{ textAlign: 'center', marginBottom: 8 }}>
-                Witnesses / Evidence
-              </Text>
-              <View>
-                <Text>Describe those who were involved:</Text>
-                <Input
-                  placeholder="Avoid naming people directly"
-                  style={[styles.input, { height: 80, paddingTop: 12 }]}
-                  placeholderTextColor="#6B6B6B"
-                  multiline
-                  value={formData.documentation}
-                  onChangeText={(value) => setFormData({ ...formData, documentation: value })}
-                />
-              </View>
-              <View>
-                <Text>Witnesses, if any:</Text>
-                <Input
-                  placeholder="Avoid naming people directly"
-                  style={[styles.input, { height: 80, paddingTop: 12 }]}
-                  placeholderTextColor="#6B6B6B"
-                  multiline
-                  value={formData.documentation}
-                  onChangeText={(value) => setFormData({ ...formData, documentation: value })}
-                />
-              </View>
-              <View>
-                <Text>Attach any supporting evidence you have:</Text>
-                <Button
-                  variant={formData.reportType === 'Discrimination' ? 'purple' : 'darkGrey'}
-                  size="lg"
-                  onPress={() => setFormData({ ...formData, reportType: 'Discrimination' })}>
-                  <Icon as={Plus} size={24} color="#fff" style={{ marginRight: 8 }} />
-                  <Text>Add from your phone</Text>
-                </Button>
-              </View>
-              <View>
-                <Button
-                  variant={formData.reportType === 'Violence' ? 'purple' : 'darkGrey'}
-                  size="lg"
-                  onPress={() => setFormData({ ...formData, reportType: 'Violence' })}>
-                  <Icon as={FolderLock} size={24} color="#fff" style={{ marginRight: 8 }} />
-                  <Text>Choose from My Logs</Text>
-                </Button>
-              </View>
-            </>
-          )}
-        </View>
         <View style={styles.buttonContainer}>
           <Button
             variant="darkGrey"

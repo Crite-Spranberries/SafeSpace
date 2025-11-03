@@ -1,16 +1,20 @@
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { Link, useLocalSearchParams } from 'expo-router';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
 import { Badge } from '@/components/ui/badge';
+import { ArrowLeft } from 'lucide-react-native';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Asset } from 'expo-asset';
 import { ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router, Stack, useRouter } from 'expo-router';
+import { Icon } from '@/components/ui/icon';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
@@ -26,7 +30,7 @@ export default function Details() {
   const [activeUri, setActiveUri] = useState<string | null>(null);
   const [status, setStatus] = useState('Stopped');
   const [audTranscribed, setAudTranscribed] = useState<string>(
-    'Parsed data from the audio would ideally go here.'
+    'Transcripter awaiting audio to parse.'
   );
 
   // Load default audio file for fallback playback
@@ -107,57 +111,83 @@ export default function Details() {
     }
   };
 
+  const SCREEN_OPTIONS = {
+    title: '',
+    headerBackTitle: 'Back',
+    headerTransparent: true,
+    headerLeft: () => (
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Icon as={ArrowLeft} size={24} />
+      </TouchableOpacity>
+    ),
+  };
+
   return (
-    <ScrollView>
-      <View style={styles.container}>
-        <View style={{ flexDirection: 'row', gap: 4 }}>
-          <Button
-            disabled={!audioUri}
-            onPress={() => {
-              Transcribe(false);
-              playRecording();
-            }}>
-            <Text>Transcribe Recording</Text>
-          </Button>
-          <Button
-            onPress={() => {
-              Transcribe(true);
-              playDefault();
-            }}>
-            <Text>Transcribe Default</Text>
-          </Button>
-        </View>
+    <>
+      <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <Stack.Screen options={SCREEN_OPTIONS} />
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+          <View style={styles.container}>
+            <Text variant="h2" style={styles.title}>
+              Review Recording
+            </Text>
+            <View style={{ flexDirection: 'column', gap: 6 }}>
+              <Button
+                radius="full"
+                variant="purple"
+                disabled={!audioUri}
+                onPress={() => {
+                  Transcribe(false);
+                  playRecording();
+                }}>
+                <Text>Transcribe Recording</Text>
+              </Button>
+              <Button
+                radius="full"
+                variant="lightGrey"
+                onPress={() => {
+                  Transcribe(true);
+                  playDefault();
+                }}>
+                <Text>Transcribe Sample</Text>
+              </Button>
+            </View>
 
-        <Text variant="h4">Voice Recording: {status}</Text>
+            <Text variant="h4">Recording Preview: {status}</Text>
 
-        <View style={styles.container}>
-          <Button onPress={playRecording}>
-            <Text>Play Sound</Text>
-          </Button>
-          <Button
-            onPress={() => {
-              player.seekTo(0);
-              player.play();
-            }}>
-            <Text>Replay Sound</Text>
-          </Button>
-        </View>
+            <View style={styles.container}>
+              <Button onPress={playRecording} radius="full">
+                <Text>Play Sound</Text>
+              </Button>
+              <Button
+                variant="outline"
+                radius="full"
+                onPress={() => {
+                  player.seekTo(0);
+                  player.play();
+                }}>
+                <Text>Replay Sound</Text>
+              </Button>
+            </View>
 
-        <Text>AI Transcript</Text>
-        <DescriptionCard description={audTranscribed} />
+            <Text>AI Transcript</Text>
+            <DescriptionCard description={audTranscribed} />
 
-        <View style={styles.bottomButtonAlign}>
-          <Button>
-            <Text>Edit</Text>
-          </Button>
-          <Link href="./report" asChild>
-            <Button>
-              <Text>Generate Report</Text>
-            </Button>
-          </Link>
-        </View>
-      </View>
-    </ScrollView>
+            <View style={styles.buttonContainer}>
+              <Button variant="lightGrey" radius="full" style={{ flex: 1, marginRight: 8 }}>
+                <Text>Edit</Text>
+              </Button>
+              <Link href="./report" asChild>
+                <Button variant="purple" radius="full" style={{ flex: 1 }}>
+                  <Text>Generate Report</Text>
+                </Button>
+              </Link>
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -183,5 +213,32 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: '100%',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff33',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 999,
+    // marginLeft: 10,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '500',
+    // marginBottom: 8,
+    marginTop: 24,
+    borderColor: 'transparent',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    height: 52,
   },
 });

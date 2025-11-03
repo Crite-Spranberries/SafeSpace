@@ -1,7 +1,7 @@
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { Link, router, usePathname } from 'expo-router';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
 import { Card } from '@/components/ui/card';
@@ -11,7 +11,11 @@ import { CommentCard } from '@/components/ui/CommentCard';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { RetrieveResponse } from 'roughlyai';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowLeft } from 'lucide-react-native';
+import { Icon } from '@/components/ui/icon';
 
 export default function Report() {
   const path = usePathname();
@@ -63,52 +67,56 @@ export default function Report() {
     };
     init();
   }, [path]);
+
+  const SCREEN_OPTIONS = {
+    title: '',
+    headerBackTitle: 'Back',
+    headerTransparent: true,
+    headerLeft: () => (
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Icon as={ArrowLeft} size={24} />
+      </TouchableOpacity>
+    ),
+  };
+
   return (
     <>
-      <ScrollView>
-        <View style={styles.container}>
-          <Text>Title generated based on summary</Text>
-          <Text>Location</Text>
-          <View className="w-full max-w-md">
-            <MapOnDetail />
-          </View>
-          <Text>Tags</Text>
-
-          <View style={styles.tagAlign}>
-            <Badge>
-              <Text>Longshore</Text>
-            </Badge>
-            <Badge>
-              <Text>Harassment</Text>
-            </Badge>
-            <Badge>
-              <Text>Warning</Text>
-            </Badge>
-          </View>
-          <View>
-            <View style={{ flexDirection: 'column', gap: 5 }}>
-              {(() => {
-                const lines = report.split('\n');
-                let output = lines.map((line, index) => {
-                  return <Text key={`line_${index}`}>{line || <>&nbsp;</>}</Text>;
-                });
-                return <>{output}</>;
-              })()}
+      <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <Stack.Screen options={SCREEN_OPTIONS} />
+        <ScrollView>
+          <View style={styles.container}>
+            <Text variant="h2" style={styles.title}>
+              Report Summary
+            </Text>
+            <View className="w-full max-w-md">
+              <MapOnDetail />
             </View>
-          </View>
-          {/* <View>
+            <View>
+              <View style={{ flexDirection: 'column', gap: 5 }}>
+                {(() => {
+                  const lines = report.split('\n');
+                  let output = lines.map((line, index) => {
+                    return <Text key={`line_${index}`}>{line || <>&nbsp;</>}</Text>;
+                  });
+                  return <>{output}</>;
+                })()}
+              </View>
+            </View>
+            {/* <View>
             <Text>Summary</Text>
             <DescriptionCard description="Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in." />
           </View> */}
-          {/* <View>
+            {/* <View>
             <Text>Comments</Text>
             <CommentCard description="Commenty input comment saying commenty things about something. In the land of comments, the comments run dry in the absence of authentic comments. There are more comments to be found, but many fail to have appeared in terms of comments." />
           </View> */}
-        </View>
-        <Button onPress={() => router.push('/(tabs)')}>
-          <Text>Home</Text>
-        </Button>
-      </ScrollView>
+          </View>
+          <Button onPress={() => router.push('/(tabs)')}>
+            <Text>Home</Text>
+          </Button>
+        </ScrollView>
+      </SafeAreaView>
     </>
   );
 }
@@ -136,5 +144,27 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: '100%',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff33',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 999,
+    // marginLeft: 10,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '500',
+    // marginBottom: 8,
+    marginTop: 24,
+    borderColor: 'transparent',
   },
 });
