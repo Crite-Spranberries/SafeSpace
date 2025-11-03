@@ -1,5 +1,5 @@
 import { TouchableOpacity, View } from 'react-native';
-import { Text } from '@/components/ui/text';
+// replaced Text usages below with AppText
 import { StyleSheet } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { router, Stack, useRouter } from 'expo-router';
@@ -35,22 +35,22 @@ export default function Report() {
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           <View style={styles.container}>
-            <Text variant="h2" style={styles.title}>
+            <AppText weight="medium" style={styles.title}>
               Onsite Harassment Concern Near Coffee Bar
-            </Text>
+            </AppText>
             <View className="w-full max-w-md">
               <MapOnDetail />
             </View>
-            <Text style={styles.subHeader}>Tags</Text>
+            <AppText style={styles.subHeader}>Tags</AppText>
             <View className="mb-4 flex flex-row gap-2 space-x-2">
               <Badge variant="lightGrey">
-                <Text>Harassment</Text>
+                <AppText>Harassment</AppText>
               </Badge>
               <Badge variant="lightGrey">
-                <Text>Site Safety</Text>
+                <AppText>Site Safety</AppText>
               </Badge>
             </View>
-            <Text style={styles.subHeader}>Summary</Text>
+            <AppText style={styles.subHeader}>Summary</AppText>
             <View
               style={{
                 backgroundColor: 'rgba(255,255,255,0.7)',
@@ -60,12 +60,12 @@ export default function Report() {
                 borderRadius: 8,
                 marginBottom: 16,
               }}>
-              <Text style={styles.descriptionBlack}>
+              <AppText style={styles.descriptionBlack}>
                 In the past week, a male individual was observed frequently interacting in ways that
                 have made several tradeswomen uncomfortable. The individual is described as having
                 brunette, curly hair, approximately 180 cm tall, and often seen near the coffee bar
                 area.
-              </Text>
+              </AppText>
             </View>
             <View style={styles.commentsSection}>
               <AppText style={styles.subHeader} weight="medium">
@@ -78,7 +78,7 @@ export default function Report() {
               />
             </View>
             <Button variant="outline" size="lg" radius="lg">
-              <Text>Load More</Text>
+              <AppText>Load More</AppText>
             </Button>
           </View>
         </ScrollView>
@@ -131,6 +131,7 @@ const styles = StyleSheet.create({
     // marginBottom: 8,
     marginTop: 24,
     borderColor: 'transparent',
+    color: '#FFF',
   },
   descriptionBlack: {
     fontSize: 16,
