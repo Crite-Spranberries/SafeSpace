@@ -1,22 +1,52 @@
-import React from 'react';
-import { View, StyleSheet, ImageBackground } from 'react-native';
-import { MapPin } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { AppText } from './AppText';
+import MapView, { Region } from 'react-native-maps';
+import * as Location from 'expo-location';
 
 const MapOnHome: React.FC = () => {
+  const [userAddress, setUserAddress] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Explicitly type region as Region or undefined
+  const [region, setRegion] = useState<Region | undefined>(undefined);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setErrorMsg('Permission to access location was denied');
+        return;
+      }
+      let location = await Location.getCurrentPositionAsync({});
+      let [geo] = await Location.reverseGeocodeAsync(location.coords);
+      setUserAddress(
+        geo.name ? `${geo.name}, ${geo.city}, ${geo.region}` : `${geo.city}, ${geo.region}`
+      );
+
+      setRegion({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+    })();
+  }, []);
+
   return (
     <View style={styles.container}>
-      <ImageBackground
-        source={require('@/assets/images/map-placeholder.png')}
-        style={styles.mapArea}
-        imageStyle={styles.mapImage}>
-        <MapPin color="#5E349E" size={24} strokeWidth={2.6} style={styles.pinA} />
-        <MapPin color="#5E349E" size={24} strokeWidth={2.6} style={styles.pinB} />
-        <MapPin color="#5E349E" size={24} strokeWidth={2.6} style={styles.pinC} />
-      </ImageBackground>
-
+      {region && (
+        <MapView
+          style={styles.mapArea}
+          provider="google"
+          showsUserLocation={true}
+          region={region} // Pass correctly typed region here
+        />
+      )}
       <View style={styles.addressBar}>
-        <AppText style={styles.addressText}>BCIT Burnaby Campus, Burnaby</AppText>
+        <AppText style={styles.addressText}>
+          {errorMsg ? errorMsg : userAddress ? userAddress : 'Fetching current location...'}
+        </AppText>
       </View>
     </View>
   );
@@ -35,32 +65,6 @@ const styles = StyleSheet.create({
   mapArea: {
     height: 123,
     width: '100%',
-  },
-  mapImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  pinA: {
-    position: 'absolute',
-    left: '33.5%',
-    top: '55.5%',
-    marginLeft: -12,
-    marginTop: -12,
-  },
-  pinB: {
-    position: 'absolute',
-    left: '43%',
-    top: '46%',
-    marginLeft: -12,
-    marginTop: -12,
-  },
-  pinC: {
-    position: 'absolute',
-    left: '64%',
-    top: '62%',
-    marginLeft: -12,
-    marginTop: -12,
   },
   addressBar: {
     backgroundColor: '#F3EDFC',
