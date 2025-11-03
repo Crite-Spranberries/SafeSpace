@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, Stack, useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import RecordingCardSmall from '@/components/ui/RecordingCardSmall';
 
 // ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
@@ -132,6 +133,7 @@ export default function Details() {
             <Text variant="h2" style={styles.title}>
               Review Recording
             </Text>
+            <RecordingCardSmall />
             <View style={{ flexDirection: 'column', gap: 6 }}>
               <Button
                 radius="full"

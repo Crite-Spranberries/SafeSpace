@@ -78,7 +78,7 @@ export default function Report() {
               />
             </View>
             <Button variant="outline" size="lg" radius="lg">
-              <AppText>Load More</AppText>
+              <AppText style={{ color: '#FFFFFF' }}>Load More</AppText>
             </Button>
           </View>
         </ScrollView>
