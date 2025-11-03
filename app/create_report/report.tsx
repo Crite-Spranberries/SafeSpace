@@ -11,6 +11,8 @@ import { useNavigation } from 'expo-router';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/badge';
 import { ScrollView } from 'react-native';
+import CommentCard from '@/components/ui/CommentCardN';
+import { AppText } from '@/components/ui/AppText';
 
 const SCREEN_OPTIONS = {
   title: '',
@@ -65,7 +67,16 @@ export default function Report() {
                 area.
               </Text>
             </View>
-
+            <View style={styles.commentsSection}>
+              <AppText style={styles.subHeader} weight="medium">
+                Comments
+              </AppText>
+              <CommentCard
+                excerpt="Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in."
+                likes={5}
+                comments={2}
+              />
+            </View>
             <Button variant="outline" size="lg" radius="lg">
               <Text>Load More</Text>
             </Button>
@@ -112,6 +123,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '500',
     marginBottom: 4,
+    color: '#FFF',
   },
   title: {
     fontSize: 24,
@@ -130,5 +142,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 16,
     color: '#fff',
+  },
+  commentsSection: {
+    marginBottom: 16,
   },
 });

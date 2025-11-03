@@ -7,7 +7,6 @@ import { useAudioPlayer } from 'expo-audio';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
-import { CommentCard } from '@/components/ui/CommentCard';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { RetrieveResponse } from 'roughlyai';
 import AsyncStorage from '@react-native-async-storage/async-storage';
