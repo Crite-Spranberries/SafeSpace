@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, ImageSourcePropType } from 'react-native';
 import { Icon } from '@/components/ui/icon';
-import { Heart, MessageCircleMore, ArrowRight } from 'lucide-react-native';
+import { Heart, MessageCircleMore, ArrowRight, Globe, EyeOff, PenLine } from 'lucide-react-native';
 import { AppText } from './AppText';
 
 type ReportCardProps = {
@@ -14,6 +14,8 @@ type ReportCardProps = {
   comments?: number;
   onPress?: () => void;
   onDetailsPress?: () => void;
+  /** Optional status in the top-right*/
+  status?: 'Posted' | 'Private' | 'Draft';
 };
 
 export default function ReportCard({
@@ -25,6 +27,7 @@ export default function ReportCard({
   comments = 0,
   onPress,
   onDetailsPress,
+  status,
 }: ReportCardProps) {
   return (
     <View style={styles.wrapper}>
@@ -33,6 +36,21 @@ export default function ReportCard({
           <AppText style={styles.tags} numberOfLines={1}>
             {tags.join(', ')}
           </AppText>
+
+          {status ? (
+            <View style={styles.topRight}>
+              <AppText style={styles.topRightText} numberOfLines={1}>
+                {status}
+              </AppText>
+              <Icon
+                as={status === 'Posted' ? Globe : status === 'Private' ? EyeOff : PenLine}
+                color="#5E349E"
+                size={14}
+                strokeWidth={2.2}
+                style={{ marginLeft: 6 }}
+              />
+            </View>
+          ) : null}
         </View>
 
         <AppText numberOfLines={1} style={styles.title} weight="medium">
@@ -85,7 +103,7 @@ const styles = StyleSheet.create({
   },
   topBlock: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
   tags: {
@@ -142,5 +160,14 @@ const styles = StyleSheet.create({
     color: '#5E349E',
     fontSize: 14,
     lineHeight: 18,
+  },
+  topRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  topRightText: {
+    color: '#5E349E',
+    fontSize: 14,
   },
 });

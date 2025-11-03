@@ -144,6 +144,7 @@ export default function RecordingsPage() {
                   likes={108}
                   comments={56}
                   onDetailsPress={onDetails}
+                  status="Posted"
                 />
                 <ReportCard
                   tags={['Discrimination', 'Harassment']}
@@ -153,6 +154,7 @@ export default function RecordingsPage() {
                   likes={42}
                   comments={16}
                   onDetailsPress={onDetails}
+                  status="Private"
                 />
                 <ReportCard
                   tags={['Discrimination', 'Safety']}
@@ -162,6 +164,7 @@ export default function RecordingsPage() {
                   likes={37}
                   comments={27}
                   onDetailsPress={onDetails}
+                  status="Draft"
                 />
               </>
             )}
