@@ -8,6 +8,7 @@ import {
   Platform,
   Keyboard,
   Pressable,
+  ScrollView,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import StatusBar from '@/components/ui/statusBar';
 import { useState } from 'react';
 import { Icon } from '@/components/ui/icon';
 import { Plus, FolderLock } from 'lucide-react-native';
+import { useSwipe } from '@/hooks/useSwipe';
 
 export default function Form() {
   const navigation = useNavigation();
@@ -33,6 +35,16 @@ export default function Form() {
     documentation: '',
     witnesses: '',
   });
+
+  const { onTouchStart, onTouchEnd } = useSwipe(onSwipeLeft, onSwipeRight, 3);
+
+  function onSwipeLeft() {
+    setCurrentPage((prevPage) => Math.min(prevPage + 1, 3));
+  }
+
+  function onSwipeRight() {
+    setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
+  }
 
   const handleNext = () => {
     if (currentPage < 3) {
@@ -57,8 +69,13 @@ export default function Form() {
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={styles.pageContainer}>
         <Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }}>
-          <View style={{ gap: 16 }}>
-            <StatusBar state={currentPage} />
+          <ScrollView
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+            scrollEnabled={false}
+            style={styles.formContainer}
+            contentContainerStyle={styles.formContentContainer}>
+            <StatusBar state={currentPage} onPageSelect={setCurrentPage} />
 
             {currentPage === 1 && (
               <>
@@ -240,7 +257,7 @@ export default function Form() {
                 </View>
               </>
             )}
-          </View>
+          </ScrollView>
         </Pressable>
 
         <View style={styles.buttonContainer}>
@@ -252,7 +269,7 @@ export default function Form() {
             style={{ flex: 1, marginRight: 8 }}>
             <Text>Back</Text>
           </Button>
-          <Button variant="purple" size="lg" radius="full" style={{ flex: 1 }} onPress={handleNext}>
+          <Button variant="purple" size="lg" radius="full" style={{ flex: 3 }} onPress={handleNext}>
             <Text>{currentPage === 3 ? 'Submit' : 'Next'}</Text>
           </Button>
         </View>
@@ -273,6 +290,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
     padding: 16,
+  },
+  formContainer: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  formContentContainer: {
+    gap: 16,
   },
   buttonContainer: {
     flexDirection: 'row',
