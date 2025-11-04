@@ -167,12 +167,14 @@ const buttonTextVariants = cva(
 
 type ButtonProps = React.ComponentProps<typeof Pressable> &
   React.RefAttributes<typeof Pressable> &
-  VariantProps<typeof buttonVariants>;
+  VariantProps<typeof buttonVariants> & {
+    noHaptic?: boolean;
+  };
 
-function Button({ className, variant, size, radius, ...props }: ButtonProps) {
+function Button({ className, variant, size, radius, noHaptic, ...props }: ButtonProps) {
   const handlePressIn = async (ev: any) => {
     // Trigger haptic feedback on button press
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== 'web' && !noHaptic) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     props.onPressIn?.(ev);

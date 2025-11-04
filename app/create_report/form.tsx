@@ -93,12 +93,14 @@ export default function Form() {
                 <View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Button
+                      noHaptic
                       variant={formData.reportType === 'Harassment' ? 'purple' : 'darkGrey'}
                       style={{ flex: 1, marginRight: 8 }}
                       onPress={() => setFormData({ ...formData, reportType: 'Harassment' })}>
                       <Text>Harassment</Text>
                     </Button>
                     <Button
+                      noHaptic
                       variant={formData.reportType === 'Safety Hazards' ? 'purple' : 'darkGrey'}
                       style={{ flex: 1 }}
                       onPress={() => setFormData({ ...formData, reportType: 'Safety Hazards' })}>
@@ -108,12 +110,14 @@ export default function Form() {
                   <View
                     style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
                     <Button
+                      noHaptic
                       variant={formData.reportType === 'Discrimination' ? 'purple' : 'darkGrey'}
                       style={{ flex: 1, marginRight: 8 }}
                       onPress={() => setFormData({ ...formData, reportType: 'Discrimination' })}>
                       <Text>Discrimination</Text>
                     </Button>
                     <Button
+                      noHaptic
                       variant={formData.reportType === 'Violence' ? 'purple' : 'darkGrey'}
                       style={{ flex: 1 }}
                       onPress={() => setFormData({ ...formData, reportType: 'Violence' })}>
@@ -133,12 +137,14 @@ export default function Form() {
                 <View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Button
+                      noHaptic
                       variant={formData.harassmentType === 'Verbal' ? 'purple' : 'darkGrey'}
                       style={{ flex: 1, marginRight: 8 }}
                       onPress={() => setFormData({ ...formData, harassmentType: 'Verbal' })}>
                       <Text>Verbal</Text>
                     </Button>
                     <Button
+                      noHaptic
                       variant={formData.harassmentType === 'Physical' ? 'purple' : 'darkGrey'}
                       style={{ flex: 1 }}
                       onPress={() => setFormData({ ...formData, harassmentType: 'Physical' })}>
@@ -148,12 +154,14 @@ export default function Form() {
                   <View
                     style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
                     <Button
+                      noHaptic
                       variant={formData.harassmentType === 'Visual' ? 'purple' : 'darkGrey'}
                       style={{ flex: 1, marginRight: 8 }}
                       onPress={() => setFormData({ ...formData, harassmentType: 'Visual' })}>
                       <Text>Visual</Text>
                     </Button>
                     <Button
+                      noHaptic
                       variant={formData.harassmentType === 'Online' ? 'purple' : 'darkGrey'}
                       style={{ flex: 1 }}
                       onPress={() => setFormData({ ...formData, harassmentType: 'Online' })}>
@@ -214,19 +222,13 @@ export default function Form() {
                 </View>
                 <View>
                   <Text>Attach any supporting evidence you have:</Text>
-                  <Button
-                    variant={formData.reportType === 'Discrimination' ? 'purple' : 'darkGrey'}
-                    size="lg"
-                    onPress={() => setFormData({ ...formData, reportType: 'Discrimination' })}>
+                  <Button variant="darkGrey" size="lg">
                     <Icon as={Plus} size={24} color="#fff" style={{ marginRight: 8 }} />
                     <Text>Add from your phone</Text>
                   </Button>
                 </View>
                 <View>
-                  <Button
-                    variant={formData.reportType === 'Violence' ? 'purple' : 'darkGrey'}
-                    size="lg"
-                    onPress={() => setFormData({ ...formData, reportType: 'Violence' })}>
+                  <Button variant="darkGrey" size="lg">
                     <Icon as={FolderLock} size={24} color="#fff" style={{ marginRight: 8 }} />
                     <Text>Choose from My Logs</Text>
                   </Button>
