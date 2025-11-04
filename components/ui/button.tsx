@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Platform, Pressable } from 'react-native';
 import { useState } from 'react';
+import * as Haptics from 'expo-haptics';
 
 const buttonVariants = cva(
   cn(
@@ -169,6 +170,14 @@ type ButtonProps = React.ComponentProps<typeof Pressable> &
   VariantProps<typeof buttonVariants>;
 
 function Button({ className, variant, size, radius, ...props }: ButtonProps) {
+  const handlePressIn = async (ev: any) => {
+    // Trigger haptic feedback on button press
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    props.onPressIn?.(ev);
+  };
+
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size, radius })}>
       <Pressable
@@ -178,6 +187,7 @@ function Button({ className, variant, size, radius, ...props }: ButtonProps) {
           className
         )}
         role="button"
+        onPressIn={handlePressIn}
         {...props}
       />
     </TextClassContext.Provider>

@@ -11,7 +11,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Modal } from '@/components/ui/modal';
 import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import * as Haptics from 'expo-haptics';
 
 export default function RecordingsPage() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -45,9 +45,7 @@ export default function RecordingsPage() {
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        <ScrollView
-          contentContainerStyle={{ paddingTop: 70, paddingBottom: 5 }}
-          scrollEnabled={scrollEnabled}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 5 }} scrollEnabled={scrollEnabled}>
           <Modal isOpen={modalOpen}>
             <View style={styles.modalContent}>
               <Text variant="h4" style={styles.modalTitle}>
@@ -61,14 +59,23 @@ export default function RecordingsPage() {
                 style={styles.modalInput}
               />
               <View style={styles.modalButtonContainer}>
-                <Pressable style={styles.cancelButtonStyle} onPress={() => setModalOpen(false)}>
+                <Pressable
+                  style={styles.cancelButtonStyle}
+                  onPress={() => {
+                    router.back();
+                    setModalOpen(false);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  }}>
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </Pressable>
                 <Pressable
                   style={
                     password ? styles.confirmButtonEnabledStyle : styles.confirmButtonDisabledStyle
                   }
-                  onPress={() => setModalOpen(false)}
+                  onPress={() => {
+                    setModalOpen(false);
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  }}
                   disabled={!password}>
                   <Text
                     style={
@@ -80,9 +87,6 @@ export default function RecordingsPage() {
               </View>
             </View>
           </Modal>
-          <Pressable onPress={() => setModalOpen(true)}>
-            <Text style={styles.openModalText}>Open Modal</Text>
-          </Pressable>
           <Tabs onTabChange={handleTabChange} tab={activeTab} style={{ marginBottom: 16 }} />
           <SearchSettings />
           <View style={styles.pageContainer}>

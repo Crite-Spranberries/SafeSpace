@@ -12,13 +12,19 @@ import { ScrollView, TouchableOpacity } from 'react-native';
 import { Image } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import ChatTyping from '@/components/ui/chatTyping';
+import * as Haptics from 'expo-haptics';
 
 const SCREEN_OPTIONS = {
   title: '',
   headerBackTitle: 'Back',
   headerTransparent: true,
   headerLeft: () => (
-    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+    <TouchableOpacity
+      style={styles.backButton}
+      onPress={async () => {
+        router.back();
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }}>
       <Icon as={ArrowLeft} size={24} />
     </TouchableOpacity>
   ),

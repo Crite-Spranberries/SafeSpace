@@ -1,14 +1,7 @@
 import { Text } from '@/components/ui/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  StyleSheet,
-  View,
-  KeyboardAvoidingView,
-  Platform,
-  Keyboard,
-  Pressable,
-} from 'react-native';
+import { StyleSheet, View, Keyboard, Pressable } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Button } from '@/components/ui/button';
 import { useNavigation } from 'expo-router';

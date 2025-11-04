@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, ScrollView } from 'react-native';
 import { Input } from './input';
 import { Badge } from './badge';
 import { Button } from './button';
@@ -19,20 +19,20 @@ export default function SearchSettings() {
         />
       </View>
 
-      <View style={styles.badgeContainer}>
-        <Button size="iconSmall" radius="full">
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.badgeContainer}>
+        <Button size="iconSmall" radius="full" className="mr-2">
           <Icon as={Settings2} color="#7842CB" size={24} />
         </Button>
-        <Badge variant="darkGrey" className="px-4">
+        <Badge variant="darkGrey" className="mr-2 px-4">
           <Text style={styles.badgeText}>Oakridge</Text>
         </Badge>
-        <Badge variant="darkGrey" className="px-4">
+        <Badge variant="darkGrey" className="mr-2 px-4">
           <Text style={styles.badgeText}>Downtown</Text>
         </Badge>
-        <Badge variant="darkGrey" className="px-4">
+        <Badge variant="darkGrey" className="mr-2 px-4">
           <Text style={styles.badgeText}>Marine Drive</Text>
         </Badge>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -61,10 +61,7 @@ const styles = StyleSheet.create({
   },
 
   badgeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    flexWrap: 'nowrap',
-    gap: 8,
+    // justifyContent: 'flex-start',
   },
   badge: {
     paddingHorizontal: 16,
