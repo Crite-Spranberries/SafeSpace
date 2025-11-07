@@ -1,15 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { AppText } from './AppText';
-import MapView, { Region } from 'react-native-maps';
+import MapView, { Marker, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
+
+const customMapStyle = [
+  { elementType: 'geometry', stylers: [{ color: '#222222' }] }, // dark background
+  { elementType: 'labels.text.fill', stylers: [{ color: '#cccccc' }] }, // light gray text
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#141414' }] }, // dark text outline
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#505050' }] }, // medium gray roads
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#2e3a4b' }] }, // muted blue water
+  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#171c18' }] }, // dark landscape
+];
 
 const MapOnHome: React.FC = () => {
   const [userAddress, setUserAddress] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // Explicitly type region as Region or undefined
   const [region, setRegion] = useState<Region | undefined>(undefined);
+  const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(
+    null
+  );
 
   useEffect(() => {
     (async () => {
@@ -23,12 +33,15 @@ const MapOnHome: React.FC = () => {
       setUserAddress(
         geo.name ? `${geo.name}, ${geo.city}, ${geo.region}` : `${geo.city}, ${geo.region}`
       );
-
       setRegion({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
+      });
+      setUserCoords({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
       });
     })();
   }, []);
@@ -39,9 +52,17 @@ const MapOnHome: React.FC = () => {
         <MapView
           style={styles.mapArea}
           provider="google"
-          showsUserLocation={true}
-          region={region} // Pass correctly typed region here
-        />
+          region={region}
+          customMapStyle={customMapStyle}>
+          {userCoords && (
+            <Marker
+              coordinate={userCoords}
+              pinColor="#a70df4f"
+              title="You are here"
+              description={userAddress}
+            />
+          )}
+        </MapView>
       )}
       <View style={styles.addressBar}>
         <AppText style={styles.addressText}>
