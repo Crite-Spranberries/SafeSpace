@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/text';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   StyleSheet,
   View,
@@ -9,6 +9,7 @@ import {
   Keyboard,
   Pressable,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,17 @@ import { useState } from 'react';
 import { Icon } from '@/components/ui/icon';
 import { Plus, FolderLock } from 'lucide-react-native';
 import { useSwipe } from '@/hooks/useSwipe';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import * as React from 'react';
+import type { TriggerRef } from '@rn-primitives/select';
 
 export default function Form() {
   const navigation = useNavigation();
@@ -37,6 +49,21 @@ export default function Form() {
   });
 
   const { onTouchStart, onTouchEnd } = useSwipe(onSwipeLeft, onSwipeRight, 3);
+
+  const ref = React.useRef<TriggerRef>(null);
+  const insets = useSafeAreaInsets();
+  const contentInsets = {
+    top: insets.top,
+    bottom: Platform.select({ ios: insets.bottom, android: insets.bottom + 24 }),
+    left: 12,
+    right: 12,
+  };
+
+  const selectWidth = Dimensions.get('window').width; // added: full screen width
+
+  function onOpenStart() {
+    ref.current?.open();
+  }
 
   function onSwipeLeft() {
     setCurrentPage((prevPage) => Math.min(prevPage + 1, 3));
@@ -187,13 +214,30 @@ export default function Form() {
                 </View>
                 <View>
                   <Text>Severity</Text>
-                  <Input
-                    placeholder="Should be a dropdown but don't have time..."
-                    style={styles.input}
-                    placeholderTextColor="#6B6B6B"
-                    value={formData.severity}
-                    onChangeText={(value) => setFormData({ ...formData, severity: value })}
-                  />
+                  <Select>
+                    <SelectTrigger
+                      onTouchStart={onTouchStart}
+                      ref={ref}
+                      style={{ backgroundColor: 'white' }}>
+                      <SelectValue placeholder="Severity" />
+                    </SelectTrigger>
+                    <SelectContent
+                      insets={contentInsets}
+                      style={{ width: selectWidth, backgroundColor: 'white' }}>
+                      <SelectGroup>
+                        <SelectLabel>Severity</SelectLabel>
+                        <SelectItem label="Low" value="low">
+                          Low
+                        </SelectItem>
+                        <SelectItem label="Medium" value="medium">
+                          Medium
+                        </SelectItem>
+                        <SelectItem label="High" value="high">
+                          High
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </View>
                 <View>
                   <Text>Briefly describe the incident:</Text>
@@ -242,7 +286,7 @@ export default function Form() {
                     variant={formData.reportType === 'Discrimination' ? 'purple' : 'darkGrey'}
                     size="lg"
                     onPress={() => setFormData({ ...formData, reportType: 'Discrimination' })}>
-                    <Icon as={Plus} size={24} color="#fff" style={{ marginRight: 8 }} />
+                    <Icon as={Plus} size={24} color="#fff" style={{ flex: 1, marginRight: 8 }} />
                     <Text>Add from your phone</Text>
                   </Button>
                 </View>
@@ -251,7 +295,12 @@ export default function Form() {
                     variant={formData.reportType === 'Violence' ? 'purple' : 'darkGrey'}
                     size="lg"
                     onPress={() => setFormData({ ...formData, reportType: 'Violence' })}>
-                    <Icon as={FolderLock} size={24} color="#fff" style={{ marginRight: 8 }} />
+                    <Icon
+                      as={FolderLock}
+                      size={24}
+                      color="#fff"
+                      style={{ flex: 1, marginRight: 8 }}
+                    />
                     <Text>Choose from My Logs</Text>
                   </Button>
                 </View>
@@ -269,7 +318,7 @@ export default function Form() {
             style={{ flex: 1, marginRight: 8 }}>
             <Text>Back</Text>
           </Button>
-          <Button variant="purple" size="lg" radius="full" style={{ flex: 3 }} onPress={handleNext}>
+          <Button variant="purple" size="lg" radius="full" style={{ flex: 1 }} onPress={handleNext}>
             <Text>{currentPage === 3 ? 'Submit' : 'Next'}</Text>
           </Button>
         </View>
