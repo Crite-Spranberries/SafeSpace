@@ -30,6 +30,7 @@ export default function ChatBubble({ text, type, withButtons }: Props) {
         <View style={styles.buttonsContainer}>
           {withButtons.map((button, index) => (
             <Button
+              noHaptic
               key={index}
               style={[styles.button, selectedButton === index && styles.buttonSelected]}
               onPress={() => handleButtonPress(index)}>

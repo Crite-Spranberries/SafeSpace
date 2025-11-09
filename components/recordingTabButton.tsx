@@ -1,16 +1,17 @@
 import { Icon } from '@/components/ui/icon';
 import { AudioLines } from 'lucide-react-native';
 import { Link } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 
 import { StyleSheet, TouchableOpacity } from 'react-native';
 
 export const RecordingTabButton = () => {
   const handlePress = () => {
-    // Handle the button press action
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   return (
-    <Link href="/(tabs)/recording" style={styles.button}>
+    <Link href="/(tabs)/recording" style={styles.button} onPress={handlePress}>
       <Icon as={AudioLines} size={24} color={'#fff'} />
     </Link>
   );
