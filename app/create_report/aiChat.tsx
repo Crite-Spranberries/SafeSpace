@@ -1,18 +1,24 @@
 import { router, Stack } from 'expo-router';
-import { Text } from '@/components/ui/text';
-import { StyleSheet, View, KeyboardAvoidingView, Platform } from 'react-native';
-import { Button } from '@/components/ui/button';
+import {
+  StyleSheet,
+  View,
+  KeyboardAvoidingView,
+  Platform,
+  Animated,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 import { Icon } from '@/components/ui/icon';
 import { ArrowLeft } from 'lucide-react-native';
 import { useNavigation } from 'expo-router';
 import ChatBubble from '@/components/ui/chatBubble';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, TouchableOpacity } from 'react-native';
-import { Image } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import ChatTyping from '@/components/ui/chatTyping';
 import * as Haptics from 'expo-haptics';
+import { useRef, useState } from 'react';
 
 const SCREEN_OPTIONS = {
   title: '',
@@ -31,7 +37,9 @@ const SCREEN_OPTIONS = {
 };
 
 export default function aiChat() {
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
   const navigation = useNavigation();
+  const scrollY = useRef(new Animated.Value(0)).current;
   return (
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
@@ -45,21 +53,40 @@ export default function aiChat() {
           style={styles.contentWrapper}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}>
-          <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ padding: 16 }}>
-            <Image source={require('../../assets/images/Safi.png')} style={styles.image} />
-            <View style={styles.chatContainer}>
-              <ChatBubble
-                type="safi"
-                text="Hello, I'm Safi! You can talk to me directly, or let my questions guide you."
-              />
-              <ChatBubble type="user" text="Description of what happened blah blah blah" />
-              <ChatBubble
-                type="user"
-                text="Select one of the following"
-                withButtons={['Option 1', 'Option 2', 'Option 3', 'Option 4']}
-              />
-            </View>
-          </ScrollView>
+          <Image source={require('../../assets/images/Safi.png')} style={styles.image} />
+          <View style={{ flex: 1, position: 'relative' }}>
+            <Animated.ScrollView
+              contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
+              style={styles.scrollView}
+              onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+                useNativeDriver: true,
+              })}
+              scrollEventThrottle={16}
+              onLayout={(e) => setScrollViewHeight(e.nativeEvent.layout.height)}>
+              <View style={styles.chatContainer}>
+                <ChatBubble
+                  type="safi"
+                  text="Hello, I'm Safi! You can talk to me directly, or let my questions guide you."
+                />
+                <ChatBubble
+                  type="user"
+                  text="Just had an uncomfortable encounter with a male coworker. He kept making weirdly sexual jokes and comments at me."
+                />
+                <ChatBubble type="safi" text="Did this happen at your current location?" />
+              </View>
+            </Animated.ScrollView>
+            <LinearGradient
+              colors={['#000', 'transparent']}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 30,
+                pointerEvents: 'none',
+              }}
+            />
+          </View>
           <ChatTyping />
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -96,6 +123,9 @@ const styles = StyleSheet.create({
   contentWrapper: {
     flex: 1,
     justifyContent: 'flex-end',
+  },
+  scrollView: {
+    padding: 16,
   },
   heading: {
     color: 'white',
