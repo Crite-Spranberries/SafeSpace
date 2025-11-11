@@ -246,7 +246,7 @@ export default function RecordingCardSmall({
           <TouchableOpacity
             style={styles.controlBtn}
             onPress={() => {
-              void seekBy(-2000);
+              void seekBy(-2000); // 2 seconds back
               onPrevPress?.();
             }}
             activeOpacity={0.85}>
@@ -265,7 +265,7 @@ export default function RecordingCardSmall({
           <TouchableOpacity
             style={styles.controlBtn}
             onPress={() => {
-              void seekBy(2000);
+              void seekBy(2000); // 2 seconds forward
               onNextPress?.();
             }}
             activeOpacity={0.85}>

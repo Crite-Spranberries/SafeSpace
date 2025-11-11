@@ -332,6 +332,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#B2B2B2',
     alignItems: 'center',
     justifyContent: 'center',
+    borderColor: '#efefefff',
+    borderWidth: 1,
   },
   reportGenText: {
     color: '#FFFFFF',
