@@ -23,7 +23,7 @@ export default function ChatTyping() {
 const styles = StyleSheet.create({
   container: {
     padding: 10,
-    paddingBottom: 20,
+    paddingBottom: 30,
     borderTopWidth: 1,
     borderTopColor: '#eee',
     backgroundColor: '#fff',
