@@ -6,6 +6,7 @@ import * as React from 'react';
 import { StyleSheet } from 'react-native';
 import { RecordingTabButton } from '@/components/recordingTabButton';
 import { LinearGradient } from 'expo-linear-gradient';
+import { HapticTab } from '@/components/HapticTab';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
@@ -18,6 +19,7 @@ export default function TabLayout() {
           headerShown: false,
           tabBarActiveTintColor: 'black',
           tabBarInactiveTintColor: '#B0B0B0',
+          tabBarButton: HapticTab,
           tabBarStyle: {
             backgroundColor: '#fff',
             borderTopEndRadius: 24,

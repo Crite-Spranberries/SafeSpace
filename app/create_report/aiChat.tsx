@@ -12,13 +12,19 @@ import { ScrollView, TouchableOpacity } from 'react-native';
 import { Image } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import ChatTyping from '@/components/ui/chatTyping';
+import * as Haptics from 'expo-haptics';
 
 const SCREEN_OPTIONS = {
   title: '',
   headerBackTitle: 'Back',
   headerTransparent: true,
   headerLeft: () => (
-    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+    <TouchableOpacity
+      style={styles.backButton}
+      onPress={async () => {
+        router.back();
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }}>
       <Icon as={ArrowLeft} size={24} />
     </TouchableOpacity>
   ),
@@ -39,7 +45,7 @@ export default function aiChat() {
           style={styles.contentWrapper}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}>
-          <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+          <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ padding: 16 }}>
             <Image source={require('../../assets/images/Safi.png')} style={styles.image} />
             <View style={styles.chatContainer}>
               <ChatBubble
@@ -101,5 +107,6 @@ const styles = StyleSheet.create({
   },
   chatContainer: {
     gap: 16,
+    marginBottom: 16,
   },
 });
