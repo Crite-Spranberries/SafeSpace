@@ -28,11 +28,11 @@ const badgeVariants = cva(
         ),
         outline: Platform.select({ web: '[a&]:hover:bg-accent [a&]:hover:text-accent-foreground' }),
         darkGrey: cn(
-          'h-10 bg-white-500/30 shadow-sm shadow-black/5 active:bg-white-500/10',
+          'h-10 bg-white-500/30 shadow-sm shadow-black/5 active:bg-white-500/20',
           Platform.select({ web: '[a&]:hover:bg-white-500/10' })
         ),
         lightGrey: cn(
-          'h-10 bg-white-500/70 shadow-sm shadow-black/5 active:bg-white-500/50',
+          'h-10 bg-white-500/70 text-foreground shadow-sm shadow-black/5 active:bg-white-500/30',
           Platform.select({ web: '[a&]:hover:bg-white-500/50' })
         ),
       },

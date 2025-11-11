@@ -9,17 +9,16 @@ import {
   Keyboard,
   Pressable,
   ScrollView,
-  Dimensions,
+  TouchableOpacity,
 } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { Button } from '@/components/ui/button';
+import { router, Stack, useRouter } from 'expo-router';
+import { Button, buttonTextVariants } from '@/components/ui/button';
 import { useNavigation } from 'expo-router';
 import { Input } from '@/components/ui/input';
 import StatusBar from '@/components/ui/statusBar';
 import { useState } from 'react';
 import { Icon } from '@/components/ui/icon';
-import { Plus, FolderLock } from 'lucide-react-native';
-import { useSwipe } from '@/hooks/useSwipe';
+import { Plus, FolderLock, ArrowLeft } from 'lucide-react-native';
 import {
   Select,
   SelectContent,
@@ -31,13 +30,43 @@ import {
 } from '@/components/ui/select';
 import * as React from 'react';
 import type { TriggerRef } from '@rn-primitives/select';
+import { AppText } from '@/components/ui/AppText';
+import MapOnDetail from '@/components/ui/MapOnDetail';
+import MapOnHome from '@/components/ui/MapOnHome';
+
+const SCREEN_OPTIONS = {
+  title: '',
+  headerBackTitle: 'Back',
+  headerTransparent: true,
+  headerLeft: () => (
+    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <Icon as={ArrowLeft} size={24} />
+    </TouchableOpacity>
+  ),
+};
+
+const months = [
+  { label: 'January', value: 'january' },
+  { label: 'February', value: 'february' },
+  { label: 'March', value: 'march' },
+  { label: 'April', value: 'april' },
+  { label: 'May', value: 'may' },
+  { label: 'June', value: 'june' },
+  { label: 'July', value: 'july' },
+  { label: 'August', value: 'august' },
+  { label: 'September', value: 'september' },
+  { label: 'October', value: 'october' },
+  { label: 'November', value: 'november' },
+  { label: 'December', value: 'december' },
+];
 
 export default function Form() {
   const navigation = useNavigation();
   const router = useRouter();
-  const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState({
     location: '',
+    day: '',
+    year: '',
     dateTime: '',
     tradesField: '',
     reportType: '',
@@ -46,10 +75,9 @@ export default function Form() {
     description: '',
     documentation: '',
     witnesses: '',
+    individualsInvolved: '',
+    actionsTaken: '',
   });
-
-  const { onTouchStart, onTouchEnd } = useSwipe(onSwipeLeft, onSwipeRight, 3);
-
   const ref = React.useRef<TriggerRef>(null);
   const insets = useSafeAreaInsets();
   const contentInsets = {
@@ -59,269 +87,179 @@ export default function Form() {
     right: 12,
   };
 
-  const selectWidth = Dimensions.get('window').width; // added: full screen width
-
-  function onOpenStart() {
+  function onTouchStart() {
     ref.current?.open();
   }
 
-  function onSwipeLeft() {
-    setCurrentPage((prevPage) => Math.min(prevPage + 1, 3));
-  }
-
-  function onSwipeRight() {
-    setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
-  }
-
-  const handleNext = () => {
-    if (currentPage < 3) {
-      setCurrentPage(currentPage + 1);
-    } else if (currentPage === 3) {
-      // Submit form and navigate to report page
-      router.push('/recording_sandbox/report');
-    }
-  };
-
-  const handleBack = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    } else {
-      navigation.goBack();
-    }
-  };
-
   return (
     <>
-      <LinearGradient colors={['#371F5E', '#000']} style={styles.background} />
-      <Stack.Screen options={{ headerShown: false }} />
+      <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
+      <Stack.Screen options={SCREEN_OPTIONS} />
       <SafeAreaView style={styles.pageContainer}>
         <Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }}>
           <ScrollView
-            onTouchStart={onTouchStart}
-            onTouchEnd={onTouchEnd}
-            scrollEnabled={false}
             style={styles.formContainer}
             contentContainerStyle={styles.formContentContainer}>
-            <StatusBar state={currentPage} onPageSelect={setCurrentPage} />
-
-            {currentPage === 1 && (
-              <>
-                <Text variant="h3" style={{ textAlign: 'center', marginBottom: 8 }}>
-                  General Information
-                </Text>
-                <View>
-                  <Text>Location</Text>
-                  <Input
-                    placeholder="Location"
-                    style={styles.input}
-                    placeholderTextColor="#6B6B6B"
-                    value={formData.location}
-                    onChangeText={(value) => setFormData({ ...formData, location: value })}
-                  />
-                </View>
-                <View>
-                  <Text>Date and Time</Text>
-                  <Input
-                    placeholder="Date and Time"
-                    style={styles.input}
-                    placeholderTextColor="#6B6B6B"
-                    value={formData.dateTime}
-                    onChangeText={(value) => setFormData({ ...formData, dateTime: value })}
-                  />
-                </View>
-                <View>
-                  <Text>Trades Field</Text>
-                  <Input
-                    placeholder="Trades Field"
-                    style={styles.input}
-                    placeholderTextColor="#6B6B6B"
-                    value={formData.tradesField}
-                    onChangeText={(value) => setFormData({ ...formData, tradesField: value })}
-                  />
-                </View>
-
-                <Text>Type of Report</Text>
-                <View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Button
-                      variant={formData.reportType === 'Harassment' ? 'purple' : 'darkGrey'}
-                      style={{ flex: 1, marginRight: 8 }}
-                      onPress={() => setFormData({ ...formData, reportType: 'Harassment' })}>
-                      <Text>Harassment</Text>
-                    </Button>
-                    <Button
-                      variant={formData.reportType === 'Safety Hazards' ? 'purple' : 'darkGrey'}
-                      style={{ flex: 1 }}
-                      onPress={() => setFormData({ ...formData, reportType: 'Safety Hazards' })}>
-                      <Text>Safety Hazards</Text>
-                    </Button>
-                  </View>
-                  <View
-                    style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-                    <Button
-                      variant={formData.reportType === 'Discrimination' ? 'purple' : 'darkGrey'}
-                      style={{ flex: 1, marginRight: 8 }}
-                      onPress={() => setFormData({ ...formData, reportType: 'Discrimination' })}>
-                      <Text>Discrimination</Text>
-                    </Button>
-                    <Button
-                      variant={formData.reportType === 'Violence' ? 'purple' : 'darkGrey'}
-                      style={{ flex: 1 }}
-                      onPress={() => setFormData({ ...formData, reportType: 'Violence' })}>
-                      <Text>Violence</Text>
-                    </Button>
-                  </View>
-                </View>
-              </>
-            )}
-
-            {currentPage === 2 && (
-              <>
-                <Text variant="h3" style={{ textAlign: 'center', marginBottom: 8 }}>
-                  Incident Details
-                </Text>
-                <Text>Type of harassment</Text>
-                <View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Button
-                      variant={formData.harassmentType === 'Verbal' ? 'purple' : 'darkGrey'}
-                      style={{ flex: 1, marginRight: 8 }}
-                      onPress={() => setFormData({ ...formData, harassmentType: 'Verbal' })}>
-                      <Text>Verbal</Text>
-                    </Button>
-                    <Button
-                      variant={formData.harassmentType === 'Physical' ? 'purple' : 'darkGrey'}
-                      style={{ flex: 1 }}
-                      onPress={() => setFormData({ ...formData, harassmentType: 'Physical' })}>
-                      <Text>Physical</Text>
-                    </Button>
-                  </View>
-                  <View
-                    style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-                    <Button
-                      variant={formData.harassmentType === 'Visual' ? 'purple' : 'darkGrey'}
-                      style={{ flex: 1, marginRight: 8 }}
-                      onPress={() => setFormData({ ...formData, harassmentType: 'Visual' })}>
-                      <Text>Visual</Text>
-                    </Button>
-                    <Button
-                      variant={formData.harassmentType === 'Online' ? 'purple' : 'darkGrey'}
-                      style={{ flex: 1 }}
-                      onPress={() => setFormData({ ...formData, harassmentType: 'Online' })}>
-                      <Text>Online</Text>
-                    </Button>
-                  </View>
-                </View>
-                <View>
-                  <Text>Severity</Text>
-                  <Select>
-                    <SelectTrigger
-                      onTouchStart={onTouchStart}
-                      ref={ref}
-                      style={{ backgroundColor: 'white' }}>
-                      <SelectValue placeholder="Severity" />
-                    </SelectTrigger>
-                    <SelectContent
-                      insets={contentInsets}
-                      style={{ width: selectWidth, backgroundColor: 'white' }}>
-                      <SelectGroup>
-                        <SelectLabel>Severity</SelectLabel>
-                        <SelectItem label="Low" value="low">
-                          Low
+            <AppText
+              weight="bold"
+              style={{ fontSize: 24, color: 'white', marginBottom: 20, textAlign: 'center' }}>
+              Create Report
+            </AppText>
+            <View style={{ marginBottom: 8 }}>
+              <AppText weight="medium" style={styles.label}>
+                Date
+              </AppText>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <Select>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select a Month" />
+                  </SelectTrigger>
+                  <SelectContent insets={contentInsets} className="w-[180px]">
+                    <SelectGroup>
+                      <SelectLabel>Months</SelectLabel>
+                      {months.map((month) => (
+                        <SelectItem key={month.value} label={month.label} value={month.value}>
+                          {month.label}
                         </SelectItem>
-                        <SelectItem label="Medium" value="medium">
-                          Medium
-                        </SelectItem>
-                        <SelectItem label="High" value="high">
-                          High
-                        </SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </View>
-                <View>
-                  <Text>Briefly describe the incident:</Text>
-                  <Input
-                    placeholder="Start typing..."
-                    style={[styles.input, { height: 120, paddingTop: 12 }]}
-                    placeholderTextColor="#6B6B6B"
-                    multiline
-                    value={formData.description}
-                    onChangeText={(value) => setFormData({ ...formData, description: value })}
-                  />
-                </View>
-              </>
-            )}
-
-            {currentPage === 3 && (
-              <>
-                <Text variant="h3" style={{ textAlign: 'center', marginBottom: 8 }}>
-                  Witnesses / Evidence
-                </Text>
-                <View>
-                  <Text>Describe those who were involved:</Text>
-                  <Input
-                    placeholder="Avoid naming people directly"
-                    style={[styles.input, { height: 80, paddingTop: 12 }]}
-                    placeholderTextColor="#6B6B6B"
-                    multiline
-                    value={formData.documentation}
-                    onChangeText={(value) => setFormData({ ...formData, documentation: value })}
-                  />
-                </View>
-                <View>
-                  <Text>Witnesses, if any:</Text>
-                  <Input
-                    placeholder="Avoid naming people directly"
-                    style={[styles.input, { height: 80, paddingTop: 12 }]}
-                    placeholderTextColor="#6B6B6B"
-                    multiline
-                    value={formData.documentation}
-                    onChangeText={(value) => setFormData({ ...formData, documentation: value })}
-                  />
-                </View>
-                <View>
-                  <Text>Attach any supporting evidence you have:</Text>
-                  <Button
-                    variant={formData.reportType === 'Discrimination' ? 'purple' : 'darkGrey'}
-                    size="lg"
-                    onPress={() => setFormData({ ...formData, reportType: 'Discrimination' })}>
-                    <Icon as={Plus} size={24} color="#fff" style={{ flex: 1, marginRight: 8 }} />
-                    <Text>Add from your phone</Text>
-                  </Button>
-                </View>
-                <View>
-                  <Button
-                    variant={formData.reportType === 'Violence' ? 'purple' : 'darkGrey'}
-                    size="lg"
-                    onPress={() => setFormData({ ...formData, reportType: 'Violence' })}>
-                    <Icon
-                      as={FolderLock}
-                      size={24}
-                      color="#fff"
-                      style={{ flex: 1, marginRight: 8 }}
-                    />
-                    <Text>Choose from My Logs</Text>
-                  </Button>
-                </View>
-              </>
-            )}
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="DD"
+                  style={styles.inputDay}
+                  placeholderTextColor="#6B6B6B"
+                  value={formData.day}
+                  keyboardType="numeric"
+                  maxLength={2}
+                  onChangeText={(value) => setFormData({ ...formData, day: value })}
+                />
+                <Input
+                  placeholder="YYYY"
+                  style={styles.inputDay}
+                  placeholderTextColor="#6B6B6B"
+                  value={formData.year}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  onChangeText={(value) => setFormData({ ...formData, year: value })}
+                />
+              </View>
+            </View>
+            <View>
+              <AppText weight="medium" style={styles.label}>
+                Time
+              </AppText>
+              <Input
+                placeholder="Time"
+                style={styles.input}
+                placeholderTextColor="#6B6B6B"
+                value={formData.dateTime}
+                keyboardType="numeric"
+                onChangeText={(value) => setFormData({ ...formData, dateTime: value })}
+              />
+            </View>
+            <View>
+              <AppText weight="medium" style={styles.label}>
+                Location
+              </AppText>
+              <Input
+                placeholder="Search for a location..."
+                style={[styles.input, { marginBottom: 12 }]}
+                placeholderTextColor="#6B6B6B"
+                value={formData.location}
+                onChangeText={(value) => setFormData({ ...formData, location: value })}
+              />
+              <MapOnHome />
+            </View>
+            <View>
+              <AppText weight="medium" style={styles.label}>
+                Type of Report
+              </AppText>
+              <View style={{ position: 'relative' }}>
+                <Input
+                  placeholder="Add a report type"
+                  style={styles.input}
+                  placeholderTextColor="#6B6B6B"
+                  value={formData.reportType}
+                  onChangeText={(value) => setFormData({ ...formData, reportType: value })}
+                />
+              </View>
+            </View>
+            <View>
+              <AppText weight="medium" style={styles.label}>
+                Trades Field
+              </AppText>
+              <Input
+                placeholder="Add a trades field"
+                style={styles.input}
+                placeholderTextColor="#6B6B6B"
+                value={formData.tradesField}
+                onChangeText={(value) => setFormData({ ...formData, tradesField: value })}
+              />
+            </View>
+            <View>
+              <AppText weight="medium" style={styles.label}>
+                Incident Description
+              </AppText>
+              <Input
+                placeholder="Describe what happened and provide any context needed."
+                style={[styles.input, { height: 120, paddingTop: 12 }]}
+                placeholderTextColor="#6B6B6B"
+                multiline
+                value={formData.description}
+                onChangeText={(value) => setFormData({ ...formData, description: value })}
+              />
+            </View>
+            <View>
+              <AppText weight="medium" style={styles.label}>
+                Primary Indivuduals Involved
+              </AppText>
+              <Input
+                placeholder="SProvide a brief description if you do not know their name(s)."
+                style={[styles.input, { height: 120, paddingTop: 12 }]}
+                placeholderTextColor="#6B6B6B"
+                multiline
+                value={formData.individualsInvolved}
+                onChangeText={(value) => setFormData({ ...formData, individualsInvolved: value })}
+              />
+            </View>
+            <View>
+              <AppText weight="medium" style={styles.label}>
+                Witnesses
+              </AppText>
+              <Input
+                placeholder="Provide a brief description if you do not know their name(s)."
+                style={[styles.input, { height: 120, paddingTop: 12 }]}
+                placeholderTextColor="#6B6B6B"
+                multiline
+                value={formData.witnesses}
+                onChangeText={(value) => setFormData({ ...formData, witnesses: value })}
+              />
+            </View>
+            <View>
+              <AppText weight="medium" style={styles.label}>
+                Actions Taken
+              </AppText>
+              <Input
+                placeholder="Was anything done in response?"
+                style={[styles.input, { height: 120, paddingTop: 12 }]}
+                placeholderTextColor="#6B6B6B"
+                multiline
+                value={formData.actionsTaken}
+                onChangeText={(value) => setFormData({ ...formData, actionsTaken: value })}
+              />
+            </View>
           </ScrollView>
         </Pressable>
-
-        <View style={styles.buttonContainer}>
-          <Button
-            variant="darkGrey"
-            size="lg"
-            radius="full"
-            onPress={handleBack}
-            style={{ flex: 1, marginRight: 8 }}>
-            <Text>Back</Text>
-          </Button>
-          <Button variant="purple" size="lg" radius="full" style={{ flex: 1 }} onPress={handleNext}>
-            <Text>{currentPage === 3 ? 'Submit' : 'Next'}</Text>
-          </Button>
-        </View>
+        <Button
+          variant="purple"
+          radius="full"
+          style={styles.buttonContainer}
+          onPress={() => router.push('/create_report/report')}>
+          <AppText weight="medium" style={styles.buttonText}>
+            Generate Report
+          </AppText>
+        </Button>
       </SafeAreaView>
     </>
   );
@@ -335,10 +273,19 @@ const styles = StyleSheet.create({
     right: 0,
     height: '100%',
   },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff33',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 999,
+  },
   pageContainer: {
     flex: 1,
     justifyContent: 'space-between',
     padding: 16,
+    paddingBottom: 66,
   },
   formContainer: {
     flex: 1,
@@ -352,8 +299,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     height: 52,
+    position: 'absolute',
+    bottom: 30,
+    left: 24,
+    right: 24,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  label: {
+    color: 'white',
+    fontSize: 20,
+    marginBottom: 8,
   },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: '#333',
+    borderColor: '#FFFFFF4D',
+    color: 'white',
+  },
+  inputDay: {
+    backgroundColor: '#333',
+    borderColor: '#FFFFFF4D',
+    width: 'auto',
+    flexGrow: 1,
+    textAlign: 'center',
+    color: 'white',
   },
 });

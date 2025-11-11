@@ -30,6 +30,10 @@ const buttonVariants = cva(
             web: 'hover:bg-accent dark:hover:bg-input/50',
           })
         ),
+        reallyLightGrey: cn(
+          'bg-white-500/70 shadow-sm shadow-black/5 active:bg-white-500/50',
+          Platform.select({ web: 'hover:bg-white-500/70' })
+        ),
         lightGrey: cn(
           'bg-white-500/50 shadow-sm shadow-black/5 active:bg-white-500/30',
           Platform.select({ web: 'hover:bg-white-5000/30' })
@@ -133,6 +137,7 @@ const buttonTextVariants = cva(
         saveRecording: 'text-white',
         success: 'text-white',
         purple: '!text-white',
+        reallyLightGrey: '!text-white',
         lightGrey: '!text-white',
         darkGrey: '!text-white',
         switch: 'text-foreground',

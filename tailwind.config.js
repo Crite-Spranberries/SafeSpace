@@ -52,7 +52,10 @@ module.exports = {
           600: '#e8e8e8',
           700: '#b5b5b5',
           800: '#8c8c8c',
-          800: '#6b6b6b',
+          900: '#6b6b6b',
+        },
+        neutral: {
+          6: '#333',
         },
       },
       borderRadius: {
