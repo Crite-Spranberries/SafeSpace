@@ -4,7 +4,8 @@ import { Link, useLocalSearchParams } from 'expo-router';
 import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
-import { ArrowLeft, Trash2, PenLine } from 'lucide-react-native';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft } from 'lucide-react-native';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -17,9 +18,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import RecordingCardSmall from '@/components/ui/RecordingCardSmall';
 import { AppText } from '@/components/ui/AppText';
 import MapOnDetail from '@/components/ui/MapOnDetail';
-import { Badge } from '@/components/ui/badge';
-
-// Recording details screen
 
 // ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
@@ -130,9 +128,9 @@ export default function Details() {
   return (
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
-      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+      <SafeAreaView style={{ flex: 1 }}>
         <Stack.Screen options={SCREEN_OPTIONS} />
-        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 36 }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           <View style={styles.container}>
             <AppText weight="bold" style={styles.title}>
               Voice Recording 1
@@ -143,65 +141,55 @@ export default function Details() {
             </View>
             <RecordingCardSmall style={{ marginBottom: 24 }} />
             <MapOnDetail address="3700 Willingdon Avenue, Burnaby" style={{ marginBottom: 24 }} />
-
-            <View style={styles.badgeSection}>
-              <AppText style={styles.badgeTitle} weight="medium">
-                Tags
-              </AppText>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.badgeContainer}>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Harassment
-                  </AppText>
-                </Badge>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Electrical
-                  </AppText>
-                </Badge>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Warning
-                  </AppText>
-                </Badge>
-              </ScrollView>
+            <View style={{ flexDirection: 'column', gap: 6 }}>
+              <Button
+                radius="full"
+                variant="purple"
+                disabled={!audioUri}
+                onPress={() => {
+                  Transcribe(false);
+                  playRecording();
+                }}>
+                <Text>Transcribe Recording</Text>
+              </Button>
+              <Button
+                radius="full"
+                variant="lightGrey"
+                onPress={() => {
+                  Transcribe(true);
+                  playDefault();
+                }}>
+                <Text>Transcribe Sample</Text>
+              </Button>
             </View>
 
-            <View style={styles.transcriptSection}>
-              <View style={styles.transcriptHeader}>
-                <AppText style={styles.transcriptTitle} weight="medium">
-                  AI Transcript
-                </AppText>
-                <AppText style={styles.transcriptModel}>GPT-4o</AppText>
-              </View>
-              <AppText style={styles.transcriptText}>
-                Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet
-                pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis
-                pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
-                Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet
-                pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis
-                pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
-                Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet
-                pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis
-                pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
-              </AppText>
+            <Text variant="h4">Recording Preview: {status}</Text>
+
+            <View style={styles.container}>
+              <Button onPress={playRecording} radius="full">
+                <Text>Play Sound</Text>
+              </Button>
+              <Button
+                variant="outline"
+                radius="full"
+                onPress={() => {
+                  player.seekTo(0);
+                  player.play();
+                }}>
+                <Text>Replay Sound</Text>
+              </Button>
             </View>
+
+            <Text>AI Transcript</Text>
+            <DescriptionCard description={audTranscribed} />
 
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.reportIcon} onPress={() => {}}>
-                <Icon as={Trash2} color="#FFFFFF" size={24} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.editIcon} onPress={() => {}}>
-                <Icon as={PenLine} color="#5E349E" size={24} />
-              </TouchableOpacity>
+              <Button variant="lightGrey" radius="full" style={{ flex: 1, marginRight: 8 }}>
+                <Text>Edit</Text>
+              </Button>
               <Link href="./report" asChild>
-                <Button variant="purple" radius="full" className="h-[52px] w-[193px]">
-                  <AppText weight="medium" style={styles.reportGenText}>
-                    Generate Report
-                  </AppText>
+                <Button variant="purple" radius="full" style={{ flex: 1 }}>
+                  <Text>Generate Report</Text>
                 </Button>
               </Link>
             </View>
@@ -216,8 +204,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'column',
     justifyContent: 'center',
-    paddingHorizontal: 18,
-    marginTop: 35,
+    margin: 10,
   },
   bottomButtonAlign: {
     alignContent: 'center',
@@ -269,73 +256,9 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
   },
-  badgeSection: {
-    marginBottom: 24,
-  },
-  badgeTitle: {
-    fontSize: 20,
-    color: '#fff',
-    marginBottom: 12,
-  },
-  badgeContainer: {
-    // justifyContent: 'flex-start',
-  },
-  badge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  transcriptSection: {
-    marginBottom: 30,
-  },
-  transcriptHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 12,
-  },
-  transcriptTitle: {
-    fontSize: 20,
-    color: '#fff',
-  },
-  transcriptModel: {
-    fontSize: 16,
-    color: '#B0B0B0',
-  },
-  transcriptText: {
-    color: '#fff',
-    fontSize: 16,
-    lineHeight: 20,
-  },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 24,
+    gap: 8,
     height: 52,
-  },
-  reportIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: '#4D4D4D',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: '#B2B2B2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  reportGenText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    lineHeight: 19,
   },
 });
