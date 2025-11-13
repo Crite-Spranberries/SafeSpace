@@ -15,6 +15,7 @@ export default function ChatTyping() {
         placeholder="Type your message..."
         style={styles.input}
         placeholderTextColor="#6B6B6B"
+        returnKeyType="done"
       />
     </View>
   );
