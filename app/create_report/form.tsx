@@ -41,21 +41,6 @@ const SCREEN_OPTIONS = {
   ),
 };
 
-const months = [
-  { label: 'January', value: 'january' },
-  { label: 'February', value: 'february' },
-  { label: 'March', value: 'march' },
-  { label: 'April', value: 'april' },
-  { label: 'May', value: 'may' },
-  { label: 'June', value: 'june' },
-  { label: 'July', value: 'july' },
-  { label: 'August', value: 'august' },
-  { label: 'September', value: 'september' },
-  { label: 'October', value: 'october' },
-  { label: 'November', value: 'november' },
-  { label: 'December', value: 'december' },
-];
-
 export default function Form() {
   const [formData, setFormData] = useState({
     location: '',
@@ -264,10 +249,10 @@ export default function Form() {
             </View>
             <View>
               <AppText weight="medium" style={styles.label}>
-                Primary Indivuduals Involved
+                Primary Individuals Involved
               </AppText>
               <Input
-                placeholder="SProvide a brief description if you do not know their name(s)."
+                placeholder="Provide a brief description if you do not know their name(s)."
                 style={[styles.input, { height: 120, paddingTop: 12 }]}
                 placeholderTextColor="#6B6B6B"
                 multiline
