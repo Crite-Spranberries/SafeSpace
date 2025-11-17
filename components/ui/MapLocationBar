@@ -1,0 +1,76 @@
+import React, { useState } from 'react';
+import { View, StyleSheet, TextInput, TouchableOpacity, Keyboard } from 'react-native';
+import { AppText } from './AppText';
+import { Locate, Search } from 'lucide-react-native';
+
+type LocationSearchBarProps = {
+  locationText: string;
+  onSearchChange: (text: string) => void;
+  onClearSearch: () => void;
+  searching: boolean;
+};
+
+const LocationSearchBar: React.FC<LocationSearchBarProps> = ({
+  locationText,
+  onSearchChange,
+  onClearSearch,
+  searching,
+}) => {
+  const [inputFocused, setInputFocused] = useState(false);
+
+  return (
+    <View style={styles.searchBarContainer}>
+      {searching || inputFocused ? (
+        <TextInput
+          style={styles.textInput}
+          placeholder="Search location..."
+          autoFocus
+          onChangeText={onSearchChange}
+          onBlur={() => {
+            setInputFocused(false);
+            if (!searching) {
+              onClearSearch();
+            }
+          }}
+        />
+      ) : (
+        <TouchableOpacity style={styles.locationDisplay} onPress={() => setInputFocused(true)}>
+          <Locate size={20} color="#8449DF" style={{ marginRight: 8 }} />
+          <AppText numberOfLines={1} ellipsizeMode="tail" style={styles.locationText}>
+            {locationText || 'Fetching location...'}
+          </AppText>
+          <Search size={20} color="#999" style={{ marginLeft: 8 }} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  searchBarContainer: {
+    height: 50,
+    backgroundColor: '#222',
+    borderRadius: 24,
+    paddingHorizontal: 15,
+    justifyContent: 'center',
+    margin: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    // Add shadow or glass style if needed
+  },
+  locationDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  locationText: {
+    flex: 1,
+    color: '#ccc',
+    fontSize: 16,
+  },
+  textInput: {
+    flex: 1,
+    color: 'white',
+    fontSize: 16,
+  },
+});

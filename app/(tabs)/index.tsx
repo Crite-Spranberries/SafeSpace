@@ -35,68 +35,71 @@ const IMAGE_STYLE: ImageStyle = {
 export default function Screen() {
   const { colorScheme } = useColorScheme();
   const router = useRouter();
+  const [address, setAddress] = React.useState<string | null>(null);
+
   const onDetails = () => {
     router.push('/create_report/report');
   };
-  // background: linear-gradient(180deg, #371F5E 0%, #000 30.29%);
+
   return (
-    <>
-      <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
-      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        <View style={{ position: 'absolute', top: 60, left: 16, right: 16, zIndex: 10 }}>
-          <HomeTopBar />
-        </View>
-        <ScrollView contentContainerStyle={{ paddingTop: 70, paddingBottom: 5 }}>
-          <View style={styles.pageContainer}>
-            <View className="w-full max-w-md">
-              <MapOnHome />
+    <View style={{ flex: 1 }}>
+      <MapOnHome style={StyleSheet.absoluteFill} onAddressChange={setAddress} />
+
+      {/* Overlay all UI on top of the map with absolute positioning */}
+      <SafeAreaView
+        style={{ flex: 1, position: 'absolute', width: '100%', height: '100%' }}
+        pointerEvents="box-none">
+        {/* Combined top bar container */}
+        <View style={{ position: 'absolute', top: 16, left: 16, right: 16, zIndex: 10 }}>
+          <HomeTopBar
+            onPressNotifications={() => console.log('Notify')}
+            onPressHelp={() => console.log('Help')}
+            glass
+            borderColor="rgba(255,255,255,0.5)"
+            borderWidth={1}
+            radius={24}
+          />
+          {address && (
+            <View
+              style={{
+                marginTop: 8,
+                backgroundColor: 'rgba(255,255,255,0.6)',
+                borderRadius: 18,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                shadowColor: '#000',
+                shadowOpacity: 0.12,
+                shadowRadius: 7,
+                elevation: 3,
+              }}>
+              <AppText style={{ color: '#000', fontSize: 16, lineHeight: 20 }}>{address}</AppText>
             </View>
-            <Link href="../create_report" asChild>
-              <Button radius="full" className="mt-2 h-[52px]">
-                <AppText style={{ fontSize: 20, lineHeight: 24 }} weight="medium">
-                  Create Report
-                </AppText>
-              </Button>
-            </Link>
-            <AppText style={styles.reportSectionHeader} weight="bold">
-              Reports Near You
+          )}
+        </View>
+
+        {/* Bottom aligned "Create Report" button */}
+        <View
+          style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center', marginBottom: 40 }}
+          pointerEvents="auto">
+          <Button
+            radius="full"
+            style={{
+              width: '90%',
+              minHeight: 56,
+              paddingVertical: 16,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+            onPress={onDetails}>
+            <AppText
+              style={{ fontSize: 20, lineHeight: 24, textAlignVertical: 'center' }}
+              weight="medium">
+              Create Report
             </AppText>
-            <ReportCard
-              tags={['Harassment', 'Site Safety']}
-              title="Onsite Harassment Concern Near Coffee Bar"
-              location="123 Construction Avenue, Vancouver"
-              excerpt="In the past week, a male individual was observed frequently interacting in ways that have made several tradeswomen uncomfortable. The individual is described as having brunette, curly hair, approximately 180 cm tall, and often seen near the coffee bar area."
-              likes={108}
-              comments={56}
-              onDetailsPress={onDetails}
-            />
-            <ReportCard
-              tags={['Discrimination', 'Harassment']}
-              title="Misgendered During Training"
-              location="123 Granville St, Burnaby, BC"
-              excerpt="During a recent apprenticeship training, my supervisor repeatedly referred to me with the wrong pronouns despite me correcting them multiple times."
-              likes={42}
-              comments={16}
-              onDetailsPress={onDetails}
-            />
-            <ReportCard
-              tags={['Discrimination', 'Safety']}
-              title="Unsafe Equipment Access"
-              location="789 Bernard Ave, Burnaby, BC"
-              excerpt="The workshop layout makes it unsafe for me as a non-binary person to access certain machinery without constant supervision, which is stressful and humiliating."
-              likes={37}
-              comments={27}
-              onDetailsPress={onDetails}
-            />
-            <Button variant="outline" className="h-[48px] rounded-[12px]">
-              <AppText style={{ fontSize: 16, lineHeight: 20, color: '#FFFFFF' }} weight="medium">
-                View More
-              </AppText>
-            </Button>
-          </View>
-        </ScrollView>
+          </Button>
+        </View>
       </SafeAreaView>
-    </>
+    </View>
   );
 }
 

@@ -10,19 +10,13 @@ type HomeTopBarProps = ViewProps & {
   onPressHelp?: () => void;
   showUnreadDot?: boolean;
   className?: string;
-  /** Enable liquid glass (frosted blur + gloss) effect */
   glass?: boolean;
-  /** Blur intensity when using expo-blur (0-100). Higher = more blur */
-  glassIntensity?: number;
-  /** Background alpha for the glass surface (0-1). Lower makes it more transparent */
-  glassBgAlpha?: number;
-  /** Opacity for the gloss overlay (0-1) */
-  glossOpacity?: number;
-  /** Border color for the glass surface */
+  glassIntensity?: number; // blur intensity 0-100
+  glassTint?: 'light' | 'dark' | 'default';
+  glassBgAlpha?: number; // background alpha 0-1
+  glossOpacity?: number; // overlay gloss opacity 0-1
   borderColor?: string;
-  /** Border width in px */
   borderWidth?: number;
-  /** Corner radius in px */
   radius?: number;
 };
 
@@ -34,16 +28,14 @@ export function HomeTopBar({
   style,
   glass = true,
   glassIntensity = 8,
+  glassTint = 'default',
   glassBgAlpha = 0.6,
-  glossOpacity = 0,
-  borderColor = '#FFFFFF',
+  glossOpacity = 0.1,
+  borderColor = 'rgba(255,255,255,0.6)',
   borderWidth = 1,
   radius = 24,
   ...rest
 }: HomeTopBarProps) {
-  // Try to require expo-blur at runtime. Metro/bundler will fail on a static
-  // import if the package isn't installed, so we load it dynamically and
-  // fall back to a plain View when it's not available.
   let BlurViewComponent: any | undefined;
   if (glass) {
     try {
@@ -58,13 +50,15 @@ export function HomeTopBar({
   const containerProps: any = { ...(rest as any) };
   if (Container !== View) {
     containerProps.intensity = glassIntensity;
-    containerProps.tint = 'light';
+    containerProps.tint = glassTint;
   }
+
   const bgColor = `rgba(255,255,255,${glassBgAlpha})`;
 
   return (
     <Container
       {...containerProps}
+      pointerEvents="auto"
       className={cn('w-full flex-row items-center justify-between px-4 py-3', className)}
       style={[
         style,
@@ -91,7 +85,6 @@ export function HomeTopBar({
         hitSlop={8}
         className="relative h-10 w-10 items-center justify-center rounded-full p-2">
         <Icon as={Bell} className="text-black" size={24} />
-        {/* Notification dot */}
         {showUnreadDot ? (
           <View
             className="absolute h-2 w-2 rounded-full"
@@ -116,9 +109,7 @@ export default HomeTopBar;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderColor: '#FFFFFF',
-    // subtle shadow to lift the glass
+    // Adjust these as needed for glass lift effect
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
