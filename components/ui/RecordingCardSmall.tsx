@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   LayoutChangeEvent,
   GestureResponderEvent,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
 import { Audio } from 'expo-av';
 import { Icon } from '@/components/ui/icon';
@@ -17,6 +19,8 @@ type RecordingCardSmallProps = {
   onPlayPress?: () => void;
   onPrevPress?: () => void;
   onNextPress?: () => void;
+  // extra styles passed from pages
+  style?: StyleProp<ViewStyle>;
 };
 
 export default function RecordingCardSmall({
@@ -25,6 +29,7 @@ export default function RecordingCardSmall({
   onPlayPress,
   onPrevPress,
   onNextPress,
+  style,
 }: RecordingCardSmallProps) {
   const formatMs = (ms: number): string => {
     if (!ms || ms < 0 || !Number.isFinite(ms)) return '0:00';
@@ -189,7 +194,7 @@ export default function RecordingCardSmall({
     }
   };
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, style]}>
       <View style={styles.card}>
         {/* Recording progress row */}
         <View style={styles.recordingBar}>
@@ -241,7 +246,7 @@ export default function RecordingCardSmall({
           <TouchableOpacity
             style={styles.controlBtn}
             onPress={() => {
-              void seekBy(-2000);
+              void seekBy(-2000); // 2 seconds back
               onPrevPress?.();
             }}
             activeOpacity={0.85}>
@@ -260,7 +265,7 @@ export default function RecordingCardSmall({
           <TouchableOpacity
             style={styles.controlBtn}
             onPress={() => {
-              void seekBy(2000);
+              void seekBy(2000); // 2 seconds forward
               onNextPress?.();
             }}
             activeOpacity={0.85}>

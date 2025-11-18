@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Platform, Pressable } from 'react-native';
 import { useState } from 'react';
+import * as Haptics from 'expo-haptics';
 
 const buttonVariants = cva(
   cn(
@@ -29,6 +30,10 @@ const buttonVariants = cva(
           Platform.select({
             web: 'hover:bg-accent dark:hover:bg-input/50',
           })
+        ),
+        reallyLightGrey: cn(
+          'bg-white-500/70 shadow-sm shadow-black/5 active:bg-white-500/50',
+          Platform.select({ web: 'hover:bg-white-500/70' })
         ),
         lightGrey: cn(
           'bg-white-500/50 shadow-sm shadow-black/5 active:bg-white-500/30',
@@ -133,6 +138,7 @@ const buttonTextVariants = cva(
         saveRecording: 'text-white',
         success: 'text-white',
         purple: '!text-white',
+        reallyLightGrey: '!text-white',
         lightGrey: '!text-white',
         darkGrey: '!text-white',
         switch: 'text-foreground',
@@ -166,9 +172,19 @@ const buttonTextVariants = cva(
 
 type ButtonProps = React.ComponentProps<typeof Pressable> &
   React.RefAttributes<typeof Pressable> &
-  VariantProps<typeof buttonVariants>;
+  VariantProps<typeof buttonVariants> & {
+    noHaptic?: boolean;
+  };
 
-function Button({ className, variant, size, radius, ...props }: ButtonProps) {
+function Button({ className, variant, size, radius, noHaptic, ...props }: ButtonProps) {
+  const handlePressIn = async (ev: any) => {
+    // Trigger haptic feedback on button press
+    if (Platform.OS !== 'web' && !noHaptic) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    props.onPressIn?.(ev);
+  };
+
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size, radius })}>
       <Pressable
@@ -178,6 +194,7 @@ function Button({ className, variant, size, radius, ...props }: ButtonProps) {
           className
         )}
         role="button"
+        onPressIn={handlePressIn}
         {...props}
       />
     </TextClassContext.Provider>

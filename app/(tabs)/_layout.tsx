@@ -1,11 +1,12 @@
 import { Tabs } from 'expo-router';
 import { Icon } from '@/components/ui/icon';
-import { House, Newspaper, CircleUserRound, FolderLock, AudioLines } from 'lucide-react-native';
+import { House, Newspaper, CircleUserRound, FolderLock, Map, Settings } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { StyleSheet } from 'react-native';
 import { RecordingTabButton } from '@/components/recordingTabButton';
 import { LinearGradient } from 'expo-linear-gradient';
+import { HapticTab } from '@/components/HapticTab';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
@@ -18,6 +19,7 @@ export default function TabLayout() {
           headerShown: false,
           tabBarActiveTintColor: 'black',
           tabBarInactiveTintColor: '#B0B0B0',
+          tabBarButton: HapticTab,
           tabBarStyle: {
             backgroundColor: '#fff',
             borderTopEndRadius: 24,
@@ -30,8 +32,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: 'Home',
-            tabBarIcon: ({ color }) => <Icon as={House} size={24} color={color} />,
+            title: 'Map',
+            tabBarIcon: ({ color }) => <Icon as={Map} size={24} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -58,8 +60,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="profile"
           options={{
-            title: 'Profile',
-            tabBarIcon: ({ color }) => <Icon as={CircleUserRound} size={24} color={color} />,
+            title: 'Settings',
+            tabBarIcon: ({ color }) => <Icon as={Settings} size={24} color={color} />,
           }}
         />
       </Tabs>

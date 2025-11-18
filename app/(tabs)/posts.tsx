@@ -37,9 +37,7 @@ export default function Profile() {
             <Icon as={Plus} size={20} color="#fff" />
           </Button>
         </View>
-        <ScrollView
-          contentContainerStyle={{ paddingTop: 70, paddingBottom: 5 }}
-          scrollEnabled={scrollEnabled}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 5 }} scrollEnabled={scrollEnabled}>
           <Text variant="h3" style={{ marginBottom: 16, textAlign: 'center' }}>
             Posted Reports
           </Text>

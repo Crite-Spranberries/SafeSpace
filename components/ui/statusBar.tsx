@@ -1,17 +1,24 @@
 import { View } from 'react-native';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Pressable } from 'react-native';
 
 type StatusBarProps = {
   state: number;
+  onPageSelect?: (page: number) => void;
 };
 
-export default function StatusBar({ state }: StatusBarProps) {
+export default function StatusBar({ state, onPageSelect }: StatusBarProps) {
   return (
     <>
       <View style={styles.barContainer}>
-        <View style={state === 1 ? styles.selectedBar : styles.unselectedBar} />
-        <View style={state === 2 ? styles.selectedBar : styles.unselectedBar} />
-        <View style={state === 3 ? styles.selectedBar : styles.unselectedBar} />
+        <Pressable onPress={() => onPageSelect?.(1)} style={{ flex: 1, height: 12 }}>
+          <View style={state === 1 ? styles.selectedBar : styles.unselectedBar} />
+        </Pressable>
+        <Pressable onPress={() => onPageSelect?.(2)} style={{ flex: 1, height: 12 }}>
+          <View style={state === 2 ? styles.selectedBar : styles.unselectedBar} />
+        </Pressable>
+        <Pressable onPress={() => onPageSelect?.(3)} style={{ flex: 1, height: 12 }}>
+          <View style={state === 3 ? styles.selectedBar : styles.unselectedBar} />
+        </Pressable>
       </View>
     </>
   );
