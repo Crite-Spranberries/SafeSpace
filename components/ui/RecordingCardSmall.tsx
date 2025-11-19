@@ -8,7 +8,7 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { Audio } from 'expo-av';
+import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
 import { Icon } from '@/components/ui/icon';
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react-native';
 import { AppText } from './AppText';
@@ -38,160 +38,89 @@ export default function RecordingCardSmall({
     const s = totalSeconds % 60;
     return `${m}:${String(s).padStart(2, '0')}`;
   };
-  const [playing, setPlaying] = React.useState<boolean>(!!isPlaying);
-  const [loading, setLoading] = React.useState<boolean>(false);
-  const soundRef = React.useRef<Audio.Sound | null>(null);
+  // expo-audio player & status
+  const player = useAudioPlayer(require('../../assets/audio/test_audio.mp3'));
+  const status = useAudioPlayerStatus(player);
+  const playing = status.playing;
+  const isLoaded = status.isLoaded;
   const [trackWidth, setTrackWidth] = React.useState<number>(0);
   const [isDragging, setIsDragging] = React.useState<boolean>(false);
   const [dragProgress, setDragProgress] = React.useState<number>(0);
   const [statusProgress, setStatusProgress] = React.useState<number>(0); // 0..1
-  const durationRef = React.useRef<number>(0);
   const [positionMs, setPositionMs] = React.useState<number>(0);
   const [durationMs, setDurationMs] = React.useState<number>(0);
-  const finishedRef = React.useRef<boolean>(false);
 
   const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v));
 
   React.useEffect(() => {
-    // Allow playback in iOS silent mode
-    void Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-
-    // cleanup: unload sound when unmounting
-    return () => {
-      (async () => {
-        try {
-          if (soundRef.current) {
-            await soundRef.current.unloadAsync();
-            soundRef.current = null;
-          }
-        } catch {
-          // ignore
-        }
-      })();
-    };
+    // Enable silent mode playback (new API key name differs)
+    void setAudioModeAsync({ playsInSilentMode: true });
   }, []);
 
-  const togglePlay = async () => {
-    if (loading) return;
-    try {
-      if (!soundRef.current) {
-        setLoading(true);
-        const { sound } = await Audio.Sound.createAsync(
-          require('../../assets/audio/test_audio.mp3'),
-          { shouldPlay: true }
-        );
-        soundRef.current = sound;
-        setLoading(false);
-        setPlaying(true);
-        soundRef.current.setOnPlaybackStatusUpdate((st: any) => {
-          if (!st?.isLoaded) return;
-          const d = st.durationMillis ?? durationRef.current ?? 0;
-          const p = st.positionMillis ?? 0;
-          durationRef.current = d;
-          if (d > 0) setStatusProgress(clamp(p / d));
-          setPositionMs(p || 0);
-          setDurationMs(d || 0);
-          if (st.didJustFinish) {
-            setPlaying(false);
-            finishedRef.current = true;
-          }
-        });
-      } else {
-        const status: any = await soundRef.current.getStatusAsync();
-        if (status.isLoaded && status.isPlaying) {
-          await soundRef.current.pauseAsync();
-          setPlaying(false);
-        } else if (status.isLoaded) {
-          // If previously finished or at end, restart from beginning before playing
-          const dur = status?.durationMillis ?? durationRef.current ?? 0;
-          const pos = status?.positionMillis ?? 0;
-          const nearEnd = dur > 0 && pos >= Math.max(0, dur - 200);
-          if (finishedRef.current || nearEnd) {
-            try {
-              await soundRef.current.setPositionAsync(0);
-              setPositionMs(0);
-              setStatusProgress(0);
-            } catch {
-              // ignore
-            } finally {
-              finishedRef.current = false;
-            }
-          }
-          await soundRef.current.playAsync();
-          setPlaying(true);
-        } else {
-          await soundRef.current.playAsync();
-          setPlaying(true);
-        }
+  // Derive progress & ms values from status
+  React.useEffect(() => {
+    const durSec = status.duration || 0;
+    const posSec = status.currentTime || 0;
+    if (durSec > 0) setStatusProgress(clamp(posSec / durSec));
+    setPositionMs(Math.max(0, posSec * 1000));
+    setDurationMs(Math.max(0, durSec * 1000));
+  }, [status.currentTime, status.duration]);
+
+  const togglePlay = () => {
+    if (!isLoaded) return;
+    // If finished or at end, seek to start before playing again
+    const nearEnd = durationMs > 0 && positionMs >= Math.max(0, durationMs - 200);
+    if (!playing) {
+      if (nearEnd || status.didJustFinish) {
+        player.seekTo(0);
       }
-      onPlayPress?.();
-    } catch {
-      setLoading(false);
+      player.play();
+    } else {
+      player.pause();
     }
+    onPlayPress?.();
   };
 
   const onTrackLayout = (e: LayoutChangeEvent) => {
     setTrackWidth(e.nativeEvent.layout.width);
   };
 
-  const updateProgressFromX = async (x: number) => {
+  const updateProgressFromX = (x: number) => {
     const width = Math.max(1, trackWidth);
     const next = clamp(x / width);
     setDragProgress(next);
-    if (soundRef.current) {
-      const s: any = await soundRef.current.getStatusAsync();
-      const dur = durationRef.current || s?.durationMillis || 0;
-      if (dur > 0) {
-        const target = Math.floor(next * dur);
-        try {
-          await soundRef.current.setPositionAsync(target);
-          setPositionMs(target);
-        } catch {
-          // ignore
-        }
-      }
+    if (durationMs > 0) {
+      const targetMs = Math.floor(next * durationMs);
+      player.seekTo(targetMs / 1000);
+      setPositionMs(targetMs);
     }
   };
 
-  const onSeekStart = async (e: GestureResponderEvent) => {
-    if (!soundRef.current) return false;
+  const onSeekStart = (e: GestureResponderEvent) => {
+    if (!isLoaded) return false;
     setIsDragging(true);
-    await updateProgressFromX(e.nativeEvent.locationX);
+    updateProgressFromX(e.nativeEvent.locationX);
     return true;
   };
 
-  const onSeekMove = async (e: GestureResponderEvent) => {
-    if (!soundRef.current) return;
-    await updateProgressFromX(e.nativeEvent.locationX);
+  const onSeekMove = (e: GestureResponderEvent) => {
+    if (!isLoaded) return;
+    updateProgressFromX(e.nativeEvent.locationX);
   };
 
-  const onSeekRelease = async (e: GestureResponderEvent) => {
-    if (!soundRef.current) return;
-    await updateProgressFromX(e.nativeEvent.locationX);
+  const onSeekRelease = (e: GestureResponderEvent) => {
+    if (!isLoaded) return;
+    updateProgressFromX(e.nativeEvent.locationX);
     setIsDragging(false);
   };
 
-  const seekBy = async (deltaMs: number) => {
-    if (!soundRef.current) return;
-    try {
-      const st: any = await soundRef.current.getStatusAsync();
-      if (!st?.isLoaded) return;
-      const dur = st.durationMillis ?? durationRef.current ?? 0;
-      const pos = st.positionMillis ?? positionMs ?? 0;
-      const target = Math.max(
-        0,
-        Math.min(dur > 0 ? dur - 1 : Number.MAX_SAFE_INTEGER, pos + deltaMs)
-      );
-      await soundRef.current.setPositionAsync(target);
-      setPositionMs(target);
-      if (dur > 0) setStatusProgress(clamp(target / dur));
-      // If we moved away from end, reset finished flag
-      if (finishedRef.current && target < (dur > 0 ? dur - 200 : target)) {
-        finishedRef.current = false;
-      }
-    } catch {
-      // ignore
-    }
+  const seekBy = (deltaMs: number) => {
+    if (!isLoaded || durationMs <= 0) return;
+    const pos = positionMs;
+    const target = Math.max(0, Math.min(durationMs - 1, pos + deltaMs));
+    player.seekTo(target / 1000);
+    setPositionMs(target);
+    setStatusProgress(clamp(target / durationMs));
   };
   return (
     <View style={[styles.wrapper, style]}>
@@ -201,10 +130,10 @@ export default function RecordingCardSmall({
           <View
             style={styles.progressWrap}
             onLayout={onTrackLayout}
-            onStartShouldSetResponder={() => !!soundRef.current}
-            onMoveShouldSetResponder={() => !!soundRef.current}
-            onStartShouldSetResponderCapture={() => !!soundRef.current}
-            onMoveShouldSetResponderCapture={() => !!soundRef.current}
+            onStartShouldSetResponder={() => isLoaded}
+            onMoveShouldSetResponder={() => isLoaded}
+            onStartShouldSetResponderCapture={() => isLoaded}
+            onMoveShouldSetResponderCapture={() => isLoaded}
             onResponderTerminationRequest={() => false}
             onResponderGrant={onSeekStart}
             onResponderMove={onSeekMove}
