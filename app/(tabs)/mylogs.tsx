@@ -10,7 +10,7 @@ import Tabs from '@/components/ui/Tabs';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Modal } from '@/components/ui/Modal';
 import { Text } from '@/components/ui/Text';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/Input';
 import * as Haptics from 'expo-haptics';
 
 export default function RecordingsPage() {

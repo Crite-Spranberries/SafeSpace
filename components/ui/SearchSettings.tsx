@@ -1,10 +1,10 @@
 import { View } from 'react-native';
 import { StyleSheet, ScrollView } from 'react-native';
-import { Input } from './input';
+import { Input } from './Input';
 import { Badge } from './badge';
 import { Button } from './button';
 import { Text } from './Text';
-import { Icon } from './icon';
+import { Icon } from './Icon';
 import { Search, Settings2 } from 'lucide-react-native';
 
 export default function SearchSettings() {

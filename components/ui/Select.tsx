@@ -1,4 +1,4 @@
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { NativeOnlyAnimatedView } from '@/components/ui/NativeOnlyAnimatedView';
 import { TextClassContext } from '@/components/ui/Text';
 import { cn } from '@/lib/utils';
@@ -52,7 +52,7 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       ref={ref}
       className={cn(
-        'bg-neutral-6 dark:bg-neutral-6 dark:active:bg-neutral-6/50 flex h-10 flex-row items-center justify-between gap-2 rounded-md border border-white-500/30 px-3 py-2 shadow-sm shadow-black/5 sm:h-9',
+        'flex h-10 flex-row items-center justify-between gap-2 rounded-md border border-white-500/30 bg-neutral-6 px-3 py-2 shadow-sm shadow-black/5 dark:bg-neutral-6 dark:active:bg-neutral-6/50 sm:h-9',
         Platform.select({
           web: 'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive w-fit whitespace-nowrap text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed dark:hover:bg-input/50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
         }),
@@ -88,7 +88,7 @@ function SelectContent({
             <NativeOnlyAnimatedView className="z-50" entering={FadeIn} exiting={FadeOut}>
               <SelectPrimitive.Content
                 className={cn(
-                  'bg-neutral-6 relative z-50 min-w-[8rem] rounded-md border border-white-500/30 shadow-md shadow-black/5',
+                  'relative z-50 min-w-[8rem] rounded-md border border-white-500/30 bg-neutral-6 shadow-md shadow-black/5',
                   Platform.select({
                     web: cn(
                       'origin-(--radix-select-content-transform-origin) max-h-52 overflow-y-auto overflow-x-hidden animate-in fade-in-0 zoom-in-95',

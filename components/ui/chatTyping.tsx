@@ -1,7 +1,7 @@
 import { View } from 'react-native';
-import { Input } from './input';
+import { Input } from './Input';
 import { StyleSheet } from 'react-native';
-import { Icon } from './icon';
+import { Icon } from './Icon';
 import { Mic } from 'lucide-react-native';
 import { Button } from './button';
 

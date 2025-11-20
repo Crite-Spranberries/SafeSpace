@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { House, Newspaper, CircleUserRound, FolderLock, Map, Settings } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';

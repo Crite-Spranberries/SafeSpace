@@ -12,7 +12,7 @@ import { Asset } from 'expo-asset';
 import { ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, Stack, useRouter } from 'expo-router';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RecordingCardSmall from '@/components/ui/RecordingCardSmall';
 import { AppText } from '@/components/ui/AppText';

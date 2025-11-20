@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/Input';
 import { useState } from 'react';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { ArrowLeft, CircleX } from 'lucide-react-native';
 import {
   Select,

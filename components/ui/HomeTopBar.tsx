@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 import * as React from 'react';
 import { Pressable, View, StyleSheet, type ViewProps } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { Bell, CircleHelp } from 'lucide-react-native';
 
 type HomeTopBarProps = ViewProps & {

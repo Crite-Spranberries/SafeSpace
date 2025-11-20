@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SearchSettings from '@/components/ui/SearchSettings';
 import ReportCard from '@/components/ui/ReportCard';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { Plus } from 'lucide-react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';

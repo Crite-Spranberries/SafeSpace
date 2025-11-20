@@ -9,7 +9,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react-native';
 import { AppText } from './AppText';
 

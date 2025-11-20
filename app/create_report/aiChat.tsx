@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   Keyboard,
 } from 'react-native';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { ArrowLeft } from 'lucide-react-native';
 import { useNavigation } from 'expo-router';
 import ChatBubble from '@/components/ui/chatBubble';

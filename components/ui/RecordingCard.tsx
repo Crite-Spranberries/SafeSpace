@@ -6,7 +6,7 @@ import {
   type LayoutChangeEvent,
   type GestureResponderEvent,
 } from 'react-native';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { ArrowRight, Play, Pause } from 'lucide-react-native';
 import { AppText } from './AppText';
 
