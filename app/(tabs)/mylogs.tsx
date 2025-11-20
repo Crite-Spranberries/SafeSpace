@@ -16,7 +16,6 @@ import { AppText } from '@/components/ui/AppText';
 
 export default function RecordingsPage() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [scrollEnabled, setScrollEnabled] = useState(true);
   const [activeTab, setActiveTab] = useState<'recordings' | 'reports'>('recordings');
   const [password, setPassword] = useState('');
   const router = useRouter();
@@ -53,7 +52,7 @@ export default function RecordingsPage() {
           <Tabs onTabChange={handleTabChange} tab={activeTab} />
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 10 }} scrollEnabled={scrollEnabled}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 10 }}>
           {/* <Modal isOpen={modalOpen}>  commented out for dev convenience
             <View style={styles.modalContent}>
               <Text variant="h4" style={styles.modalTitle}>
@@ -105,7 +104,7 @@ export default function RecordingsPage() {
                   title="My Supervisor Keeps Misgendering Me"
                   location="6200 Kingsway, Burnaby, BC"
                   date="January 7, 2025"
-                  timestamp="15:30"
+                  timestamp="9:30"
                   duration="10:12"
                   onDetailsPress={onRecording}
                 />
@@ -114,7 +113,7 @@ export default function RecordingsPage() {
                   title="Uncomfortable Comments at Work"
                   location="8200 Kingsway, Burnaby, BC"
                   date="January 7, 2025"
-                  timestamp="15:30"
+                  timestamp="10:30"
                   duration="2:12"
                   onDetailsPress={onRecording}
                 />
@@ -123,7 +122,7 @@ export default function RecordingsPage() {
                   title="Talking About the Pay Gap"
                   location="9200 Kingsway, Burnaby, BC"
                   date="January 7, 2025"
-                  timestamp="15:30"
+                  timestamp="11:30"
                   duration="1:12"
                   onDetailsPress={onRecording}
                 />
@@ -132,7 +131,7 @@ export default function RecordingsPage() {
                   title="Left Out Again"
                   location="3200 Kingsway, Burnaby, BC"
                   date="January 7, 2025"
-                  timestamp="15:30"
+                  timestamp="18:30"
                   duration="3:12"
                   onDetailsPress={onRecording}
                 />
@@ -153,20 +152,20 @@ export default function RecordingsPage() {
                   title="Unequal Pay for Equal Work"
                   location="456 Government St, Burnaby, BC"
                   excerpt="I noticed that my male colleagues receive higher pay for the same tasks. When I raised the issue, I was ignored and sometimes subtly threatened. It made me feel undervalued and hesitant to speak up again."
-                  likes={108}
-                  comments={56}
                   onDetailsPress={onDetails}
                   status="Posted"
+                  date="November 6, 2025"
+                  timestamp="10:30"
                 />
                 <ReportCard
                   tags={['Discrimination', 'Harassment']}
                   title="Misgendered During Training"
                   location="123 Granville St, Burnaby, BC"
                   excerpt="During a recent apprenticeship training, my supervisor repeatedly referred to me with the wrong pronouns despite me correcting them multiple times."
-                  likes={42}
-                  comments={16}
                   onDetailsPress={onDetails}
                   status="Private"
+                  date="January 7, 2025"
+                  timestamp="10:30"
                 />
               </>
             )}
@@ -185,15 +184,15 @@ const styles = StyleSheet.create({
     right: 0,
     height: '100%',
   },
-  pageTitle: {
-    color: '#FFFFFF',
-    fontSize: 24,
-  },
   header: {
     alignItems: 'center',
     marginTop: 16,
     marginBottom: 16,
     gap: 24,
+  },
+  pageTitle: {
+    color: '#FFFFFF',
+    fontSize: 24,
   },
   contentContainer: {
     paddingHorizontal: 16,
