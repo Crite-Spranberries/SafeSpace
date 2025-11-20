@@ -53,7 +53,7 @@ export default function RecordingsPage() {
         </View>
 
         <ScrollView contentContainerStyle={{ paddingBottom: 10 }}>
-          {/* <Modal isOpen={modalOpen}>  commented out for dev convenience
+          {/* <Modal isOpen={modalOpen}>  
             <View style={styles.modalContent}>
               <Text variant="h4" style={styles.modalTitle}>
                 Enter Passcode
