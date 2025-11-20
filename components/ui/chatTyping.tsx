@@ -15,6 +15,7 @@ export default function ChatTyping() {
         placeholder="Type your message..."
         style={styles.input}
         placeholderTextColor="#6B6B6B"
+        returnKeyType="done"
       />
     </View>
   );
@@ -23,7 +24,7 @@ export default function ChatTyping() {
 const styles = StyleSheet.create({
   container: {
     padding: 10,
-    paddingBottom: 20,
+    paddingBottom: 30,
     borderTopWidth: 1,
     borderTopColor: '#eee',
     backgroundColor: '#fff',

@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollView } from 'react-native';
 import CommentCard from '@/components/ui/CommentCardN';
 import { AppText } from '@/components/ui/AppText';
+import Recommendation from '@/components/ui/recommendation';
 
 const SCREEN_OPTIONS = {
   title: '',
@@ -38,50 +39,82 @@ export default function Report() {
             <AppText weight="medium" style={styles.title}>
               Onsite Harassment Concern Near Coffee Bar
             </AppText>
+            <View
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                marginBottom: 16,
+              }}>
+              <AppText style={styles.descriptionWhite}>November 4, 2025</AppText>
+              <AppText style={styles.descriptionWhite}>10:15 AM</AppText>
+            </View>
             <View className="w-full max-w-md">
               <MapOnDetail />
             </View>
-            <AppText style={styles.subHeader}>Tags</AppText>
-            <View className="mb-4 flex flex-row gap-2 space-x-2">
-              <Badge variant="lightGrey">
-                <AppText>Harassment</AppText>
-              </Badge>
-              <Badge variant="lightGrey">
-                <AppText>Site Safety</AppText>
-              </Badge>
+            <View>
+              <AppText weight="medium" style={styles.subHeader}>
+                Type of Report
+              </AppText>
+              <View className="mb-4 flex flex-row gap-2 space-x-2">
+                <Badge variant="darkGrey">
+                  <AppText style={styles.badgeText}>Harassment</AppText>
+                </Badge>
+                <Badge variant="darkGrey">
+                  <AppText style={styles.badgeText}>Verbal</AppText>
+                </Badge>
+              </View>
             </View>
-            <AppText style={styles.subHeader}>Summary</AppText>
-            <View
-              style={{
-                backgroundColor: 'rgba(255,255,255,0.7)',
-                borderColor: '#fff',
-                borderWidth: 1,
-                padding: 12,
-                borderRadius: 8,
-                marginBottom: 16,
-              }}>
-              <AppText style={styles.descriptionBlack}>
+            <View>
+              <AppText weight="medium" style={styles.subHeader}>
+                Trades Field
+              </AppText>
+              <View className="mb-4 flex flex-row gap-2 space-x-2">
+                <Badge variant="darkGrey">
+                  <AppText style={styles.badgeText}>Electrical</AppText>
+                </Badge>
+              </View>
+            </View>
+            <View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <AppText weight="medium" style={styles.subHeader}>
+                  AI Summary
+                </AppText>
+                <AppText style={{ color: '#B0B0B0' }}>GPT-4o</AppText>
+              </View>
+
+              <AppText style={styles.descriptionWhite}>
                 In the past week, a male individual was observed frequently interacting in ways that
                 have made several tradeswomen uncomfortable. The individual is described as having
                 brunette, curly hair, approximately 180 cm tall, and often seen near the coffee bar
                 area.
               </AppText>
             </View>
-            <View style={styles.commentsSection}>
-              <AppText style={styles.subHeader} weight="medium">
-                Comments
+
+            <View style={styles.recommendationsSection}>
+              <AppText weight="medium" style={styles.subHeader}>
+                Recommended Actions
               </AppText>
-              <CommentCard
-                excerpt="Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in."
-                likes={5}
-                comments={2}
-              />
+              <Recommendation text="Provide Bystander Intervention and Respect Training" />
+              <Recommendation text="Require Pre-Task Safety and Inclusion Briefings" />
+              <Recommendation text="Implement a Zero-Tolerance Harassment Policy" />
+              <Recommendation text="Enforce Proper PPE Usage at All Times" />
             </View>
-            <Button variant="outline" size="lg" radius="lg">
-              <AppText style={{ color: '#FFFFFF' }}>Load More</AppText>
-            </Button>
           </View>
         </ScrollView>
+        <View
+          style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 24, gap: 24 }}>
+          <Button variant="reallyLightGrey" size="lg" radius="full" style={{ flex: 1 }}>
+            <AppText weight="medium" style={{ color: '#5E349E', fontSize: 16 }}>
+              Edit
+            </AppText>
+          </Button>
+          <Button variant="purple" size="lg" radius="full" style={{ flex: 1 }}>
+            <AppText weight="medium" style={{ color: '#FFFFFF', fontSize: 16 }}>
+              Save Report
+            </AppText>
+          </Button>
+        </View>
       </SafeAreaView>
     </>
   );
@@ -113,6 +146,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    gap: 24,
   },
   header: {
     position: 'absolute',
@@ -120,31 +154,34 @@ const styles = StyleSheet.create({
     left: 10,
   },
   subHeader: {
-    fontSize: 18,
-    fontWeight: '500',
-    marginBottom: 4,
+    fontSize: 20,
+    marginBottom: 8,
     color: '#FFF',
   },
   title: {
     fontSize: 24,
-    fontWeight: '500',
-    // marginBottom: 8,
-    marginTop: 24,
-    borderColor: 'transparent',
+    textAlign: 'center',
+    marginTop: 30,
     color: '#FFF',
   },
   descriptionBlack: {
     fontSize: 16,
-    marginBottom: 16,
     fontWeight: '400',
     color: '#000',
   },
   descriptionWhite: {
     fontSize: 16,
-    marginBottom: 16,
     color: '#fff',
   },
-  commentsSection: {
-    marginBottom: 16,
+  recommendationsSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+    marginBottom: 24,
+  },
+  badgeText: {
+    color: '#FFF',
+    marginHorizontal: 8,
+    fontSize: 16,
   },
 });

@@ -32,6 +32,7 @@ export default function CreateReport() {
               size="multiLine"
               variant="darkGrey"
               radius="lg"
+              style={styles.button}
               onPress={() => router.push('/create_report/aiChat')}>
               <View style={styles.buttonText}>
                 <Text style={styles.buttonTitle}>AI Guidance</Text>
@@ -41,24 +42,16 @@ export default function CreateReport() {
               </View>
               <Icon as={ArrowRight} size={24} />
             </Button>
-            <Button size="multiLine" variant="darkGrey" radius="lg">
-              <View style={styles.buttonText}>
-                <Text style={styles.buttonTitle}>Summarize from recordings</Text>
-                <Text style={styles.buttonDescription}>
-                  Create a report based on saved recordings you select.
-                </Text>
-              </View>
-              <Icon as={ArrowRight} size={24} />
-            </Button>
             <Button
               size="multiLine"
               variant="darkGrey"
               radius="lg"
-              onPress={() => router.push('/create_report/form')}>
+              onPress={() => router.push('/create_report/form')}
+              style={styles.button}>
               <View style={styles.buttonText}>
-                <Text style={styles.buttonTitle}>Fill out a form</Text>
+                <Text style={styles.buttonTitle}>Do It Yourself</Text>
                 <Text style={styles.buttonDescription}>
-                  Complete a short form to create a report.
+                  Manually input all the information needed to generate a report.
                 </Text>
               </View>
               <Icon as={ArrowRight} size={24} />
@@ -110,5 +103,9 @@ const styles = StyleSheet.create({
   buttonDescription: {
     fontSize: 14,
     fontWeight: '400',
+  },
+  button: {
+    borderWidth: 1,
+    borderColor: '#FFFFFF80',
   },
 });
