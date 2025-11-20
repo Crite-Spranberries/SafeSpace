@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import * as Haptics from 'expo-haptics';
+import { AppText } from '@/components/ui/AppText';
 
 export default function RecordingsPage() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -45,7 +46,14 @@ export default function RecordingsPage() {
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        <ScrollView contentContainerStyle={{ paddingBottom: 5 }} scrollEnabled={scrollEnabled}>
+        <View style={styles.header}>
+          <AppText weight="bold" style={styles.pageTitle}>
+            My Logs
+          </AppText>
+          <Tabs onTabChange={handleTabChange} tab={activeTab} />
+        </View>
+
+        <ScrollView contentContainerStyle={{ paddingBottom: 10 }} scrollEnabled={scrollEnabled}>
           {/* <Modal isOpen={modalOpen}>  commented out for dev convenience
             <View style={styles.modalContent}>
               <Text variant="h4" style={styles.modalTitle}>
@@ -87,9 +95,9 @@ export default function RecordingsPage() {
               </View>
             </View>
           </Modal> */}
-          <Tabs onTabChange={handleTabChange} tab={activeTab} style={{ marginBottom: 16 }} />
-          <SearchSettings />
-          <View style={styles.pageContainer}>
+
+          <View style={styles.contentContainer}>
+            <SearchSettings style={styles.searchSettings} />
             {activeTab === 'recordings' ? (
               <>
                 <RecordingCard
@@ -177,10 +185,23 @@ const styles = StyleSheet.create({
     right: 0,
     height: '100%',
   },
-  pageContainer: {
-    padding: 16,
+  pageTitle: {
+    color: '#FFFFFF',
+    fontSize: 24,
+  },
+  header: {
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 16,
+    gap: 24,
+  },
+  contentContainer: {
+    paddingHorizontal: 16,
     flexDirection: 'column',
     gap: 16,
+  },
+  searchSettings: {
+    marginBottom: 8,
   },
   tabContainer: {
     marginBottom: 16,

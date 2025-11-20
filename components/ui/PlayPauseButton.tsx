@@ -8,7 +8,7 @@ type PlayPauseButtonProps = {
   onPress: () => void;
 };
 
-export function PlayPauseButton({ isPlaying, onPress }: PlayPauseButtonProps) {
+export default function PlayPauseButton({ isPlaying, onPress }: PlayPauseButtonProps) {
   return (
     <Button
       variant={isPlaying ? 'pauseRecording' : 'startRecording'}

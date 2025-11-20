@@ -3,7 +3,7 @@ import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { Link } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { PlayPauseButton } from './PlayPauseButton';
+import PlayPauseButton from './PlayPauseButton';
 
 import { X } from 'lucide-react-native';
 import { Check } from 'lucide-react-native';
@@ -46,7 +46,7 @@ export default function RecordingControls() {
         <Button variant="cancelRecording">
           <X />
         </Button>
-        <PlayPauseButton />
+        <PlayPauseButton isPlaying={false} onPress={() => {}} />
         <Button variant="saveRecording">
           <Link href="/recording_sandbox/details" asChild>
             <Check />

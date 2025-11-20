@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { AppText } from './AppText';
+import { Pressable } from 'react-native';
 
 type RecordingCardProps = {
   tags?: string[];
@@ -22,27 +23,29 @@ export default function RecordingCard({
   onDetailsPress,
 }: RecordingCardProps) {
   return (
-    <View style={styles.wrapper}>
-      <View style={styles.card}>
-        {tags.length > 0 && (
-          <View style={styles.topBlock}>
-            <AppText style={styles.tags} numberOfLines={1}>
-              {tags.join(', ')}
-            </AppText>
-            <AppText style={styles.duration}>{duration}</AppText>
-          </View>
-        )}
+    <Pressable onPress={onDetailsPress}>
+      <View style={styles.wrapper}>
+        <View style={styles.card}>
+          {tags.length > 0 && (
+            <View style={styles.topBlock}>
+              <AppText style={styles.tags} numberOfLines={1}>
+                {tags.join(', ')}
+              </AppText>
+              <AppText style={styles.duration}>{duration}</AppText>
+            </View>
+          )}
 
-        <AppText numberOfLines={1} style={styles.title} weight="medium">
-          {title}
-        </AppText>
-        {location ? <AppText style={styles.location}>{location}</AppText> : null}
-        <View style={styles.bottomRow}>
-          {date ? <AppText style={styles.date}>{date}</AppText> : null}
-          {timestamp ? <AppText style={styles.timestamp}>{timestamp}</AppText> : null}
+          <AppText numberOfLines={1} style={styles.title} weight="medium">
+            {title}
+          </AppText>
+          {location ? <AppText style={styles.location}>{location}</AppText> : null}
+          <View style={styles.bottomRow}>
+            {date ? <AppText style={styles.date}>{date}</AppText> : null}
+            {timestamp ? <AppText style={styles.timestamp}>{timestamp}</AppText> : null}
+          </View>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
