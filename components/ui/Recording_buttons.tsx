@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from '@/components/ui/text';
+import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/button';
 import { Link } from 'expo-router';
 import { StyleSheet, View } from 'react-native';

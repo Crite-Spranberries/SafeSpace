@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Text } from '@/components/ui/text';
+import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/button';
 import { Link, useRouter } from 'expo-router';
 import { StyleSheet, View, Image, Alert } from 'react-native';

@@ -3,7 +3,7 @@ import { StyleSheet, ScrollView } from 'react-native';
 import { Input } from './input';
 import { Badge } from './badge';
 import { Button } from './button';
-import { Text } from './text';
+import { Text } from './Text';
 import { Icon } from './icon';
 import { Search, Settings2 } from 'lucide-react-native';
 

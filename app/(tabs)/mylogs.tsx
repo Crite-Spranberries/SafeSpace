@@ -9,7 +9,7 @@ import SearchSettings from '@/components/ui/searchSettings';
 import Tabs from '@/components/ui/tabs';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Modal } from '@/components/ui/modal';
-import { Text } from '@/components/ui/text';
+import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/input';
 import * as Haptics from 'expo-haptics';
 

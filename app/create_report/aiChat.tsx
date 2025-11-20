@@ -1,5 +1,5 @@
 import { router, Stack } from 'expo-router';
-import { Text } from '@/components/ui/text';
+import { Text } from '@/components/ui/Text';
 import { StyleSheet, View, KeyboardAvoidingView, Platform } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';

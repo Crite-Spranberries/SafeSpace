@@ -1,4 +1,4 @@
-import { Text } from '@/components/ui/text';
+import { Text } from '@/components/ui/Text';
 import { Link } from 'expo-router';
 import { Button } from '@/components/ui/button';
 import { StyleSheet, View, ScrollView } from 'react-native';
