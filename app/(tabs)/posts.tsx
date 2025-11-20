@@ -2,7 +2,7 @@ import { Text } from '@/components/ui/Text';
 import { Link } from 'expo-router';
 import { Button } from '@/components/ui/button';
 import { StyleSheet, View, ScrollView } from 'react-native';
-import { Card } from '@/components/ui/card';
+import { Card } from '@/components/ui/Card';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/badge';
 import { LinearGradient } from 'expo-linear-gradient';

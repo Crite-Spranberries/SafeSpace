@@ -4,7 +4,7 @@ import { Link, router, usePathname } from 'expo-router';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
-import { Card } from '@/components/ui/card';
+import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
 import MapOnDetail from '@/components/ui/MapOnDetail';
