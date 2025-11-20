@@ -46,7 +46,7 @@ export default function RecordingsPage() {
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <ScrollView contentContainerStyle={{ paddingBottom: 5 }} scrollEnabled={scrollEnabled}>
-          <Modal isOpen={modalOpen}>
+          {/* <Modal isOpen={modalOpen}>  commented out for dev convenience
             <View style={styles.modalContent}>
               <Text variant="h4" style={styles.modalTitle}>
                 Enter Passcode
@@ -86,55 +86,55 @@ export default function RecordingsPage() {
                 </Pressable>
               </View>
             </View>
-          </Modal>
+          </Modal> */}
           <Tabs onTabChange={handleTabChange} tab={activeTab} style={{ marginBottom: 16 }} />
           <SearchSettings />
           <View style={styles.pageContainer}>
             {activeTab === 'recordings' ? (
               <>
                 <RecordingCard
-                  tags={['Pay Gap', 'Workplace Equality']}
-                  title="Talking About the Pay Gap"
-                  location="9200 Kingsway, Burnaby, BC"
-                  timestamp="2025.01.07 15:30"
-                  duration="6:12"
-                  onDragChange={(dragging) => setScrollEnabled(!dragging)}
-                  onDetailsPress={onRecording}
-                />
-                <RecordingCard
-                  tags={['Workplace Harassment', 'Workplace Equality']}
-                  title="Uncomfortable Comments at Work"
-                  location="8200 Kingsway, Burnaby, BC"
-                  timestamp="2025.01.07 15:30"
-                  duration="6:12"
-                  onDragChange={(dragging) => setScrollEnabled(!dragging)}
-                  onDetailsPress={onRecording}
-                />
-                <RecordingCard
-                  tags={['Misgendering', 'Workplace Equality']}
+                  tags={['Misgendering', 'Equality']}
                   title="My Supervisor Keeps Misgendering Me"
                   location="6200 Kingsway, Burnaby, BC"
-                  timestamp="2025.01.07 15:30"
-                  duration="6:12"
-                  onDragChange={(dragging) => setScrollEnabled(!dragging)}
+                  date="January 7, 2025"
+                  timestamp="15:30"
+                  duration="10:12"
                   onDetailsPress={onRecording}
                 />
                 <RecordingCard
-                  tags={['Exclusion', 'Workplace Equality']}
+                  tags={['Harassment', 'Equality']}
+                  title="Uncomfortable Comments at Work"
+                  location="8200 Kingsway, Burnaby, BC"
+                  date="January 7, 2025"
+                  timestamp="15:30"
+                  duration="2:12"
+                  onDetailsPress={onRecording}
+                />
+                <RecordingCard
+                  tags={['Pay Gap', 'Equality']}
+                  title="Talking About the Pay Gap"
+                  location="9200 Kingsway, Burnaby, BC"
+                  date="January 7, 2025"
+                  timestamp="15:30"
+                  duration="1:12"
+                  onDetailsPress={onRecording}
+                />
+                <RecordingCard
+                  tags={['Exclusion', 'Equality']}
                   title="Left Out Again"
                   location="3200 Kingsway, Burnaby, BC"
-                  timestamp="2025.01.07 15:30"
-                  duration="6:12"
-                  onDragChange={(dragging) => setScrollEnabled(!dragging)}
+                  date="January 7, 2025"
+                  timestamp="15:30"
+                  duration="3:12"
                   onDetailsPress={onRecording}
                 />
                 <RecordingCard
-                  tags={['Lack of Response', 'Workplace Equality']}
+                  tags={['Lack of Response', 'Equality']}
                   title="Still No Response from HR"
                   location="5200 Kingsway, Burnaby, BC"
-                  timestamp="2025.01.07 15:30"
-                  duration="6:12"
-                  onDragChange={(dragging) => setScrollEnabled(!dragging)}
+                  date="January 7, 2025"
+                  timestamp="15:30"
+                  duration="5:12"
                   onDetailsPress={onRecording}
                 />
               </>
@@ -159,16 +159,6 @@ export default function RecordingsPage() {
                   comments={16}
                   onDetailsPress={onDetails}
                   status="Private"
-                />
-                <ReportCard
-                  tags={['Discrimination', 'Safety']}
-                  title="Unsafe Equipment Access"
-                  location="789 Bernard Ave, Burnaby, BC"
-                  excerpt="The workshop layout makes it unsafe for me as a non-binary person to access certain machinery without constant supervision, which is stressful and humiliating."
-                  likes={37}
-                  comments={27}
-                  onDetailsPress={onDetails}
-                  status="Draft"
                 />
               </>
             )}
