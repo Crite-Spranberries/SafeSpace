@@ -3,7 +3,7 @@ import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/button';
 import { Link } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { PlayPauseButton } from './PlayPause_button';
+import { PlayPauseButton } from './PlayPauseButton';
 
 import { X } from 'lucide-react-native';
 import { Check } from 'lucide-react-native';

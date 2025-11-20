@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollView } from 'react-native';
 import CommentCard from '@/components/ui/CommentCardN';
 import { AppText } from '@/components/ui/AppText';
-import Recommendation from '@/components/ui/recommendation';
+import Recommendation from '@/components/ui/Recommendation';
 
 const SCREEN_OPTIONS = {
   title: '',

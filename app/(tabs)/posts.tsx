@@ -7,7 +7,7 @@ import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/badge';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import SearchSettings from '@/components/ui/searchSettings';
+import SearchSettings from '@/components/ui/SearchSettings';
 import ReportCard from '@/components/ui/ReportCard';
 import { Icon } from '@/components/ui/icon';
 import { Plus } from 'lucide-react-native';

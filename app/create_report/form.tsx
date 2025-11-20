@@ -23,7 +23,7 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/Select';
 import React from 'react';
 import type { TriggerRef } from '@rn-primitives/select';
 import { AppText } from '@/components/ui/AppText';
