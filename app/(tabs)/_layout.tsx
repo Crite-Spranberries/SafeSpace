@@ -4,7 +4,7 @@ import { House, Newspaper, CircleUserRound, FolderLock, Map, Settings } from 'lu
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { StyleSheet } from 'react-native';
-import { RecordingTabButton } from '@/components/ecordingTabButton';
+import { RecordingTabButton } from '@/components/RecordingTabButton';
 import { LinearGradient } from 'expo-linear-gradient';
 import { HapticTab } from '@/components/HapticTab';
 import { SafeAreaView } from 'react-native-safe-area-context';
