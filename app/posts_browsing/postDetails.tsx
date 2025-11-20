@@ -1,120 +1,16 @@
-import { Button } from '@/components/ui/Button';
-import { Link, useLocalSearchParams } from 'expo-router';
-import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
-import { useState, useEffect } from 'react';
-import { useAudioPlayer } from 'expo-audio';
-import { ArrowLeft, Trash2, PenLine } from 'lucide-react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as FileSystem from 'expo-file-system/legacy';
-import { Asset } from 'expo-asset';
 import { ScrollView } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, Stack, useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import RecordingCardSmall from '@/components/ui/RecordingCardSmall';
 import { AppText } from '@/components/ui/AppText';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/Badge';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 
-// Recording details screen
-
-// ✅ securely load your API key from .env file.
-const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
-
-const SCREEN_OPTIONS = {
-  title: 'Recording Details',
-  headerBackTitle: 'Back',
-};
-
 export default function Details() {
-  const { audioUri } = useLocalSearchParams();
-  const [defAud, setDefAud] = useState<string | null>(null);
-  const [activeUri, setActiveUri] = useState<string | null>(null);
-  const [status, setStatus] = useState('Stopped');
-  const [audTranscribed, setAudTranscribed] = useState<string>(
-    'Transcripter awaiting audio to parse.'
-  );
-
-  // Load default audio file for fallback playback
-  useEffect(() => {
-    const init = async () => {
-      const [{ localUri }] = await Asset.loadAsync(require('@/assets/audio/default.m4a'));
-      setDefAud(localUri);
-      setActiveUri(localUri);
-    };
-    init();
-  }, []);
-
-  // Initialize player based on activeUri
-  const player = useAudioPlayer({ uri: activeUri ?? '' });
-
-  useEffect(() => {
-    const subscription = player.addListener('playbackStatusUpdate', (statusUpdate) => {
-      setStatus(
-        statusUpdate.playing
-          ? 'Playing'
-          : statusUpdate.currentTime && statusUpdate.currentTime > 0
-            ? 'Paused'
-            : 'Stopped'
-      );
-    });
-    return () => subscription?.remove();
-  }, [player]);
-
-  // Unified transcription handler for recorded/default files
-  const Transcribe = async (def: boolean = false) => {
-    const _auduri = def ? defAud : typeof audioUri === 'string' ? audioUri : null;
-
-    if (!_auduri) {
-      Alert.alert('Missing audio to transcribe');
-      return;
-    }
-
-    try {
-      const _resp = await FileSystem.uploadAsync(
-        'https://api.openai.com/v1/audio/transcriptions',
-        _auduri,
-        {
-          headers: { Authorization: `Bearer ${apiKey}` },
-          httpMethod: 'POST',
-          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-          fieldName: 'file',
-          mimeType: 'audio/m4a',
-          parameters: { model: 'gpt-4o-mini-transcribe' },
-        }
-      );
-
-      const _json = JSON.parse(_resp.body);
-      if (_json.text) {
-        setAudTranscribed(_json.text);
-        await AsyncStorage.setItem('transcribe', JSON.stringify(_json.text));
-      }
-    } catch (err) {
-      Alert.alert('Transcription Error', String(err));
-    }
-  };
-
-  // Playback functions
-  const playRecording = () => {
-    if (typeof audioUri === 'string') {
-      setActiveUri(audioUri);
-      player.play();
-    } else {
-      Alert.alert('No recording available');
-    }
-  };
-
-  const playDefault = () => {
-    if (defAud) {
-      setActiveUri(defAud);
-      player.play();
-    } else {
-      Alert.alert('Default audio not loaded');
-    }
-  };
-
   const SCREEN_OPTIONS = {
     title: '',
     headerBackTitle: 'Back',
@@ -126,8 +22,6 @@ export default function Details() {
     ),
   };
 
-  const { showConfirmation } = useConfirmation();
-
   return (
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
@@ -136,23 +30,19 @@ export default function Details() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
             <AppText weight="bold" style={styles.title}>
-              Voice Recording 1
+              Title generated based on summary
             </AppText>
             <View style={styles.subtitleContainer}>
               <AppText style={styles.subtitleText}>November 4, 2025</AppText>
               <AppText style={styles.subtitleText}>10:15 AM</AppText>
             </View>
-            <RecordingCardSmall style={styles.recordingCard} />
             <MapOnDetail address="3700 Willingdon Avenue, Burnaby" style={styles.mapOnDetail} />
 
             <View style={styles.badgeSection}>
               <AppText style={styles.badgeTitle} weight="medium">
-                Tags
+                Type of Report
               </AppText>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.badgeContainer}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <Badge variant="darkGrey" className="mr-2 px-4">
                   <AppText style={styles.badgeText} weight="medium">
                     Harassment
@@ -171,10 +61,23 @@ export default function Details() {
               </ScrollView>
             </View>
 
+            <View style={styles.badgeSection}>
+              <AppText style={styles.badgeTitle} weight="medium">
+                Trades Field
+              </AppText>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <Badge variant="darkGrey" className="mr-2 px-4">
+                  <AppText style={styles.badgeText} weight="medium">
+                    Electrical
+                  </AppText>
+                </Badge>
+              </ScrollView>
+            </View>
+
             <View style={styles.transcriptSection}>
               <View style={styles.transcriptHeader}>
                 <AppText style={styles.transcriptTitle} weight="medium">
-                  AI Transcript
+                  AI Summary
                 </AppText>
                 <AppText style={styles.transcriptModel}>GPT-4o</AppText>
               </View>
@@ -189,37 +92,6 @@ export default function Details() {
                 pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis
                 pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
               </AppText>
-            </View>
-
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={styles.reportIcon}
-                onPress={async () => {
-                  const confirmed = await showConfirmation({
-                    title: 'Delete Recording?',
-                    description:
-                      "Are you sure you want to delete this recording? You can't undo this.",
-                    cancelText: 'Cancel',
-                    confirmText: 'Delete',
-                  });
-
-                  if (confirmed) {
-                    // TODO: Replace this with your real delete logic
-                    Alert.alert('Deleted', 'Recording was deleted');
-                  }
-                }}>
-                <Icon as={Trash2} color="#FFFFFF" size={24} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.editIcon} onPress={() => {}}>
-                <Icon as={PenLine} color="#5E349E" size={24} />
-              </TouchableOpacity>
-              <Link href="./report" asChild>
-                <Button variant="purple" radius="full" style={styles.generateButton}>
-                  <AppText weight="medium" style={styles.reportGenText}>
-                    Generate Report
-                  </AppText>
-                </Button>
-              </Link>
             </View>
           </View>
         </ScrollView>
@@ -259,7 +131,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 10,
     borderRadius: 999,
-    // marginLeft: 10,
   },
   backButtonText: {
     color: 'white',
@@ -292,9 +163,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#fff',
     marginBottom: 12,
-  },
-  badgeContainer: {
-    // justifyContent: 'flex-start',
   },
   badge: {
     paddingHorizontal: 16,

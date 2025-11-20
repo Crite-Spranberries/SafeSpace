@@ -103,7 +103,7 @@ function parseDateTime(dateStr: string, timeStr: string) {
 export default function Profile() {
   const router = useRouter();
   const onDetails = () => {
-    router.push('/recording_sandbox/report');
+    router.push('/posts_browsing/postDetails');
   };
 
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
