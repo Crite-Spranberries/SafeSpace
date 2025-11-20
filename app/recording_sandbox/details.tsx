@@ -18,6 +18,7 @@ import RecordingCardSmall from '@/components/ui/RecordingCardSmall';
 import { AppText } from '@/components/ui/AppText';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/Badge';
+import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 
 // Recording details screen
 
@@ -127,6 +128,8 @@ export default function Details() {
     ),
   };
 
+  const { showConfirmation } = useConfirmation();
+
   return (
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
@@ -191,7 +194,22 @@ export default function Details() {
             </View>
 
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.reportIcon} onPress={() => {}}>
+              <TouchableOpacity
+                style={styles.reportIcon}
+                onPress={async () => {
+                  const confirmed = await showConfirmation({
+                    title: 'Delete Recording?',
+                    description:
+                      "Are you sure you want to delete this recording? You can't undo this.",
+                    cancelText: 'Cancel',
+                    confirmText: 'Delete',
+                  });
+
+                  if (confirmed) {
+                    // TODO: Replace this with your real delete logic
+                    Alert.alert('Deleted', 'Recording was deleted');
+                  }
+                }}>
                 <Icon as={Trash2} color="#FFFFFF" size={24} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.editIcon} onPress={() => {}}>

@@ -25,21 +25,20 @@ export default function ConfirmationDialog({
 }: Props) {
   return (
     <Modal isOpen={isOpen} transparent>
-      <View className="w-full px-3">
-        <View className="w-full max-w-md rounded-[24px] border border-white-500 bg-white-500/70 p-4">
+      <View style={styles.wrapper}>
+        <View style={styles.card}>
           <AppText weight="bold" style={styles.title}>
             {title}
           </AppText>
 
           {description ? <AppText style={styles.description}>{description}</AppText> : null}
 
-          <View className="mt-4 flex-row items-center justify-center gap-4">
+          <View style={styles.buttonRow}>
             <Button
               variant="reallyLightGrey"
               radius="full"
               size="auto"
-              style={styles.buttonFlex}
-              className="h-[48px] px-[24px]"
+              style={[styles.buttonFlex, styles.buttonSize]}
               onPress={onCancel}>
               <AppText weight="medium" style={styles.cancelText}>
                 {cancelText}
@@ -50,8 +49,7 @@ export default function ConfirmationDialog({
               variant="destructive"
               radius="full"
               size="auto"
-              style={styles.buttonFlex}
-              className="h-[48px] px-[24px]"
+              style={[styles.buttonFlex, styles.buttonSize]}
               onPress={onConfirm}>
               <AppText weight="medium" style={styles.confirmText}>
                 {confirmText}
@@ -79,8 +77,31 @@ const styles = StyleSheet.create({
     color: '#000',
     marginBottom: 6,
   },
+  wrapper: {
+    width: '100%',
+    paddingHorizontal: 12,
+  },
+  card: {
+    width: '100%',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#efefef',
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    padding: 16,
+  },
+  buttonRow: {
+    marginTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+  },
   buttonFlex: {
     flex: 1,
+  },
+  buttonSize: {
+    height: 48,
+    paddingHorizontal: 24,
   },
   cancelText: {
     color: '#5E349E',
