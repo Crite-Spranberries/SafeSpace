@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Text } from '@/components/ui/Text';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Link, useRouter } from 'expo-router';
 import { StyleSheet, View, Image, Alert } from 'react-native';
 import { X, Check } from 'lucide-react-native';
-import { PlayPauseButton } from '@/components/ui/PlayPause_button';
+import { PlayPauseButton } from '@/components/ui/PlayPauseButton';
 import { Switch } from '@/components/ui/Switch';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';

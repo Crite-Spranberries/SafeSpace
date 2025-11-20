@@ -1,11 +1,11 @@
 import { Text } from '@/components/ui/Text';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Link, router, usePathname } from 'expo-router';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { RetrieveResponse } from 'roughlyai';
@@ -14,7 +14,7 @@ import { useRouter, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 
 export default function Report() {
   const path = usePathname();

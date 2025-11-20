@@ -1,4 +1,4 @@
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { AudioLines } from 'lucide-react-native';
 import { Link } from 'expo-router';
 import * as Haptics from 'expo-haptics';

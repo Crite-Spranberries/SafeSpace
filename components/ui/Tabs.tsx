@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { Text } from './Text';
 import { StyleSheet, ViewStyle } from 'react-native';
-import { Button } from './button';
+import { Button } from './Button';
 
 type TabsProps = {
   onTabChange: (tab: 'recordings' | 'reports') => void;

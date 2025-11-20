@@ -10,10 +10,10 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { useState } from 'react';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { ArrowLeft, CircleX } from 'lucide-react-native';
 import {
   Select,
@@ -23,7 +23,7 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/Select';
 import React from 'react';
 import type { TriggerRef } from '@rn-primitives/select';
 import { AppText } from '@/components/ui/AppText';

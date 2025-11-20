@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, ImageSourcePropType } from 'react-native';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { Heart, MessageCircleMore, ArrowRight, Globe, EyeOff, PenLine } from 'lucide-react-native';
 import { AppText } from './AppText';
 

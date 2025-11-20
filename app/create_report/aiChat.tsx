@@ -10,14 +10,14 @@ import {
   TouchableOpacity,
   Keyboard,
 } from 'react-native';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { ArrowLeft } from 'lucide-react-native';
 import { useNavigation } from 'expo-router';
-import ChatBubble from '@/components/ui/chatBubble';
+import ChatBubble from '@/components/ui/ChatBubble';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
-import ChatTyping from '@/components/ui/chatTyping';
+import ChatTyping from '@/components/ui/ChatTyping';
 import * as Haptics from 'expo-haptics';
 import { useRef, useState, useEffect } from 'react';
 
