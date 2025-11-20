@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { View } from 'react-native';
 import { Pause } from 'lucide-react-native';
 import { Disc } from 'lucide-react-native';

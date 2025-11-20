@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Text } from '@/components/ui/Text';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Link, useRouter } from 'expo-router';
 import { StyleSheet, View, Image, Alert } from 'react-native';
 import { X, Check } from 'lucide-react-native';

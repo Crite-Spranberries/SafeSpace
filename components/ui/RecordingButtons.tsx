@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text } from '@/components/ui/Text';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Link } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { PlayPauseButton } from './PlayPauseButton';

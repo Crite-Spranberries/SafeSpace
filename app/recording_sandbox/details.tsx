@@ -1,5 +1,5 @@
 import { Text } from '@/components/ui/Text';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import RecordingCardSmall from '@/components/ui/RecordingCardSmall';
 import { AppText } from '@/components/ui/AppText';
 import MapOnDetail from '@/components/ui/MapOnDetail';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/Badge';
 
 // Recording details screen
 

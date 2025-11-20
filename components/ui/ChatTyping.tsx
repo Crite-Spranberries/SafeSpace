@@ -3,7 +3,7 @@ import { Input } from './Input';
 import { StyleSheet } from 'react-native';
 import { Icon } from './Icon';
 import { Mic } from 'lucide-react-native';
-import { Button } from './button';
+import { Button } from './Button';
 
 export default function ChatTyping() {
   return (

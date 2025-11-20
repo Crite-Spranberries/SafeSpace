@@ -1,10 +1,10 @@
 import { Text } from '@/components/ui/Text';
 import { Link } from 'expo-router';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { StyleSheet, View, ScrollView } from 'react-native';
 import { Card } from '@/components/ui/Card';
 import MapOnDetail from '@/components/ui/MapOnDetail';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/Badge';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SearchSettings from '@/components/ui/SearchSettings';

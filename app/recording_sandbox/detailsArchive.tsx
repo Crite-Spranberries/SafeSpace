@@ -1,10 +1,10 @@
 import { Text } from '@/components/ui/Text';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/Badge';
 import { ArrowLeft } from 'lucide-react-native';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
 import { LinearGradient } from 'expo-linear-gradient';
