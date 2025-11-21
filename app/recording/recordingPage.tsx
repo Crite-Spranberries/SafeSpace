@@ -22,7 +22,6 @@ import {
   useAudioRecorderState,
 } from 'expo-audio';
 import { addRecording } from '@/lib/recordings';
-import { Image } from 'react-native';
 import WaveForm from '@/components/ui/WaveForm';
 
 const ensureRecordingPermissions = async () => {
@@ -222,11 +221,11 @@ export default function Recording() {
 
   return (
     <>
+      <Stack.Screen options={SCREEN_OPTIONS} />
       <ImageBackground
         source={require('@/assets/images/recording-background.png')}
         style={styles.background}>
         <SafeAreaView style={{ flex: 1 }}>
-          <Stack.Screen options={SCREEN_OPTIONS} />
           <View style={styles.pageContainer}>
             <AppText weight="bold" style={styles.pageTitle}>
               Voice Recording
@@ -310,13 +309,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
+    paddingTop: 100,
   },
   pageTitle: {
-    marginTop: 90,
-    marginBottom: 60,
     fontSize: 26,
     lineHeight: 28,
     color: '#fff',
+    marginBottom: 90,
   },
   recordingIndicator: {
     flexDirection: 'row',
@@ -341,8 +340,7 @@ const styles = StyleSheet.create({
   waveContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 361,
-    height: 306,
+    marginBottom: 50,
   },
   recordingDotWrapper: {
     width: 18,

@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
-import { TouchableOpacity, View, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { TouchableOpacity, View, StyleSheet, Animated, Easing } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 
 export default function RoundRecordingButton({ isRecording = false, onStart, onStop }) {
@@ -11,6 +11,18 @@ export default function RoundRecordingButton({ isRecording = false, onStart, onS
     }
   }, [isRecording, onStart, onStop]);
 
+  // Animated progress: 0 => start circle, 1 => stop square
+  const progress = useRef(new Animated.Value(isRecording ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: isRecording ? 1 : 0,
+      duration: 1100,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [isRecording, progress]);
+
   return (
     <View style={styles.wrapper}>
       <TouchableOpacity
@@ -19,7 +31,21 @@ export default function RoundRecordingButton({ isRecording = false, onStart, onS
         accessibilityLabel={isRecording ? 'Stop recording' : 'Start recording'}
         onPress={handlePress}
         style={styles.outerCircle}>
-        {isRecording ? <View style={styles.stopSquare} /> : <View style={styles.startCircle} />}
+        <Animated.View
+          accessible={false}
+          style={[
+            styles.innerBase,
+            {
+              width: progress.interpolate({ inputRange: [0, 1], outputRange: [70, 40] }),
+              height: progress.interpolate({ inputRange: [0, 1], outputRange: [70, 40] }),
+              borderRadius: progress.interpolate({ inputRange: [0, 1], outputRange: [999, 8] }),
+              backgroundColor: progress.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['#FF5656', '#9D6DE5'],
+              }),
+            },
+          ]}
+        />
       </TouchableOpacity>
       <AppText style={styles.label}>{isRecording ? 'Stop' : 'Start'}</AppText>
     </View>
@@ -39,18 +65,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 4,
   },
-  startCircle: {
-    backgroundColor: '#FF5656',
-    width: 70,
-    height: 70,
-    borderRadius: 999,
-  },
-  stopSquare: {
-    backgroundColor: '#9D6DE5',
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    position: 'absolute',
+  innerBase: {
+    alignSelf: 'center',
   },
   label: {
     marginTop: 14,
