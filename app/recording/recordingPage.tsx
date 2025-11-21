@@ -23,6 +23,7 @@ import {
 } from 'expo-audio';
 import { addRecording } from '@/lib/recordings';
 import { Image } from 'react-native';
+import WaveForm from '@/components/ui/WaveForm';
 
 const ensureRecordingPermissions = async () => {
   const status = await AudioModule.getRecordingPermissionsAsync();
@@ -232,11 +233,7 @@ export default function Recording() {
             </AppText>
 
             <View style={styles.waveContainer}>
-              <Image
-                source={require('@/assets/images/recording-wave-static.png')}
-                style={styles.recordingWave}
-                resizeMode="contain"
-              />
+              <WaveForm active={recorderState.isRecording} />
             </View>
 
             {recorderState.isRecording ? (
@@ -316,7 +313,7 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     marginTop: 90,
-    marginBottom: 66,
+    marginBottom: 60,
     fontSize: 26,
     lineHeight: 28,
     color: '#fff',
@@ -341,17 +338,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     width: 190,
   },
-  recordingWave: {
-    width: 361,
-    height: 306,
-    marginTop: 8,
-    marginBottom: 8,
-    color: '#FFFFFF',
-  },
   waveContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
     width: 361,
     height: 306,
   },
