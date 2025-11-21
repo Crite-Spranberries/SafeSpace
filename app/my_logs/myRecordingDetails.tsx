@@ -265,7 +265,7 @@ export default function MyRecordingDetails() {
                 onPress={() => {
                   // Navigate to the edit screen, passing current recording metadata
                   router.push({
-                    pathname: '/my_logs/my-recording-edit',
+                    pathname: '/my_logs/myRecordingDetails',
                     params: {
                       recordingId: recordingIdParam ?? '',
                       audioUri: audioUriParam ?? '',

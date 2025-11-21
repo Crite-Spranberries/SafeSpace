@@ -11,7 +11,7 @@ export const RecordingTabButton = () => {
   };
 
   return (
-    <Link href="/recording/recording-page" style={styles.button} onPress={handlePress}>
+    <Link href="/recording/recordingPage" style={styles.button} onPress={handlePress}>
       <Icon as={AudioLines} size={24} color={'#fff'} />
     </Link>
   );

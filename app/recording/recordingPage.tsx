@@ -110,7 +110,7 @@ export default function Recording() {
       await addRecording(payload);
 
       expoRouter.push({
-        pathname: '/my_logs/my-recording-details',
+        pathname: '/my_logs/myRecordingDetails',
         params: {
           audioUri: recordingUri,
           recordingId: payload.id,
