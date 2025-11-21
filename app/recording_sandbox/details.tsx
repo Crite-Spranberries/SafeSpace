@@ -1,11 +1,9 @@
-import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
 import { ArrowLeft, Trash2, PenLine } from 'lucide-react-native';
-import { DescriptionCard } from '@/components/ui/DescriptionCard';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Asset } from 'expo-asset';
@@ -123,7 +121,7 @@ export default function Details() {
     headerTransparent: true,
     headerLeft: () => (
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Icon as={ArrowLeft} size={24} />
+        <Icon as={ArrowLeft} size={16} />
       </TouchableOpacity>
     ),
   };
@@ -133,9 +131,9 @@ export default function Details() {
   return (
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
-      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <Stack.Screen options={SCREEN_OPTIONS} />
-        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 36 }}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
             <AppText weight="bold" style={styles.title}>
               Voice Recording 1
@@ -144,8 +142,8 @@ export default function Details() {
               <AppText style={styles.subtitleText}>November 4, 2025</AppText>
               <AppText style={styles.subtitleText}>10:15 AM</AppText>
             </View>
-            <RecordingCardSmall style={{ marginBottom: 24 }} />
-            <MapOnDetail address="3700 Willingdon Avenue, Burnaby" style={{ marginBottom: 24 }} />
+            <RecordingCardSmall style={styles.recordingCard} />
+            <MapOnDetail address="3700 Willingdon Avenue, Burnaby" style={styles.mapOnDetail} />
 
             <View style={styles.badgeSection}>
               <AppText style={styles.badgeTitle} weight="medium">
@@ -216,7 +214,7 @@ export default function Details() {
                 <Icon as={PenLine} color="#5E349E" size={24} />
               </TouchableOpacity>
               <Link href="./report" asChild>
-                <Button variant="purple" radius="full" className="h-[52px] w-[193px]">
+                <Button variant="purple" radius="full" style={styles.generateButton}>
                   <AppText weight="medium" style={styles.reportGenText}>
                     Generate Report
                   </AppText>
@@ -357,5 +355,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     lineHeight: 19,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 36,
+  },
+  recordingCard: {
+    marginBottom: 24,
+  },
+  mapOnDetail: {
+    marginBottom: 24,
+  },
+  generateButton: {
+    height: 52,
+    width: 193,
   },
 });
