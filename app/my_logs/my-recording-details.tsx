@@ -22,7 +22,7 @@ import { deleteRecording as deleteStoredRecording } from '@/lib/recordings';
 // ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
 
-export default function Details() {
+export default function MyRecordingDetails() {
   const params = useLocalSearchParams<{
     audioUri?: string;
     title?: string;
@@ -260,7 +260,22 @@ export default function Details() {
                 }}>
                 <Icon as={Trash2} color="#FFFFFF" size={24} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.editIcon} onPress={() => {}}>
+              <TouchableOpacity
+                style={styles.editIcon}
+                onPress={() => {
+                  // Navigate to the edit screen, passing current recording metadata
+                  router.push({
+                    pathname: '/my_logs/my-recording-edit',
+                    params: {
+                      recordingId: recordingIdParam ?? '',
+                      audioUri: audioUriParam ?? '',
+                      title: titleParam ?? '',
+                      date: dateParam ?? '',
+                      timestamp: timestampParam ?? '',
+                      duration: durationParam ?? '',
+                    },
+                  });
+                }}>
                 <Icon as={PenLine} color="#5E349E" size={24} />
               </TouchableOpacity>
               <Link href="./my-post-details" asChild>

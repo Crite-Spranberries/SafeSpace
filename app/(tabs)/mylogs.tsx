@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { AppText } from '@/components/ui/AppText';
 import { loadRecordings, StoredRecording } from '@/lib/recordings';
 
-export default function RecordingsPage() {
+export default function MylogsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'recordings' | 'reports'>('recordings');
   const [password, setPassword] = useState('');

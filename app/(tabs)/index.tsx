@@ -32,7 +32,7 @@ const IMAGE_STYLE: ImageStyle = {
   width: 76,
 };
 
-export default function Screen() {
+export default function Home() {
   const { colorScheme } = useColorScheme();
   const router = useRouter();
   const onDetails = () => {

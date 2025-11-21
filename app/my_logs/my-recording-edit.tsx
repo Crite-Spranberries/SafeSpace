@@ -1,8 +1,7 @@
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
-import { ArrowLeft, Trash2, PenLine } from 'lucide-react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ScrollView, Alert } from 'react-native';
+import { ScrollView } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,11 +9,8 @@ import { AppText } from '@/components/ui/AppText';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/Badge';
 import Recommendation from '@/components/ui/Recommendation';
-import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
-import { Link } from 'expo-router';
-import { Button } from '@/components/ui/Button';
 
-export default function MyPostDetails() {
+export default function MyRecordingEdit() {
   const SCREEN_OPTIONS = {
     title: '',
     headerBackTitle: 'Back',
@@ -26,9 +22,6 @@ export default function MyPostDetails() {
     ),
   };
 
-  const { showConfirmation } = useConfirmation();
-  const [isPublic, setIsPublic] = useState(false);
-
   return (
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
@@ -37,7 +30,7 @@ export default function MyPostDetails() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
             <AppText weight="bold" style={styles.title}>
-              Title generated based on summary
+              Edit Details
             </AppText>
             <View style={styles.subtitleContainer}>
               <AppText style={styles.subtitleText}>November 4, 2025</AppText>
@@ -109,81 +102,6 @@ export default function MyPostDetails() {
               <Recommendation text="Require Pre-Task Safety and Inclusion Briefings" />
               <Recommendation text="Implement a Zero-Tolerance Harassment Policy" />
               <Recommendation text="Enforce Proper PPE Usage at All Times" />
-            </View>
-
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={styles.reportIcon}
-                onPress={async () => {
-                  const confirmed = await showConfirmation({
-                    title: 'Delete Report?',
-                    description:
-                      "Are you sure you want to delete this report? You can't undo this.",
-                    cancelText: 'Cancel',
-                    confirmText: 'Delete',
-                    confirmVariant: 'destructive',
-                  });
-
-                  if (confirmed) {
-                    // TODO: Replace this with your real delete logic
-                    Alert.alert('Deleted', 'Report has been deleted.');
-                  }
-                }}>
-                <Icon as={Trash2} color="#FFFFFF" size={24} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.editIcon} onPress={() => {}}>
-                <Icon as={PenLine} color="#5E349E" size={24} />
-              </TouchableOpacity>
-              <Button
-                variant={isPublic ? 'darkGrey' : 'purple'}
-                radius="full"
-                style={styles.postButton}
-                onPress={async () => {
-                  if (!isPublic) {
-                    // Going from private -> public
-                    const confirmed = await showConfirmation({
-                      title: 'Post Report Publicly?',
-                      description: (
-                        <AppText style={styles.confirmationDescription}>
-                          Your report will now be <AppText weight="bold">visible</AppText> to all
-                          SafeSpace users. Personal or identifying information will be{' '}
-                          <AppText weight="bold">censored</AppText> to protect your privacy.
-                        </AppText>
-                      ),
-                      cancelText: 'Cancel',
-                      confirmText: 'Post Publicly',
-                      confirmVariant: 'purple',
-                    });
-
-                    if (confirmed) {
-                      setIsPublic(true);
-                      Alert.alert('Posted', 'Report has been made public.');
-                    }
-                  } else {
-                    // Going from public -> private
-                    const confirmed = await showConfirmation({
-                      title: 'Make Report Private?',
-                      description: (
-                        <AppText style={styles.confirmationDescription}>
-                          Your report will no longer be public. Any comments received on this report
-                          will be deleted.
-                        </AppText>
-                      ),
-                      cancelText: 'Cancel',
-                      confirmText: 'Make Private',
-                      confirmVariant: 'purple',
-                    });
-
-                    if (confirmed) {
-                      setIsPublic(false);
-                      Alert.alert('Updated', 'Report has been made private.');
-                    }
-                  }
-                }}>
-                <AppText weight="medium" style={styles.reportPostText}>
-                  {isPublic ? 'Make Private' : 'Post Publicly'}
-                </AppText>
-              </Button>
             </View>
           </View>
         </ScrollView>
@@ -285,49 +203,10 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column',
     gap: 12,
-    marginBottom: 36,
+    marginBottom: 24,
   },
   recommendTitle: {
     fontSize: 20,
     color: '#fff',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 24,
-    height: 52,
-  },
-  reportIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: '#4D4D4D',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: '#B2B2B2',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderColor: '#efefefff',
-    borderWidth: 1,
-  },
-  reportPostText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    lineHeight: 19,
-  },
-  postButton: {
-    height: 52,
-    width: 193,
-  },
-  confirmationDescription: {
-    fontSize: 20,
-    lineHeight: 24,
-    textAlign: 'center',
-    color: '#000',
   },
 });
