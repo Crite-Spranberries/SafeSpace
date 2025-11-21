@@ -263,7 +263,7 @@ export default function Details() {
               <TouchableOpacity style={styles.editIcon} onPress={() => {}}>
                 <Icon as={PenLine} color="#5E349E" size={24} />
               </TouchableOpacity>
-              <Link href="./report" asChild>
+              <Link href="./my-post-details" asChild>
                 <Button variant="purple" radius="full" style={styles.generateButton}>
                   <AppText weight="medium" style={styles.reportGenText}>
                     Generate Report
