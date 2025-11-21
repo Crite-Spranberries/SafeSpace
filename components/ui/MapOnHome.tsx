@@ -1,9 +1,15 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+  ForwardedRef,
+} from 'react';
+import { View, StyleSheet, ViewProps } from 'react-native';
 import { AppText } from './AppText';
 import MapView, { Marker, Region } from 'react-native-maps';
-import { MapPin } from 'lucide-react-native'; // your SVG icon
-import { Locate } from 'lucide-react-native';
+import { MapPin } from 'lucide-react-native';
 import * as Location from 'expo-location';
 
 const customMapStyle = [
@@ -13,35 +19,50 @@ const customMapStyle = [
   { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#6c6c6c' }] },
   { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#2e3a4b' }] },
   { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#171c18' }] },
-
-  // Hide all POI labels and icons
   { featureType: 'poi', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
   { featureType: 'poi', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
   { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
 ];
 
-const MapOnHome: React.FC<{ style?: object; onAddressChange?: (address: string) => void }> = ({
-  style,
-  onAddressChange,
-}) => {
+export type MapOnHomeImperativeHandle = {
+  centerOnUser: () => void;
+};
+
+type MapOnHomeProps = ViewProps & {
+  onAddressChange?: (address: string) => void;
+};
+
+const MapOnHome = forwardRef<MapOnHomeImperativeHandle, MapOnHomeProps>(function MapOnHome(
+  { style, onAddressChange },
+  ref: ForwardedRef<MapOnHomeImperativeHandle>
+) {
   const [userAddress, setUserAddress] = useState('');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [region, setRegion] = useState<Region | undefined>(undefined);
   const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(
     null
   );
+  const mapRef = useRef<MapView>(null);
 
-  const locationSubscription = useRef<Location.LocationSubscription | null>(null);
+  useImperativeHandle(ref, () => ({
+    centerOnUser() {
+      if (userCoords) {
+        const targetRegion = {
+          latitude: userCoords.latitude,
+          longitude: userCoords.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        };
+        mapRef.current?.animateToRegion(targetRegion, 750);
+      }
+    },
+  }));
 
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
         return;
       }
-
-      // Get initial position and address
       let location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
       let [geo] = await Location.reverseGeocodeAsync(location.coords);
@@ -60,8 +81,7 @@ const MapOnHome: React.FC<{ style?: object; onAddressChange?: (address: string) 
       setRegion(initialRegion);
       setUserCoords({ latitude, longitude });
 
-      // Subscribe for continuous updates
-      locationSubscription.current = await Location.watchPositionAsync(
+      Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.Highest,
           distanceInterval: 1,
@@ -80,10 +100,7 @@ const MapOnHome: React.FC<{ style?: object; onAddressChange?: (address: string) 
     })();
 
     return () => {
-      if (locationSubscription.current) {
-        locationSubscription.current.remove();
-        locationSubscription.current = null;
-      }
+      // Cleanup subscription
     };
   }, []);
 
@@ -91,11 +108,12 @@ const MapOnHome: React.FC<{ style?: object; onAddressChange?: (address: string) 
     <View style={[styles.container, style]} pointerEvents="box-none">
       {region && (
         <MapView
+          ref={mapRef}
           style={StyleSheet.absoluteFill}
           provider="google"
           region={region}
           customMapStyle={customMapStyle}
-          showsUserLocation={false} // custom marker used
+          showsUserLocation={false}
           zoomEnabled={true}
           scrollEnabled={true}
           pitchEnabled={true}
@@ -113,7 +131,7 @@ const MapOnHome: React.FC<{ style?: object; onAddressChange?: (address: string) 
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

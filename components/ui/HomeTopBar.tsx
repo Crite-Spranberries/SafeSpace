@@ -1,14 +1,11 @@
 import { cn } from '@/lib/utils';
 import * as React from 'react';
-import { Pressable, View, StyleSheet, type ViewProps } from 'react-native';
+import { View, Text, StyleSheet, ViewProps } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Icon } from '@/components/ui/Icon';
-import { Bell, CircleHelp } from 'lucide-react-native';
+import { Send } from 'lucide-react-native'; // Paper plane/location icon
 
 type HomeTopBarProps = ViewProps & {
-  onPressNotifications?: () => void;
-  onPressHelp?: () => void;
-  showUnreadDot?: boolean;
+  address?: string | null;
   className?: string;
   glass?: boolean;
   glassIntensity?: number; // blur intensity 0-100
@@ -21,19 +18,17 @@ type HomeTopBarProps = ViewProps & {
 };
 
 export function HomeTopBar({
-  onPressNotifications,
-  onPressHelp,
-  showUnreadDot = true,
+  address,
   className,
   style,
   glass = true,
   glassIntensity = 8,
   glassTint = 'default',
-  glassBgAlpha = 0.6,
-  glossOpacity = 0.1,
-  borderColor = 'rgba(255,255,255,0.6)',
-  borderWidth = 1,
-  radius = 24,
+  glassBgAlpha = 0.65, // Slightly stronger opaque
+  glossOpacity = 0.15, // Slightly stronger gloss
+  borderColor = 'rgba(255,255,255,0.0)',
+  borderWidth = 0,
+  radius = 28, // Bigger rounding
   ...rest
 }: HomeTopBarProps) {
   let BlurViewComponent: any | undefined;
@@ -46,26 +41,29 @@ export function HomeTopBar({
   }
 
   const Container: any = glass && BlurViewComponent ? BlurViewComponent : View;
-
   const containerProps: any = { ...(rest as any) };
   if (Container !== View) {
     containerProps.intensity = glassIntensity;
     containerProps.tint = glassTint;
   }
-
   const bgColor = `rgba(255,255,255,${glassBgAlpha})`;
 
   return (
     <Container
       {...containerProps}
       pointerEvents="auto"
-      className={cn('w-full flex-row items-center justify-between px-4 py-3', className)}
+      className={cn('w-full flex-row items-center justify-center', className)} // px/padding handled in styles
       style={[
         style,
         styles.container,
-        { backgroundColor: bgColor, borderColor, borderWidth, borderRadius: radius },
+        {
+          backgroundColor: bgColor,
+          borderColor,
+          borderWidth,
+          borderRadius: radius,
+        },
       ]}>
-      {/* glossy overlay */}
+      {/* Glossy Overlay */}
       {glass ? (
         <LinearGradient
           colors={[
@@ -77,30 +75,13 @@ export function HomeTopBar({
           style={[styles.gloss, { borderRadius: radius }]}
         />
       ) : null}
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Notifications"
-        onPress={onPressNotifications}
-        hitSlop={8}
-        className="relative h-10 w-10 items-center justify-center rounded-full p-2">
-        <Icon as={Bell} className="text-black" size={24} />
-        {showUnreadDot ? (
-          <View
-            className="absolute h-2 w-2 rounded-full"
-            style={{ backgroundColor: '#E06A36', left: 22, top: 12 }}
-          />
-        ) : null}
-      </Pressable>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Help"
-        onPress={onPressHelp}
-        hitSlop={8}
-        className="h-10 w-10 items-center justify-center rounded-full p-2">
-        <Icon as={CircleHelp} className="text-black" size={24} />
-      </Pressable>
+      {/* Icon + Text Row */}
+      <View style={styles.row}>
+        <Send color="#8449DF" size={28} style={styles.icon} />
+        <Text style={styles.addressText} numberOfLines={1} ellipsizeMode="tail">
+          {address ?? 'Location unknown'}
+        </Text>
+      </View>
     </Container>
   );
 }
@@ -109,21 +90,40 @@ export default HomeTopBar;
 
 const styles = StyleSheet.create({
   container: {
-    // Adjust these as needed for glass lift effect
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 4,
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 6,
     overflow: 'hidden',
+    paddingHorizontal: 30, // Extra horizontal padding
+    paddingVertical: 14, // Extra vertical padding
+    minHeight: 56,
+    justifyContent: 'center',
   },
   gloss: {
     ...StyleSheet.absoluteFillObject,
     height: '100%',
     width: '100%',
     position: 'absolute',
-    borderRadius: 24,
-    opacity: 0.9,
+    borderRadius: 28,
+    opacity: 0.85,
     pointerEvents: 'none',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  icon: {
+    marginRight: 14,
+    marginLeft: 2,
+    alignSelf: 'center',
+  },
+  addressText: {
+    fontSize: 20,
+    color: '#222',
+    fontWeight: '600',
+    flexShrink: 1,
   },
 });
