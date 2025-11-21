@@ -66,8 +66,6 @@ export default function Screen() {
               title="Onsite Harassment Concern Near Coffee Bar"
               location="123 Construction Avenue, Vancouver"
               excerpt="In the past week, a male individual was observed frequently interacting in ways that have made several tradeswomen uncomfortable. The individual is described as having brunette, curly hair, approximately 180 cm tall, and often seen near the coffee bar area."
-              likes={108}
-              comments={56}
               onDetailsPress={onDetails}
             />
             <ReportCard
@@ -75,8 +73,6 @@ export default function Screen() {
               title="Misgendered During Training"
               location="123 Granville St, Burnaby, BC"
               excerpt="During a recent apprenticeship training, my supervisor repeatedly referred to me with the wrong pronouns despite me correcting them multiple times."
-              likes={42}
-              comments={16}
               onDetailsPress={onDetails}
             />
             <ReportCard
@@ -84,8 +80,6 @@ export default function Screen() {
               title="Unsafe Equipment Access"
               location="789 Bernard Ave, Burnaby, BC"
               excerpt="The workshop layout makes it unsafe for me as a non-binary person to access certain machinery without constant supervision, which is stressful and humiliating."
-              likes={37}
-              comments={27}
               onDetailsPress={onDetails}
             />
             <Button variant="outline" className="h-[48px] rounded-[12px]">

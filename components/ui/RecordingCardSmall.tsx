@@ -9,6 +9,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
+import type { AudioSource } from 'expo-audio';
 import { Icon } from '@/components/ui/Icon';
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react-native';
 import { AppText } from './AppText';
@@ -19,8 +20,19 @@ type RecordingCardSmallProps = {
   onPlayPress?: () => void;
   onPrevPress?: () => void;
   onNextPress?: () => void;
+  source?: AudioSource;
   // extra styles passed from pages
   style?: StyleProp<ViewStyle>;
+};
+
+const DEFAULT_AUDIO: AudioSource = require('../../assets/audio/test_audio.mp3');
+
+const formatMs = (ms: number): string => {
+  if (!ms || ms < 0 || !Number.isFinite(ms)) return '0:00';
+  const totalSeconds = Math.floor(ms / 1000);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
 };
 
 export default function RecordingCardSmall({
@@ -29,17 +41,11 @@ export default function RecordingCardSmall({
   onPlayPress,
   onPrevPress,
   onNextPress,
+  source,
   style,
 }: RecordingCardSmallProps) {
-  const formatMs = (ms: number): string => {
-    if (!ms || ms < 0 || !Number.isFinite(ms)) return '0:00';
-    const totalSeconds = Math.floor(ms / 1000);
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
-  };
   // expo-audio player & status
-  const player = useAudioPlayer(require('../../assets/audio/test_audio.mp3'));
+  const player = useAudioPlayer(null);
   const status = useAudioPlayerStatus(player);
   const playing = status.playing;
   const isLoaded = status.isLoaded;
@@ -49,6 +55,7 @@ export default function RecordingCardSmall({
   const [statusProgress, setStatusProgress] = React.useState<number>(0); // 0..1
   const [positionMs, setPositionMs] = React.useState<number>(0);
   const [durationMs, setDurationMs] = React.useState<number>(0);
+  const previousSource = React.useRef<AudioSource | null>(null);
 
   const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v));
 
@@ -56,6 +63,16 @@ export default function RecordingCardSmall({
     // Enable silent mode playback (new API key name differs)
     void setAudioModeAsync({ playsInSilentMode: true });
   }, []);
+
+  React.useEffect(() => {
+    const activeSource = source ?? DEFAULT_AUDIO;
+    if (previousSource.current === activeSource) return;
+    previousSource.current = activeSource;
+    player.replace(activeSource);
+    player.pause();
+    setStatusProgress(0);
+    setPositionMs(0);
+  }, [player, source]);
 
   // Derive progress & ms values from status
   React.useEffect(() => {

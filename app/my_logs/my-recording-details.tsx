@@ -9,7 +9,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Asset } from 'expo-asset';
 import { ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router, Stack, useRouter } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RecordingCardSmall from '@/components/ui/RecordingCardSmall';
@@ -23,13 +23,20 @@ import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 // ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
 
-const SCREEN_OPTIONS = {
-  title: 'Recording Details',
-  headerBackTitle: 'Back',
-};
-
 export default function Details() {
-  const { audioUri } = useLocalSearchParams();
+  const params = useLocalSearchParams<{
+    audioUri?: string;
+    title?: string;
+    date?: string;
+    timestamp?: string;
+    duration?: string;
+    recordingId?: string;
+  }>();
+  const audioUriParam = typeof params.audioUri === 'string' ? params.audioUri : null;
+  const titleParam = typeof params.title === 'string' ? params.title : null;
+  const dateParam = typeof params.date === 'string' ? params.date : null;
+  const timestampParam = typeof params.timestamp === 'string' ? params.timestamp : null;
+  const durationParam = typeof params.duration === 'string' ? params.duration : null;
   const [defAud, setDefAud] = useState<string | null>(null);
   const [activeUri, setActiveUri] = useState<string | null>(null);
   const [status, setStatus] = useState('Stopped');
@@ -39,13 +46,25 @@ export default function Details() {
 
   // Load default audio file for fallback playback
   useEffect(() => {
+    let isMounted = true;
     const init = async () => {
       const [{ localUri }] = await Asset.loadAsync(require('@/assets/audio/default.m4a'));
+      if (!isMounted) return;
       setDefAud(localUri);
-      setActiveUri(localUri);
+      setActiveUri((prev) => prev ?? audioUriParam ?? localUri);
     };
     init();
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (audioUriParam) {
+      setActiveUri(audioUriParam);
+    }
+  }, [audioUriParam]);
 
   // Initialize player based on activeUri
   const player = useAudioPlayer({ uri: activeUri ?? '' });
@@ -65,7 +84,7 @@ export default function Details() {
 
   // Unified transcription handler for recorded/default files
   const Transcribe = async (def: boolean = false) => {
-    const _auduri = def ? defAud : typeof audioUri === 'string' ? audioUri : null;
+    const _auduri = def ? defAud : audioUriParam;
 
     if (!_auduri) {
       Alert.alert('Missing audio to transcribe');
@@ -98,8 +117,8 @@ export default function Details() {
 
   // Playback functions
   const playRecording = () => {
-    if (typeof audioUri === 'string') {
-      setActiveUri(audioUri);
+    if (audioUriParam) {
+      setActiveUri(audioUriParam);
       player.play();
     } else {
       Alert.alert('No recording available');
@@ -136,13 +155,17 @@ export default function Details() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
             <AppText weight="bold" style={styles.title}>
-              Voice Recording
+              {titleParam ?? 'Voice Recording'}
             </AppText>
             <View style={styles.subtitleContainer}>
-              <AppText style={styles.subtitleText}>November 4, 2025</AppText>
-              <AppText style={styles.subtitleText}>10:15 AM</AppText>
+              <AppText style={styles.subtitleText}>{dateParam ?? 'November 4, 2025'}</AppText>
+              <AppText style={styles.subtitleText}>{timestampParam ?? '10:15 AM'}</AppText>
             </View>
-            <RecordingCardSmall style={styles.recordingCard} />
+            <RecordingCardSmall
+              style={styles.recordingCard}
+              duration={durationParam ?? undefined}
+              source={activeUri ?? undefined}
+            />
             <MapOnDetail address="3700 Willingdon Avenue, Burnaby" style={styles.mapOnDetail} />
 
             <View style={styles.badgeSection}>
