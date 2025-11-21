@@ -60,6 +60,7 @@ export default function RecordingsPage() {
         date: recording.date,
         timestamp: recording.timestamp,
         duration: recording.durationLabel,
+        immutable: recording.isImmutable ? '1' : '0',
       },
     });
   };
@@ -98,22 +99,6 @@ export default function RecordingsPage() {
                     />
                   ))
                 )}
-                <RecordingCard
-                  tags={['Misgendering', 'Equality']}
-                  title="My Supervisor Keeps Misgendering Me"
-                  location="6200 Kingsway, Burnaby, BC"
-                  date="March 20, 2025"
-                  timestamp="9:30"
-                  duration="10:12"
-                />
-                <RecordingCard
-                  tags={['Harassment', 'Equality']}
-                  title="Uncomfortable Comments at Work"
-                  location="8200 Kingsway, Burnaby, BC"
-                  date="May 7, 2025"
-                  timestamp="5:30"
-                  duration="2:12"
-                />
               </>
             ) : (
               <>
