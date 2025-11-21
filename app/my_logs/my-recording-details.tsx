@@ -136,7 +136,7 @@ export default function Details() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
             <AppText weight="bold" style={styles.title}>
-              Voice Recording 1
+              Voice Recording
             </AppText>
             <View style={styles.subtitleContainer}>
               <AppText style={styles.subtitleText}>November 4, 2025</AppText>
@@ -201,6 +201,7 @@ export default function Details() {
                       "Are you sure you want to delete this recording? You can't undo this.",
                     cancelText: 'Cancel',
                     confirmText: 'Delete',
+                    confirmVariant: 'destructive',
                   });
 
                   if (confirmed) {

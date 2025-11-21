@@ -7,9 +7,10 @@ import { AppText } from './AppText';
 type Props = {
   isOpen: boolean;
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   cancelText?: string;
   confirmText?: string;
+  confirmVariant?: 'destructive' | 'purple';
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -18,8 +19,9 @@ export default function ConfirmationDialog({
   isOpen,
   title,
   description,
-  cancelText = 'Cancel',
-  confirmText = 'Confirm',
+  cancelText,
+  confirmText,
+  confirmVariant,
   onCancel,
   onConfirm,
 }: Props) {
@@ -31,7 +33,13 @@ export default function ConfirmationDialog({
             {title}
           </AppText>
 
-          {description ? <AppText style={styles.description}>{description}</AppText> : null}
+          {description ? (
+            typeof description === 'string' ? (
+              <AppText style={styles.description}>{description}</AppText>
+            ) : (
+              <View style={styles.descriptionWrapper}>{description}</View>
+            )
+          ) : null}
 
           <View style={styles.buttonRow}>
             <Button
@@ -46,7 +54,7 @@ export default function ConfirmationDialog({
             </Button>
 
             <Button
-              variant="destructive"
+              variant={confirmVariant}
               radius="full"
               size="auto"
               style={[styles.buttonFlex, styles.buttonSize]}
@@ -75,6 +83,9 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     textAlign: 'center',
     color: '#000',
+    marginBottom: 6,
+  },
+  descriptionWrapper: {
     marginBottom: 6,
   },
   wrapper: {
