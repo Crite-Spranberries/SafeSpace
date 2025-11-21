@@ -249,7 +249,7 @@ export default function MyRecordingDetails() {
                       Alert.alert('Deleted', 'Recording has been deleted.', [
                         {
                           text: 'OK',
-                          onPress: () => router.replace('/(tabs)/mylogs'),
+                          onPress: () => router.replace('/(tabs)/myLogs'),
                         },
                       ]);
                     } catch (err) {
@@ -265,7 +265,7 @@ export default function MyRecordingDetails() {
                 onPress={() => {
                   // Navigate to the edit screen, passing current recording metadata
                   router.push({
-                    pathname: '/my_logs/myRecordingDetails',
+                    pathname: '/my_logs/myRecordingEdit',
                     params: {
                       recordingId: recordingIdParam ?? '',
                       audioUri: audioUriParam ?? '',
@@ -278,7 +278,7 @@ export default function MyRecordingDetails() {
                 }}>
                 <Icon as={PenLine} color="#5E349E" size={24} />
               </TouchableOpacity>
-              <Link href="./my-post-details" asChild>
+              <Link href="./myPostDetails" asChild>
                 <Button variant="purple" radius="full" style={styles.generateButton}>
                   <AppText weight="medium" style={styles.reportGenText}>
                     Generate Report
