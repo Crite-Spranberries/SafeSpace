@@ -17,8 +17,7 @@ import { AppText } from '@/components/ui/AppText';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/Badge';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
-
-// Recording details screen
+import { deleteRecording as deleteStoredRecording } from '@/lib/recordings';
 
 // ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
@@ -31,12 +30,15 @@ export default function Details() {
     timestamp?: string;
     duration?: string;
     recordingId?: string;
+    immutable?: string;
   }>();
   const audioUriParam = typeof params.audioUri === 'string' ? params.audioUri : null;
   const titleParam = typeof params.title === 'string' ? params.title : null;
   const dateParam = typeof params.date === 'string' ? params.date : null;
   const timestampParam = typeof params.timestamp === 'string' ? params.timestamp : null;
   const durationParam = typeof params.duration === 'string' ? params.duration : null;
+  const recordingIdParam = typeof params.recordingId === 'string' ? params.recordingId : null;
+  const isImmutable = params.immutable === '1';
   const [defAud, setDefAud] = useState<string | null>(null);
   const [activeUri, setActiveUri] = useState<string | null>(null);
   const [status, setStatus] = useState('Stopped');
@@ -48,7 +50,7 @@ export default function Details() {
   useEffect(() => {
     let isMounted = true;
     const init = async () => {
-      const [{ localUri }] = await Asset.loadAsync(require('@/assets/audio/default.m4a'));
+      const [{ localUri }] = await Asset.loadAsync(require('@/assets/audio/test_audio.mp3'));
       if (!isMounted) return;
       setDefAud(localUri);
       setActiveUri((prev) => prev ?? audioUriParam ?? localUri);
@@ -218,6 +220,10 @@ export default function Details() {
               <TouchableOpacity
                 style={styles.reportIcon}
                 onPress={async () => {
+                  if (isImmutable) {
+                    Alert.alert('Protected Recording', 'Sample recordings cannot be deleted.');
+                    return;
+                  }
                   const confirmed = await showConfirmation({
                     title: 'Delete Recording?',
                     description:
@@ -228,8 +234,28 @@ export default function Details() {
                   });
 
                   if (confirmed) {
-                    // TODO: Replace this with your real delete logic
-                    Alert.alert('Deleted', 'Recording has been deleted.');
+                    try {
+                      player.pause();
+                      if (audioUriParam) {
+                        try {
+                          await FileSystem.deleteAsync(audioUriParam, { idempotent: true });
+                        } catch (fileErr) {
+                          console.warn('Failed to delete audio file', fileErr);
+                        }
+                      }
+                      if (recordingIdParam) {
+                        await deleteStoredRecording(recordingIdParam);
+                      }
+                      Alert.alert('Deleted', 'Recording has been deleted.', [
+                        {
+                          text: 'OK',
+                          onPress: () => router.replace('/(tabs)/mylogs'),
+                        },
+                      ]);
+                    } catch (err) {
+                      console.error('Failed to delete recording', err);
+                      Alert.alert('Delete Failed', 'Something went wrong deleting this recording.');
+                    }
                   }
                 }}>
                 <Icon as={Trash2} color="#FFFFFF" size={24} />
