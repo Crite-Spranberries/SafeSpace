@@ -1,4 +1,5 @@
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
 import { ArrowLeft, Trash2, PenLine } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView, Alert } from 'react-native';
@@ -26,6 +27,7 @@ export default function Details() {
   };
 
   const { showConfirmation } = useConfirmation();
+  const [isPublic, setIsPublic] = useState(false);
 
   return (
     <>
@@ -119,6 +121,7 @@ export default function Details() {
                       "Are you sure you want to delete this report? You can't undo this.",
                     cancelText: 'Cancel',
                     confirmText: 'Delete',
+                    confirmVariant: 'destructive',
                   });
 
                   if (confirmed) {
@@ -131,9 +134,54 @@ export default function Details() {
               <TouchableOpacity style={styles.editIcon} onPress={() => {}}>
                 <Icon as={PenLine} color="#5E349E" size={24} />
               </TouchableOpacity>
-              <Button variant="purple" radius="full" style={styles.postButton}>
+              <Button
+                variant={isPublic ? 'darkGrey' : 'purple'}
+                radius="full"
+                style={styles.postButton}
+                onPress={async () => {
+                  if (!isPublic) {
+                    // Going from private -> public
+                    const confirmed = await showConfirmation({
+                      title: 'Post Report Publicly?',
+                      description: (
+                        <AppText style={styles.confirmationDescription}>
+                          Your report will now be <AppText weight="bold">visible</AppText> to all
+                          SafeSpace users. Personal or identifying information will be{' '}
+                          <AppText weight="bold">censored</AppText> to protect your privacy.
+                        </AppText>
+                      ),
+                      cancelText: 'Cancel',
+                      confirmText: 'Post Publicly',
+                      confirmVariant: 'purple',
+                    });
+
+                    if (confirmed) {
+                      setIsPublic(true);
+                      Alert.alert('Posted', 'Report has been made public.');
+                    }
+                  } else {
+                    // Going from public -> private
+                    const confirmed = await showConfirmation({
+                      title: 'Make Report Private?',
+                      description: (
+                        <AppText style={styles.confirmationDescription}>
+                          Your report will no longer be public. Any comments received on this report
+                          will be deleted.
+                        </AppText>
+                      ),
+                      cancelText: 'Cancel',
+                      confirmText: 'Make Private',
+                      confirmVariant: 'purple',
+                    });
+
+                    if (confirmed) {
+                      setIsPublic(false);
+                      Alert.alert('Updated', 'Report has been made private.');
+                    }
+                  }
+                }}>
                 <AppText weight="medium" style={styles.reportPostText}>
-                  Post Publicly
+                  {isPublic ? 'Make Private' : 'Post Publicly'}
                 </AppText>
               </Button>
             </View>
@@ -237,7 +285,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column',
     gap: 12,
-    marginBottom: 24,
+    marginBottom: 36,
   },
   recommendTitle: {
     fontSize: 20,
@@ -275,5 +323,11 @@ const styles = StyleSheet.create({
   postButton: {
     height: 52,
     width: 193,
+  },
+  confirmationDescription: {
+    fontSize: 20,
+    lineHeight: 24,
+    textAlign: 'center',
+    color: '#000',
   },
 });

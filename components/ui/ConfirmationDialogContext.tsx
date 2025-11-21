@@ -3,7 +3,7 @@ import ConfirmationDialog from './ConfirmationDialog';
 
 type Options = {
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   cancelText?: string;
   confirmText?: string;
   confirmVariant?: 'destructive' | 'purple';
