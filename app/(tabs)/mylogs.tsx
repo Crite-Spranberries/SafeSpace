@@ -2,7 +2,7 @@ import { Pressable, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet, ScrollView } from 'react-native';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import RecordingCard from '@/components/ui/RecordingCard';
 import ReportCard from '@/components/ui/ReportCard';
 import SearchSettings from '@/components/ui/SearchSettings';
@@ -13,18 +13,31 @@ import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import * as Haptics from 'expo-haptics';
 import { AppText } from '@/components/ui/AppText';
+import { loadRecordings, StoredRecording } from '@/lib/recordings';
 
 export default function RecordingsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'recordings' | 'reports'>('recordings');
   const [password, setPassword] = useState('');
+  const [recordings, setRecordings] = useState<StoredRecording[]>([]);
   const router = useRouter();
 
   useFocusEffect(
     useCallback(() => {
+      let isActive = true;
       setModalOpen(true);
+      (async () => {
+        try {
+          const saved = await loadRecordings();
+          if (isActive) {
+            setRecordings(saved);
+          }
+        } catch (err) {
+          console.warn('Failed to load recordings', err);
+        }
+      })();
       return () => {
-        // Cleanup function - you can add logic here if needed
+        isActive = false;
       };
     }, [])
   );
@@ -37,8 +50,18 @@ export default function RecordingsPage() {
     router.push('/my_logs/my-post-details');
   };
 
-  const onRecording = () => {
-    router.push('/my_logs/my-recording-details');
+  const onRecording = (recording: StoredRecording) => {
+    router.push({
+      pathname: '/my_logs/my-recording-details',
+      params: {
+        audioUri: recording.uri,
+        recordingId: recording.id,
+        title: recording.title,
+        date: recording.date,
+        timestamp: recording.timestamp,
+        duration: recording.durationLabel,
+      },
+    });
   };
 
   return (
@@ -53,96 +76,43 @@ export default function RecordingsPage() {
         </View>
 
         <ScrollView contentContainerStyle={{ paddingBottom: 10 }}>
-          {/* <Modal isOpen={modalOpen}>  
-            <View style={styles.modalContent}>
-              <Text variant="h4" style={styles.modalTitle}>
-                Enter Passcode
-              </Text>
-              <Input
-                placeholder="Enter password..."
-                secureTextEntry={true}
-                value={password}
-                onChangeText={setPassword}
-                style={styles.modalInput}
-              />
-              <View style={styles.modalButtonContainer}>
-                <Pressable
-                  style={styles.cancelButtonStyle}
-                  onPress={() => {
-                    router.back();
-                    setModalOpen(false);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  }}>
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  style={
-                    password ? styles.confirmButtonEnabledStyle : styles.confirmButtonDisabledStyle
-                  }
-                  onPress={() => {
-                    setModalOpen(false);
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  }}
-                  disabled={!password}>
-                  <Text
-                    style={
-                      password ? styles.confirmButtonEnabledText : styles.confirmButtonDisabledText
-                    }>
-                    Confirm
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          </Modal> */}
-
           <View style={styles.contentContainer}>
             <SearchSettings style={styles.searchSettings} />
             {activeTab === 'recordings' ? (
               <>
+                {recordings.length === 0 ? (
+                  <AppText style={styles.emptyState}>
+                    You have not saved any recordings yet. Start a recording to see it listed here.
+                  </AppText>
+                ) : (
+                  recordings.map((item) => (
+                    <RecordingCard
+                      key={item.id}
+                      tags={item.tags ?? ['Recorded']}
+                      title={item.title}
+                      location={item.location}
+                      date={item.date}
+                      timestamp={item.timestamp}
+                      duration={item.durationLabel}
+                      onDetailsPress={() => onRecording(item)}
+                    />
+                  ))
+                )}
                 <RecordingCard
                   tags={['Misgendering', 'Equality']}
                   title="My Supervisor Keeps Misgendering Me"
                   location="6200 Kingsway, Burnaby, BC"
-                  date="January 7, 2025"
+                  date="March 20, 2025"
                   timestamp="9:30"
                   duration="10:12"
-                  onDetailsPress={onRecording}
                 />
                 <RecordingCard
                   tags={['Harassment', 'Equality']}
                   title="Uncomfortable Comments at Work"
                   location="8200 Kingsway, Burnaby, BC"
-                  date="January 7, 2025"
-                  timestamp="10:30"
+                  date="May 7, 2025"
+                  timestamp="5:30"
                   duration="2:12"
-                  onDetailsPress={onRecording}
-                />
-                <RecordingCard
-                  tags={['Pay Gap', 'Equality']}
-                  title="Talking About the Pay Gap"
-                  location="9200 Kingsway, Burnaby, BC"
-                  date="January 7, 2025"
-                  timestamp="11:30"
-                  duration="1:12"
-                  onDetailsPress={onRecording}
-                />
-                <RecordingCard
-                  tags={['Exclusion', 'Equality']}
-                  title="Left Out Again"
-                  location="3200 Kingsway, Burnaby, BC"
-                  date="January 7, 2025"
-                  timestamp="18:30"
-                  duration="3:12"
-                  onDetailsPress={onRecording}
-                />
-                <RecordingCard
-                  tags={['Lack of Response', 'Equality']}
-                  title="Still No Response from HR"
-                  location="5200 Kingsway, Burnaby, BC"
-                  date="January 7, 2025"
-                  timestamp="15:30"
-                  duration="5:12"
-                  onDetailsPress={onRecording}
                 />
               </>
             ) : (
@@ -285,5 +255,10 @@ const styles = StyleSheet.create({
   },
   openModalText: {
     color: '#000',
+  },
+  emptyState: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    paddingVertical: 24,
   },
 });
