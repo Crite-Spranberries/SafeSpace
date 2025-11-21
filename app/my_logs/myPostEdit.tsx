@@ -9,7 +9,7 @@ import { AppText } from '@/components/ui/AppText';
 import { Image, TextInput } from 'react-native';
 import { Button } from '@/components/ui/Button';
 
-export default function MyRecordingEdit() {
+export default function MyPostEdit() {
   const SCREEN_OPTIONS = {
     title: '',
     headerBackTitle: 'Back',
@@ -25,7 +25,7 @@ export default function MyRecordingEdit() {
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
       <AppText weight="bold" style={styles.title}>
-        Edit Details
+        Edit Information
       </AppText>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <Stack.Screen options={SCREEN_OPTIONS} />
@@ -33,7 +33,13 @@ export default function MyRecordingEdit() {
           <View style={styles.contentContainer}>
             <View>
               <AppText style={styles.sectionTitle} weight="medium">
-                Title
+                Date
+              </AppText>
+              <TextInput style={styles.textInput} placeholder="" placeholderTextColor="#8A8A8A" />
+            </View>
+            <View>
+              <AppText style={styles.sectionTitle} weight="medium">
+                Time
               </AppText>
               <TextInput style={styles.textInput} placeholder="" placeholderTextColor="#8A8A8A" />
             </View>
@@ -49,29 +55,63 @@ export default function MyRecordingEdit() {
             </View>
             <View>
               <AppText style={styles.sectionTitle} weight="medium">
-                Date
-              </AppText>
-              <TextInput style={styles.textInput} placeholder="" placeholderTextColor="#8A8A8A" />
-            </View>
-            <View>
-              <AppText style={styles.sectionTitle} weight="medium">
-                Time
-              </AppText>
-              <TextInput style={styles.textInput} placeholder="" placeholderTextColor="#8A8A8A" />
-            </View>
-            <View>
-              <AppText style={styles.sectionTitle} weight="medium">
-                Tags
+                Type of Report
               </AppText>
               <TextInput
                 style={styles.textInput}
-                placeholder="Add a tag"
+                placeholder="Add a report type"
                 placeholderTextColor="#8A8A8A"
               />
             </View>
             <View>
               <AppText style={styles.sectionTitle} weight="medium">
-                Edit Transcript
+                Trades Field
+              </AppText>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Add a trades field"
+                placeholderTextColor="#8A8A8A"
+              />
+            </View>
+            <View>
+              <AppText style={styles.sectionTitle} weight="medium">
+                Incident Description
+              </AppText>
+              <TextInput
+                style={[styles.textInput, styles.multilineInput]}
+                placeholder="Edit here"
+                placeholderTextColor="#8A8A8A"
+                multiline={true}
+                numberOfLines={6}
+              />
+            </View>
+            <View>
+              <AppText style={styles.sectionTitle} weight="medium">
+                Primary Individuals Involved
+              </AppText>
+              <TextInput
+                style={[styles.textInput, styles.shortMultilineInput]}
+                placeholder="Edit here"
+                placeholderTextColor="#8A8A8A"
+                multiline={true}
+                numberOfLines={3}
+              />
+            </View>
+            <View>
+              <AppText style={styles.sectionTitle} weight="medium">
+                Witnesses
+              </AppText>
+              <TextInput
+                style={[styles.textInput, styles.shortMultilineInput]}
+                placeholder="Edit here"
+                placeholderTextColor="#8A8A8A"
+                multiline={true}
+                numberOfLines={3}
+              />
+            </View>
+            <View>
+              <AppText style={styles.sectionTitle} weight="medium">
+                Actions Taken
               </AppText>
               <TextInput
                 style={[styles.textInput, styles.multilineInput]}
@@ -84,7 +124,7 @@ export default function MyRecordingEdit() {
           </View>
           <Button variant="purple" radius="full" style={styles.saveButton}>
             <AppText weight="medium" style={styles.saveText}>
-              Save
+              Save & Regenerate Report
             </AppText>
           </Button>
         </ScrollView>
@@ -154,6 +194,10 @@ const styles = StyleSheet.create({
   },
   multilineInput: {
     height: 150,
+    textAlignVertical: 'top',
+  },
+  shortMultilineInput: {
+    height: 80,
     textAlignVertical: 'top',
   },
   saveButton: {

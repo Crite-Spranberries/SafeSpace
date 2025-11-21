@@ -131,7 +131,11 @@ export default function MyPostDetails() {
                 }}>
                 <Icon as={Trash2} color="#FFFFFF" size={24} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.editIcon} onPress={() => {}}>
+              <TouchableOpacity
+                style={styles.editIcon}
+                onPress={() => {
+                  router.push('/my_logs/myPostEdit');
+                }}>
                 <Icon as={PenLine} color="#5E349E" size={24} />
               </TouchableOpacity>
               <Button
