@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AppText } from '@/components/ui/AppText';
-import { StyleSheet, View, Alert, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Alert, TouchableOpacity, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { Icon } from '@/components/ui/Icon';
@@ -14,6 +14,7 @@ import {
   useAudioRecorderState,
 } from 'expo-audio';
 import { addRecording } from '@/lib/recordings';
+import { Image } from 'react-native';
 
 const ensureRecordingPermissions = async () => {
   const status = await AudioModule.getRecordingPermissionsAsync();
@@ -43,6 +44,7 @@ export default function Recording() {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder);
   const [saving, setSaving] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -62,6 +64,7 @@ export default function Recording() {
       }
 
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      setRecordingDuration(0);
       await recorder.prepareToRecordAsync();
       recorder.record();
     } catch (err) {
@@ -122,24 +125,82 @@ export default function Recording() {
       Alert.alert('Recording Error', 'Unable to stop and save the recording.');
     } finally {
       setSaving(false);
+      setRecordingDuration(0);
     }
   }, [expoRouter, recorder, recorderState.isRecording, saving]);
 
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | undefined;
+
+    if (recorderState.isRecording) {
+      const updateDuration = () => {
+        const status = recorder.getStatus();
+        const duration = typeof status.durationMillis === 'number' ? status.durationMillis : 0;
+        setRecordingDuration(duration);
+      };
+
+      updateDuration();
+      interval = setInterval(updateDuration, 200);
+    } else {
+      setRecordingDuration(0);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [recorder, recorderState.isRecording]);
+
+  const formatElapsed = (millis: number) => {
+    if (!millis || millis < 0) {
+      return '00:00:00';
+    }
+    const totalSeconds = Math.floor(millis / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
   return (
     <>
-      <SafeAreaView style={{ flex: 1 }}>
-        <Stack.Screen options={SCREEN_OPTIONS} />
-        <View style={styles.pageContainer}>
-          <AppText weight="bold" style={styles.pageTitle}>
-            View Recording
-          </AppText>
-          <RoundRecordingButton
-            isRecording={recorderState.isRecording}
-            onStart={startRecording}
-            onStop={stopRecording}
-          />
-        </View>
-      </SafeAreaView>
+      <ImageBackground
+        source={require('@/assets/images/recording-background.png')}
+        style={styles.background}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <Stack.Screen options={SCREEN_OPTIONS} />
+          <View style={styles.pageContainer}>
+            <AppText weight="bold" style={styles.pageTitle}>
+              View Recording
+            </AppText>
+
+            <View style={styles.waveContainer}>
+              <Image
+                source={require('@/assets/images/recording-wave-static.png')}
+                style={styles.recordingWave}
+                resizeMode="contain"
+              />
+            </View>
+
+            {recorderState.isRecording ? (
+              <View style={styles.recordingIndicator}>
+                <View style={styles.recordingDot} />
+                <AppText weight="medium" style={styles.recordingTimer}>
+                  {formatElapsed(recordingDuration)}
+                </AppText>
+              </View>
+            ) : null}
+            <View style={styles.recordingButtonContainer}>
+              <RoundRecordingButton
+                isRecording={recorderState.isRecording}
+                onStart={startRecording}
+                onStop={stopRecording}
+              />
+            </View>
+          </View>
+        </SafeAreaView>
+      </ImageBackground>
     </>
   );
 }
@@ -174,14 +235,58 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 999,
   },
+  background: {
+    flex: 1,
+    resizeMode: 'cover',
+  },
   pageContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
   },
   pageTitle: {
-    fontSize: 24,
+    marginTop: 90,
+    marginBottom: 66,
+    fontSize: 26,
     lineHeight: 28,
     color: '#fff',
+  },
+  recordingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    width: 226,
+    height: 48,
+    justifyContent: 'center',
+  },
+  recordingDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#FF5656',
+  },
+  recordingTimer: {
+    fontSize: 40,
+    lineHeight: 48,
+    color: '#FFFFFF',
+    width: 190,
+  },
+  recordingWave: {
+    width: 361,
+    height: 306,
+    marginTop: 8,
+    marginBottom: 8,
+    color: '#FFFFFF',
+  },
+  waveContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    width: 361,
+    height: 306,
+  },
+  recordingButtonContainer: {
+    position: 'absolute',
+    bottom: 50,
   },
 });
