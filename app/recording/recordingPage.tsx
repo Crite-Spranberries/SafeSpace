@@ -1,6 +1,14 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AppText } from '@/components/ui/AppText';
-import { StyleSheet, View, Alert, TouchableOpacity, ImageBackground } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Alert,
+  TouchableOpacity,
+  ImageBackground,
+  Animated,
+  Easing,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { Icon } from '@/components/ui/Icon';
@@ -15,6 +23,7 @@ import {
 } from 'expo-audio';
 import { addRecording } from '@/lib/recordings';
 import { Image } from 'react-native';
+import WaveForm from '@/components/ui/WaveForm';
 
 const ensureRecordingPermissions = async () => {
   const status = await AudioModule.getRecordingPermissionsAsync();
@@ -45,6 +54,54 @@ export default function Recording() {
   const recorderState = useAudioRecorderState(recorder);
   const [saving, setSaving] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+
+  // Animated values for ripple and pulse (breathing) effect
+  const rippleAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  const rippleScale = rippleAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 2.2] });
+  const rippleOpacity = rippleAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] });
+
+  const pulseScale = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1.15] });
+  const pulseOpacity = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] });
+
+  useEffect(() => {
+    const rippleLoop = Animated.loop(
+      Animated.timing(rippleAnim, {
+        toValue: 1,
+        duration: 2500,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      })
+    );
+
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1200,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0,
+          duration: 1200,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    rippleAnim.setValue(0);
+    pulseAnim.setValue(0);
+    rippleLoop.start();
+    pulseLoop.start();
+
+    return () => {
+      rippleLoop.stop();
+      pulseLoop.stop();
+    };
+  }, [rippleAnim, pulseAnim]);
 
   useEffect(() => {
     (async () => {
@@ -172,20 +229,30 @@ export default function Recording() {
           <Stack.Screen options={SCREEN_OPTIONS} />
           <View style={styles.pageContainer}>
             <AppText weight="bold" style={styles.pageTitle}>
-              View Recording
+              Voice Recording
             </AppText>
 
             <View style={styles.waveContainer}>
-              <Image
-                source={require('@/assets/images/recording-wave-static.png')}
-                style={styles.recordingWave}
-                resizeMode="contain"
-              />
+              <WaveForm active={recorderState.isRecording} />
             </View>
 
             {recorderState.isRecording ? (
               <View style={styles.recordingIndicator}>
-                <View style={styles.recordingDot} />
+                <View style={styles.recordingDotWrapper}>
+                  <Animated.View
+                    style={[
+                      styles.ripple,
+                      { transform: [{ scale: rippleScale }], opacity: rippleOpacity },
+                    ]}
+                  />
+                  <Animated.View
+                    style={[
+                      styles.pulse,
+                      { transform: [{ scale: pulseScale }], opacity: pulseOpacity },
+                    ]}
+                  />
+                  <View style={styles.recordingDot} />
+                </View>
                 <AppText weight="medium" style={styles.recordingTimer}>
                   {formatElapsed(recordingDuration)}
                 </AppText>
@@ -246,7 +313,7 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     marginTop: 90,
-    marginBottom: 66,
+    marginBottom: 60,
     fontSize: 26,
     lineHeight: 28,
     color: '#fff',
@@ -260,8 +327,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   recordingDot: {
-    width: 14,
-    height: 14,
+    width: 10,
+    height: 10,
     borderRadius: 7,
     backgroundColor: '#FF5656',
   },
@@ -271,19 +338,31 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     width: 190,
   },
-  recordingWave: {
-    width: 361,
-    height: 306,
-    marginTop: 8,
-    marginBottom: 8,
-    color: '#FFFFFF',
-  },
   waveContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
     width: 361,
     height: 306,
+  },
+  recordingDotWrapper: {
+    width: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ripple: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderRadius: 24,
+    backgroundColor: '#FF5656',
+  },
+  pulse: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderRadius: 14,
+    backgroundColor: '#FF5656',
   },
   recordingButtonContainer: {
     position: 'absolute',
