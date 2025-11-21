@@ -6,6 +6,7 @@ type Options = {
   description?: string;
   cancelText?: string;
   confirmText?: string;
+  confirmVariant?: 'destructive' | 'purple';
 };
 
 type ContextType = {
@@ -37,6 +38,7 @@ export const ConfirmationProvider = ({ children }: { children: ReactNode }) => {
         description={opts?.description}
         cancelText={opts?.cancelText}
         confirmText={opts?.confirmText}
+        confirmVariant={opts?.confirmVariant}
         onCancel={() => handleClose(false)}
         onConfirm={() => handleClose(true)}
       />

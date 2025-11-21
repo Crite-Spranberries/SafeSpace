@@ -10,6 +10,7 @@ type Props = {
   description?: string;
   cancelText?: string;
   confirmText?: string;
+  confirmVariant?: 'destructive' | 'purple';
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -20,6 +21,7 @@ export default function ConfirmationDialog({
   description,
   cancelText = 'Cancel',
   confirmText = 'Confirm',
+  confirmVariant = 'destructive',
   onCancel,
   onConfirm,
 }: Props) {
@@ -46,7 +48,7 @@ export default function ConfirmationDialog({
             </Button>
 
             <Button
-              variant="destructive"
+              variant={confirmVariant}
               radius="full"
               size="auto"
               style={[styles.buttonFlex, styles.buttonSize]}

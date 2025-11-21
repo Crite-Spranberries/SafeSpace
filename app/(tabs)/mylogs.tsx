@@ -34,11 +34,11 @@ export default function RecordingsPage() {
   };
 
   const onDetails = () => {
-    router.push('/recording_sandbox/report');
+    router.push('/my_logs/my-post-details');
   };
 
   const onRecording = () => {
-    router.push('/recording_sandbox/details');
+    router.push('/my_logs/my-recording-details');
   };
 
   return (
