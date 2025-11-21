@@ -2,13 +2,13 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView } from 'react-native';
-import { router, Stack, useRouter } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/Badge';
-import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
+import Recommendation from '@/components/ui/Recommendation';
 
 export default function Details() {
   const SCREEN_OPTIONS = {
@@ -93,6 +93,16 @@ export default function Details() {
                 pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
               </AppText>
             </View>
+
+            <View style={styles.recommendationsSection}>
+              <AppText weight="medium" style={styles.recommendTitle}>
+                Recommended Actions
+              </AppText>
+              <Recommendation text="Provide Bystander Intervention and Respect Training" />
+              <Recommendation text="Require Pre-Task Safety and Inclusion Briefings" />
+              <Recommendation text="Implement a Zero-Tolerance Harassment Policy" />
+              <Recommendation text="Enforce Proper PPE Usage at All Times" />
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -106,16 +116,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 18,
     marginTop: 35,
-  },
-  bottomButtonAlign: {
-    alignContent: 'center',
-    justifyContent: 'space-evenly',
-    flexDirection: 'row',
-  },
-  tagAlign: {
-    alignContent: 'center',
-    flexDirection: 'row',
-    gap: 24,
   },
   background: {
     position: 'absolute',
@@ -131,12 +131,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 10,
     borderRadius: 999,
-  },
-  backButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 4,
   },
   title: {
     fontSize: 24,
@@ -174,7 +168,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   transcriptSection: {
-    marginBottom: 30,
+    marginBottom: 24,
   },
   transcriptHeader: {
     flexDirection: 'row',
@@ -195,35 +189,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 20,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 24,
-    height: 52,
-  },
-  reportIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: '#4D4D4D',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: '#B2B2B2',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderColor: '#efefefff',
-    borderWidth: 1,
-  },
-  reportGenText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    lineHeight: 19,
-  },
   safeArea: {
     flex: 1,
   },
@@ -231,14 +196,17 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 36,
   },
-  recordingCard: {
-    marginBottom: 24,
-  },
   mapOnDetail: {
     marginBottom: 24,
   },
-  generateButton: {
-    height: 52,
-    width: 193,
+  recommendationsSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+    marginBottom: 24,
+  },
+  recommendTitle: {
+    fontSize: 20,
+    color: '#fff',
   },
 });
