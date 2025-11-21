@@ -1,19 +1,19 @@
 import { TouchableOpacity, View } from 'react-native';
 // replaced Text usages below with AppText
 import { StyleSheet } from 'react-native';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { router, Stack, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { useNavigation } from 'expo-router';
 import MapOnDetail from '@/components/ui/MapOnDetail';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/Badge';
 import { ScrollView } from 'react-native';
 import CommentCard from '@/components/ui/CommentCardN';
 import { AppText } from '@/components/ui/AppText';
-import Recommendation from '@/components/ui/recommendation';
+import Recommendation from '@/components/ui/Recommendation';
 
 const SCREEN_OPTIONS = {
   title: '',

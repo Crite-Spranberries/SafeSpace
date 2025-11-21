@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
+import { Button } from '@/components/ui/Button';
+import { Icon } from '@/components/ui/Icon';
 import { Link, Stack } from 'expo-router';
 import { MoonStarIcon, StarIcon, SunIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
@@ -32,7 +32,7 @@ const IMAGE_STYLE: ImageStyle = {
   width: 76,
 };
 
-export default function Screen() {
+export default function Home() {
   const { colorScheme } = useColorScheme();
   const router = useRouter();
   const [address, setAddress] = React.useState<string | null>(null);

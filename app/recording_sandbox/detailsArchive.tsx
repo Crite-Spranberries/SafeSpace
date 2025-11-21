@@ -1,10 +1,10 @@
-import { Text } from '@/components/ui/text';
-import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/Text';
+import { Button } from '@/components/ui/Button';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/Badge';
 import { ArrowLeft } from 'lucide-react-native';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,11 +13,9 @@ import { Asset } from 'expo-asset';
 import { ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, Stack, useRouter } from 'expo-router';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RecordingCardSmall from '@/components/ui/RecordingCardSmall';
-import { AppText } from '@/components/ui/AppText';
-import MapOnDetail from '@/components/ui/MapOnDetail';
 
 // ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
@@ -132,15 +130,10 @@ export default function Details() {
         <Stack.Screen options={SCREEN_OPTIONS} />
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           <View style={styles.container}>
-            <AppText weight="bold" style={styles.title}>
-              Voice Recording 1
-            </AppText>
-            <View style={styles.subtitleContainer}>
-              <AppText style={styles.subtitleText}>November 4, 2025</AppText>
-              <AppText style={styles.subtitleText}>10:15 AM</AppText>
-            </View>
-            <RecordingCardSmall style={{ marginBottom: 24 }} />
-            <MapOnDetail address="3700 Willingdon Avenue, Burnaby" style={{ marginBottom: 24 }} />
+            <Text variant="h2" style={styles.title}>
+              Review Recording
+            </Text>
+            <RecordingCardSmall />
             <View style={{ flexDirection: 'column', gap: 6 }}>
               <Button
                 radius="full"
@@ -240,21 +233,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
+    fontWeight: '500',
+    // marginBottom: 8,
     marginTop: 24,
     borderColor: 'transparent',
-    color: '#FFF',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  subtitleContainer: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  subtitleText: {
-    color: '#FFF',
-    fontSize: 16,
   },
   buttonContainer: {
     flexDirection: 'row',

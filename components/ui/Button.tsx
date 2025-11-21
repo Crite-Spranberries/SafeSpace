@@ -1,4 +1,4 @@
-import { TextClassContext } from '@/components/ui/text';
+import { TextClassContext } from '@/components/ui/Text';
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Platform, Pressable } from 'react-native';
@@ -20,7 +20,7 @@ const buttonVariants = cva(
           Platform.select({ web: 'hover:bg-primary/90' })
         ),
         destructive: cn(
-          'bg-destructive shadow-sm shadow-black/5 active:bg-destructive/90 dark:bg-destructive/60',
+          'bg-destructive shadow-sm shadow-black/5 active:bg-destructive/90 dark:bg-destructive/90',
           Platform.select({
             web: 'hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40',
           })

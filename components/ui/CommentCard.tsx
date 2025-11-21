@@ -1,10 +1,10 @@
-import { Text, TextClassContext } from '@/components/ui/text';
+import { Text, TextClassContext } from '@/components/ui/Text';
 import { cn } from '@/lib/utils';
 import { View, type ViewProps } from 'react-native';
 import { Heart } from 'lucide-react-native';
 import { MessageCircle } from 'lucide-react-native';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 
 type CardProps = ViewProps & {
   description: string;

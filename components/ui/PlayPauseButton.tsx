@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { View } from 'react-native';
 import { Pause } from 'lucide-react-native';
 import { Disc } from 'lucide-react-native';
@@ -8,7 +8,7 @@ type PlayPauseButtonProps = {
   onPress: () => void;
 };
 
-export function PlayPauseButton({ isPlaying, onPress }: PlayPauseButtonProps) {
+export default function PlayPauseButton({ isPlaying, onPress }: PlayPauseButtonProps) {
   return (
     <Button
       variant={isPlaying ? 'pauseRecording' : 'startRecording'}

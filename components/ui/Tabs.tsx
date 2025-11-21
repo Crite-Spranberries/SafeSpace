@@ -1,7 +1,7 @@
 import { View } from 'react-native';
-import { Text } from './text';
+import { AppText } from '@/components/ui/AppText';
 import { StyleSheet, ViewStyle } from 'react-native';
-import { Button } from './button';
+import { Button } from './Button';
 
 type TabsProps = {
   onTabChange: (tab: 'recordings' | 'reports') => void;
@@ -18,16 +18,22 @@ export default function Tabs({ onTabChange, tab, style }: TabsProps) {
           onPress={() => onTabChange('recordings')}
           radius="full"
           style={styles.buttonWrapper}>
-          <Text style={tab === 'recordings' ? styles.activeText : styles.inactiveText}>
+          <AppText
+            weight="medium"
+            style={tab === 'recordings' ? styles.activeText : styles.inactiveText}>
             Recordings
-          </Text>
+          </AppText>
         </Button>
         <Button
           variant={tab === 'reports' ? 'switch' : 'ghost'}
           onPress={() => onTabChange('reports')}
           radius="full"
           style={styles.buttonWrapper}>
-          <Text style={tab === 'reports' ? styles.activeText : styles.inactiveText}>Reports</Text>
+          <AppText
+            weight="medium"
+            style={tab === 'reports' ? styles.activeText : styles.inactiveText}>
+            Reports
+          </AppText>
         </Button>
       </View>
     </>
@@ -40,8 +46,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     overflow: 'hidden',
     marginHorizontal: 16,
-    height: 50,
-    backgroundColor: '#ffffff30',
+    height: 45,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   tab: {
     flex: 1,
@@ -62,10 +70,13 @@ const styles = StyleSheet.create({
   },
   activeText: {
     color: '#000',
-    fontWeight: '600',
+    fontSize: 16,
+    lineHeight: 20,
   },
   inactiveText: {
     color: '#fff',
+    fontSize: 16,
+    lineHeight: 20,
   },
   buttonWrapper: {
     flex: 1,

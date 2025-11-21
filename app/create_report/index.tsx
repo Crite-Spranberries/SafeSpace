@@ -1,9 +1,9 @@
-import { Text } from '@/components/ui/text';
+import { Text } from '@/components/ui/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet, View } from 'react-native';
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
+import { Button } from '@/components/ui/Button';
+import { Icon } from '@/components/ui/Icon';
 import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import { Stack } from 'expo-router';
 import { useNavigation, useRouter } from 'expo-router';

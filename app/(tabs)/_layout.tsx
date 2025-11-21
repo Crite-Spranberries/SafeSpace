@@ -1,10 +1,10 @@
 import { Tabs } from 'expo-router';
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { House, Newspaper, CircleUserRound, FolderLock, Map, Settings } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { StyleSheet } from 'react-native';
-import { RecordingTabButton } from '@/components/recordingTabButton';
+import { RecordingTabButton } from '@/components/RecordingTabButton';
 import { LinearGradient } from 'expo-linear-gradient';
 import { HapticTab } from '@/components/HapticTab';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -50,7 +50,7 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="mylogs"
+          name="myLogs"
           options={{
             title: 'My Logs',
             tabBarIcon: ({ color }) => <Icon as={FolderLock} size={24} color={color} />,

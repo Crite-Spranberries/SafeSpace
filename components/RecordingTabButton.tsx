@@ -1,4 +1,4 @@
-import { Icon } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/Icon';
 import { AudioLines } from 'lucide-react-native';
 import { Link } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -11,7 +11,7 @@ export const RecordingTabButton = () => {
   };
 
   return (
-    <Link href="/(tabs)/recording" style={styles.button} onPress={handlePress}>
+    <Link href="/recording/recordingPage" style={styles.button} onPress={handlePress}>
       <Icon as={AudioLines} size={24} color={'#fff'} />
     </Link>
   );
