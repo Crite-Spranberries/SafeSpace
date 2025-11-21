@@ -22,7 +22,7 @@ import { deleteRecording as deleteStoredRecording } from '@/lib/recordings';
 // ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
 
-export default function Details() {
+export default function MyRecordingDetails() {
   const params = useLocalSearchParams<{
     audioUri?: string;
     title?: string;
@@ -249,7 +249,7 @@ export default function Details() {
                       Alert.alert('Deleted', 'Recording has been deleted.', [
                         {
                           text: 'OK',
-                          onPress: () => router.replace('/(tabs)/mylogs'),
+                          onPress: () => router.replace('/(tabs)/myLogs'),
                         },
                       ]);
                     } catch (err) {
@@ -260,10 +260,25 @@ export default function Details() {
                 }}>
                 <Icon as={Trash2} color="#FFFFFF" size={24} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.editIcon} onPress={() => {}}>
+              <TouchableOpacity
+                style={styles.editIcon}
+                onPress={() => {
+                  // Navigate to the edit screen, passing current recording metadata
+                  router.push({
+                    pathname: '/my_logs/myRecordingEdit',
+                    params: {
+                      recordingId: recordingIdParam ?? '',
+                      audioUri: audioUriParam ?? '',
+                      title: titleParam ?? '',
+                      date: dateParam ?? '',
+                      timestamp: timestampParam ?? '',
+                      duration: durationParam ?? '',
+                    },
+                  });
+                }}>
                 <Icon as={PenLine} color="#5E349E" size={24} />
               </TouchableOpacity>
-              <Link href="./my-post-details" asChild>
+              <Link href="./myPostDetails" asChild>
                 <Button variant="purple" radius="full" style={styles.generateButton}>
                   <AppText weight="medium" style={styles.reportGenText}>
                     Generate Report

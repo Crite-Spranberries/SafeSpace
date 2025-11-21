@@ -14,7 +14,7 @@ import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 import { Link } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 
-export default function Details() {
+export default function MyPostDetails() {
   const SCREEN_OPTIONS = {
     title: '',
     headerBackTitle: 'Back',
@@ -131,7 +131,11 @@ export default function Details() {
                 }}>
                 <Icon as={Trash2} color="#FFFFFF" size={24} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.editIcon} onPress={() => {}}>
+              <TouchableOpacity
+                style={styles.editIcon}
+                onPress={() => {
+                  router.push('/my_logs/myPostEdit');
+                }}>
                 <Icon as={PenLine} color="#5E349E" size={24} />
               </TouchableOpacity>
               <Button

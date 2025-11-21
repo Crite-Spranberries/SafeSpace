@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { AppText } from '@/components/ui/AppText';
 import { loadRecordings, StoredRecording } from '@/lib/recordings';
 
-export default function RecordingsPage() {
+export default function MylogsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'recordings' | 'reports'>('recordings');
   const [password, setPassword] = useState('');
@@ -47,12 +47,12 @@ export default function RecordingsPage() {
   };
 
   const onDetails = () => {
-    router.push('/my_logs/my-post-details');
+    router.push('/my_logs/myPostDetails');
   };
 
   const onRecording = (recording: StoredRecording) => {
     router.push({
-      pathname: '/my_logs/my-recording-details',
+      pathname: '/my_logs/myRecordingDetails',
       params: {
         audioUri: recording.uri,
         recordingId: recording.id,

@@ -100,10 +100,10 @@ function parseDateTime(dateStr: string, timeStr: string) {
   return new Date(year, month, day, hour, minute).getTime();
 }
 
-export default function Profile() {
+export default function Posts() {
   const router = useRouter();
   const onDetails = () => {
-    router.push('/posts_browsing/post-details');
+    router.push('/posts_browsing/postDetails');
   };
 
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
