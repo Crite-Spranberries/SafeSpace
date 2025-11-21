@@ -79,7 +79,7 @@ export default function Home() {
 
         {/* Bottom aligned "Create Report" button */}
         <View
-          style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center', marginBottom: 40 }}
+          style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center', marginBottom: 5 }}
           pointerEvents="auto">
           <Button
             radius="full"

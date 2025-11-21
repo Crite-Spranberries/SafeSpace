@@ -13,6 +13,11 @@ const customMapStyle = [
   { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#6c6c6c' }] },
   { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#2e3a4b' }] },
   { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#171c18' }] },
+
+  // Hide all POI labels and icons
+  { featureType: 'poi', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
 ];
 
 const MapOnHome: React.FC<{ style?: object; onAddressChange?: (address: string) => void }> = ({
