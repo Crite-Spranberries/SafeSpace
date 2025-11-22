@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import usePreloadImages from '@/hooks/usePreloadImages';
 import { AppText } from '@/components/ui/AppText';
 import {
   StyleSheet,
@@ -8,6 +9,7 @@ import {
   ImageBackground,
   Animated,
   Easing,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
@@ -33,6 +35,8 @@ const ensureRecordingPermissions = async () => {
 };
 
 export default function Recording() {
+  // Preload the recording background image so ImageBackground renders smoothly
+  const ready = usePreloadImages([require('@/assets/images/recording-background.png')]);
   const expoRouter = useRouter();
   const SCREEN_OPTIONS = {
     title: '',
@@ -218,6 +222,17 @@ export default function Recording() {
     const seconds = totalSeconds % 60;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
+
+  if (!ready) {
+    return (
+      <>
+        <Stack.Screen options={SCREEN_OPTIONS} />
+        <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#ffffff" />
+        </SafeAreaView>
+      </>
+    );
+  }
 
   return (
     <>
