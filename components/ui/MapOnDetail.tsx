@@ -98,10 +98,10 @@ export default function MapOnDetail({
           region={region}
           customMapStyle={customMapStyle}
           showsUserLocation={false}
-          zoomEnabled
-          scrollEnabled
-          pitchEnabled
-          rotateEnabled>
+          zoomEnabled={true}
+          scrollEnabled={false}
+          pitchEnabled={false}
+          rotateEnabled={false}>
           {userCoords && (
             <Marker
               coordinate={userCoords}
