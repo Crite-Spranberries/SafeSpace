@@ -1,134 +1,132 @@
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { Link, Stack } from 'expo-router';
-import { MoonStarIcon, StarIcon, SunIcon } from 'lucide-react-native';
+import { MoonStarIcon, SunIcon, Plus, Locate } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Image, ImageBackground, type ImageStyle, View } from 'react-native';
-import { StyleSheet, ScrollView } from 'react-native';
+import { View, Pressable } from 'react-native';
+import { StyleSheet } from 'react-native';
 import MapOnHome from '@/components/ui/MapOnHome';
-import ReportCard from '@/components/ui/ReportCard';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
-// import Details from '../recording_sandbox/details';
-import Recording from './recording';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
+import { Text } from '@/components/ui/Text';
 import HomeTopBar from '@/components/ui/HomeTopBar';
 import { useRouter } from 'expo-router';
-
-const LOGO = {
-  light: require('@/assets/images/react-native-reusables-light.png'),
-  dark: require('@/assets/images/react-native-reusables-dark.png'),
-};
-
-const SCREEN_OPTIONS = {
-  title: 'Home',
-  headerTransparent: true,
-  headerRight: () => <ThemeToggle />,
-};
-
-const IMAGE_STYLE: ImageStyle = {
-  height: 76,
-  width: 76,
-};
 
 export default function Home() {
   const { colorScheme } = useColorScheme();
   const router = useRouter();
+  const [address, setAddress] = React.useState<string | null>(null);
+  const insets = useSafeAreaInsets();
+
+  // Ref for map actions
+  const mapRef = React.useRef<any>(null);
+
   const onDetails = () => {
     router.push('/create_report/report');
   };
-  // background: linear-gradient(180deg, #371F5E 0%, #000 30.29%);
+
+  const onCenterLocation = () => {
+    mapRef.current?.centerOnUser();
+  };
+
   return (
-    <>
-      <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
-      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        <View style={{ position: 'absolute', top: 60, left: 16, right: 16, zIndex: 10 }}>
-          <HomeTopBar />
+    <View style={{ flex: 1 }}>
+      <MapOnHome ref={mapRef} style={StyleSheet.absoluteFill} onAddressChange={setAddress} />
+      <SafeAreaView
+        style={{ flex: 1, position: 'absolute', width: '100%', height: '100%' }}
+        pointerEvents="box-none">
+        <View
+          style={{
+            position: 'absolute',
+            top: insets.top + 16,
+            left: 16,
+            right: 16,
+            zIndex: 10,
+          }}>
+          <HomeTopBar
+            address={address}
+            glass
+            borderColor="rgba(255,255,255,0.5)"
+            borderWidth={1}
+            radius={24}
+          />
+          <Text variant="h4">Nearby Reports</Text>
         </View>
-        <ScrollView contentContainerStyle={{ paddingTop: 70, paddingBottom: 5 }}>
-          <View style={styles.pageContainer}>
-            <View className="w-full max-w-md">
-              <MapOnHome />
-            </View>
-            <Link href="../create_report" asChild>
-              <Button radius="full" className="mt-2 h-[52px]">
-                <AppText style={{ fontSize: 20, lineHeight: 24 }} weight="medium">
-                  Create Report
-                </AppText>
-              </Button>
-            </Link>
-            <AppText style={styles.reportSectionHeader} weight="bold">
-              Reports Near You
-            </AppText>
-            <ReportCard
-              tags={['Harassment', 'Site Safety']}
-              title="Onsite Harassment Concern Near Coffee Bar"
-              location="123 Construction Avenue, Vancouver"
-              excerpt="In the past week, a male individual was observed frequently interacting in ways that have made several tradeswomen uncomfortable. The individual is described as having brunette, curly hair, approximately 180 cm tall, and often seen near the coffee bar area."
-              onDetailsPress={onDetails}
-            />
-            <ReportCard
-              tags={['Discrimination', 'Harassment']}
-              title="Misgendered During Training"
-              location="123 Granville St, Burnaby, BC"
-              excerpt="During a recent apprenticeship training, my supervisor repeatedly referred to me with the wrong pronouns despite me correcting them multiple times."
-              onDetailsPress={onDetails}
-            />
-            <ReportCard
-              tags={['Discrimination', 'Safety']}
-              title="Unsafe Equipment Access"
-              location="789 Bernard Ave, Burnaby, BC"
-              excerpt="The workshop layout makes it unsafe for me as a non-binary person to access certain machinery without constant supervision, which is stressful and humiliating."
-              onDetailsPress={onDetails}
-            />
-            <Button variant="outline" className="h-[48px] rounded-[12px]">
-              <AppText style={{ fontSize: 16, lineHeight: 20, color: '#FFFFFF' }} weight="medium">
-                View More
-              </AppText>
-            </Button>
+
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            marginBottom: 5,
+            width: '100%',
+          }}
+          pointerEvents="auto">
+          {/* Horizontal row above the button for card and location button */}
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              width: '90%',
+              alignSelf: 'center',
+              marginBottom: 16,
+              minHeight: 56, // matches button height
+            }}>
+            {/* Placeholder for future card */}
+            {/* <View style={{ flex: 1, marginRight: 12 }}>{middleCard}</View> */}
+
+            {/* Center map button at end/right */}
+            <Pressable
+              onPress={onCenterLocation}
+              style={{
+                marginLeft: 'auto', // pushes to right edge
+                backgroundColor: '#fff',
+                padding: 14,
+                borderRadius: 14,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 7,
+                elevation: 6,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              <Locate color="#8449DF" size={28} />
+            </Pressable>
           </View>
-        </ScrollView>
+
+          {/* Create Report button (remains centered at bottom) */}
+          <Button
+            radius="full"
+            style={{
+              width: '90%',
+              minHeight: 56,
+              paddingVertical: 16,
+              justifyContent: 'center',
+              alignItems: 'center',
+              flexDirection: 'row',
+              alignSelf: 'center',
+            }}
+            onPress={onDetails}>
+            <AppText
+              style={{
+                fontSize: 20,
+                lineHeight: 24,
+                textAlignVertical: 'center',
+                fontWeight: '500',
+                marginRight: 8,
+              }}
+              weight="medium">
+              Create Report
+            </AppText>
+            <Plus color="#8449DF" size={28} />
+          </Button>
+        </View>
       </SafeAreaView>
-    </>
+    </View>
   );
 }
 
-const THEME_ICONS = {
-  light: SunIcon,
-  dark: MoonStarIcon,
-};
-
-function ThemeToggle() {
-  const { colorScheme, toggleColorScheme } = useColorScheme();
-
-  return (
-    <Button
-      onPressIn={toggleColorScheme}
-      size="icon"
-      variant="ghost"
-      radius="full"
-      className="ios:size-9 rounded-full web:mx-4">
-      <Icon as={THEME_ICONS[colorScheme ?? 'light']} className="size-5" />
-    </Button>
-  );
-}
-
-const styles = StyleSheet.create({
-  pageContainer: {
-    padding: 16,
-    flexDirection: 'column',
-    gap: 16,
-  },
-  background: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    height: '100%',
-  },
-  reportSectionHeader: {
-    fontSize: 24,
-    color: '#FFFFFF',
-  },
-});
+// ...ThemeToggle and styles unchanged
