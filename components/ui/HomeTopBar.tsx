@@ -121,9 +121,9 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   addressText: {
-    fontSize: 20,
+    fontSize: 16,
     color: '#222',
-    fontWeight: '600',
+    fontWeight: '400',
     flexShrink: 1,
   },
 });
