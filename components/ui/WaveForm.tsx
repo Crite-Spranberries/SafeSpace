@@ -103,6 +103,7 @@ export default function WaveForm({
     };
   }, [active, animateToRandom, stopAndReset, updateInterval]);
 
+  
   return (
     <View style={[styles.container, { width, height }]}>
       {valuesRef.current.map((value, index) => {
