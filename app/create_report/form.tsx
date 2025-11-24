@@ -58,7 +58,7 @@ export default function Form() {
     actionsTaken: '',
   });
 
-  const [date, setDate] = useState<Date>(new Date(1598051730000));
+  const [date, setDate] = useState<Date>(new Date());
   const [mode, setMode] = useState<'date' | 'time'>('date');
   const [show, setShow] = useState<boolean>(false);
 
@@ -277,6 +277,7 @@ export default function Form() {
               <AppText weight="medium" style={styles.label}>
                 Actions Taken
               </AppText>
+
               <Input
                 placeholder="Was anything done in response?"
                 style={[styles.input, { height: 120, paddingTop: 12 }]}
