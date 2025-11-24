@@ -20,6 +20,9 @@ import { AppText } from '@/components/ui/AppText';
 import ChatTyping from '@/components/ui/ChatTyping';
 import * as Haptics from 'expo-haptics';
 import { useRef, useState, useEffect } from 'react';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { Asset } from 'expo-asset';
+import { ActivityIndicator } from 'react-native';
 
 const SCREEN_OPTIONS = {
   title: '',
@@ -42,6 +45,39 @@ export default function aiChat() {
   const navigation = useNavigation();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [playerReady, setPlayerReady] = useState(false);
+
+  const videoSource = require('../../assets/video/ai-safi-blob.mov');
+
+  // Preload the video asset
+  useEffect(() => {
+    const preloadAsset = async () => {
+      try {
+        const asset = Asset.fromModule(videoSource);
+        await asset.downloadAsync();
+        setVideoLoaded(true);
+      } catch (error) {
+        console.warn('Failed to preload video asset:', error);
+        setVideoLoaded(true); // Continue anyway
+      }
+    };
+    preloadAsset();
+  }, []);
+
+  const player = useVideoPlayer(videoLoaded ? videoSource : null, (player) => {
+    player.loop = true;
+    player.muted = true;
+    player.playbackRate = 1;
+
+    // Add status listener to know when video is ready
+    player.addListener('statusChange', (status) => {
+      if (status.status === 'readyToPlay') {
+        setPlayerReady(true);
+        player.play();
+      }
+    });
+  });
 
   const [chat, setChat] = useState<Array<{ type: 'safi' | 'user'; text: string }>>([
     {
@@ -81,11 +117,21 @@ export default function aiChat() {
         <KeyboardAvoidingView
           style={styles.contentWrapper}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}>
-          <Image
-            source={require('../../assets/images/Safi.png')}
-            style={keyboardVisible ? styles.imageSmall : styles.image}
-            resizeMode="contain"
+          keyboardVerticalOffset={Platform.OS === 'ios' ? -25 : 0}>
+          {!playerReady && (
+            <View style={keyboardVisible ? styles.imageSmall : styles.image}>
+              <ActivityIndicator size="large" color="#8B5CF6" style={styles.loader} />
+            </View>
+          )}
+          <VideoView
+            style={[
+              keyboardVisible ? styles.imageSmall : styles.image,
+              !playerReady && styles.hidden,
+            ]}
+            player={player}
+            allowsFullscreen={false}
+            allowsPictureInPicture={false}
+            nativeControls={false}
           />
           <View style={{ flex: 1, position: 'relative' }}>
             <Animated.ScrollView
@@ -107,7 +153,12 @@ export default function aiChat() {
                 />
                 <ChatBubble type="safi" text="Did this happen at your current location?" /> */}
                 {chat.map((message, index) => (
-                  <ChatBubble key={index} type={message.type} text={message.text} />
+                  <ChatBubble
+                    key={index}
+                    type={message.type}
+                    text={message.text}
+                    style={message.type === 'safi' ? styles.safiBubble : styles.userBubble}
+                  />
                 ))}
               </View>
             </Animated.ScrollView>
@@ -169,14 +220,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   image: {
-    width: '100%',
+    width: '80%',
+    aspectRatio: 1,
+    alignSelf: 'center',
   },
   imageSmall: {
-    height: '35%',
+    width: '40%',
+    aspectRatio: 1,
     alignSelf: 'center',
+  },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hidden: {
+    opacity: 0,
+    position: 'absolute',
   },
   chatContainer: {
     gap: 16,
     marginBottom: 16,
+  },
+  safiBubble: {
+    alignSelf: 'flex-start',
+  },
+  userBubble: {
+    alignSelf: 'flex-end',
   },
 });
