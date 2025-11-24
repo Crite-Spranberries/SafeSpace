@@ -17,19 +17,21 @@ export default function ChatBubble({ text, type }: Props) {
 
 const styles = StyleSheet.create({
   safiContainer: {
-    width: '100%',
-    alignSelf: 'stretch',
+    width: '90%',
+    alignSelf: 'flex-start',
     backgroundColor: 'rgba(255, 255, 255, 0.30)',
     borderWidth: 1,
     padding: 12,
     borderRadius: 12,
+    borderBottomLeftRadius: 0,
   },
   userContainer: {
-    width: '100%',
-    alignSelf: 'stretch',
+    width: '90%',
+    alignSelf: 'flex-end',
     backgroundColor: '#fff',
     padding: 12,
     borderRadius: 12,
+    borderBottomRightRadius: 0,
   },
   safiText: {
     color: 'white',

@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/Button';
 import { Link, useLocalSearchParams } from 'expo-router';
-import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
 import { ArrowLeft, Trash2, PenLine } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 import { ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,7 +17,9 @@ import { AppText } from '@/components/ui/AppText';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/Badge';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
-import { deleteRecording as deleteStoredRecording } from '@/lib/recordings';
+import { deleteRecording as deleteStoredRecording, updateRecording } from '@/lib/recordings';
+import { generateReport } from '@/lib/ai';
+import { addReport } from '@/lib/reports';
 
 // ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
@@ -32,6 +34,7 @@ export default function MyRecordingDetails() {
     recordingId?: string;
     immutable?: string;
     transcript?: string;
+    report?: string;
   }>();
   const audioUriParam = typeof params.audioUri === 'string' ? params.audioUri : null;
   const titleParam = typeof params.title === 'string' ? params.title : null;
@@ -40,10 +43,12 @@ export default function MyRecordingDetails() {
   const durationParam = typeof params.duration === 'string' ? params.duration : null;
   const recordingIdParam = typeof params.recordingId === 'string' ? params.recordingId : null;
   const transcriptParam = typeof params.transcript === 'string' ? params.transcript : null;
+  const reportParam = typeof params.report === 'string' ? params.report : null;
   const isImmutable = params.immutable === '1';
   const [defAud, setDefAud] = useState<string | null>(null);
   const [activeUri, setActiveUri] = useState<string | null>(null);
   const [status, setStatus] = useState('Stopped');
+  const [isGenerating, setIsGenerating] = useState(false);
   // const [audTranscribed, setAudTranscribed] = useState<string>(
   //   transcriptParam || 'Transcripter awaiting audio to parse.'
   // );
@@ -138,6 +143,59 @@ export default function MyRecordingDetails() {
   //   }
   // };
 
+  const handleGenerateReport = async () => {
+    if (!transcriptParam) {
+      Alert.alert('No Transcript', 'Cannot generate a report without a transcript.');
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      const generated = await generateReport(transcriptParam);
+
+      if (generated) {
+        // 1. Save to Reports
+        const createdAt = new Date();
+        const newReportId = `${createdAt.getTime()}_report`;
+        const reportTitle = titleParam || 'Generated Report';
+
+        await addReport({
+          id: newReportId,
+          title: reportTitle,
+          date: dateParam || '',
+          timestamp: timestampParam || '',
+          status: 'Private',
+          content: generated,
+          recordingId: recordingIdParam || undefined,
+          tags: ['Sexism'],
+          excerpt: generated.substring(0, 100) + '...',
+        });
+
+        // 2. Update Recording with report link
+        if (recordingIdParam) {
+          await updateRecording(recordingIdParam, { report: generated });
+        }
+
+        // 3. Navigate
+        router.push({
+          pathname: '/my_logs/myPostDetails',
+          params: {
+            report: generated,
+            title: reportTitle,
+            id: newReportId,
+          },
+        });
+      } else {
+        Alert.alert('Generation Failed', 'Could not generate report. Please try again.');
+      }
+    } catch (err) {
+      console.error('Manual report generation failed', err);
+      Alert.alert('Error', 'An error occurred while generating the report.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const SCREEN_OPTIONS = {
     title: '',
     headerBackTitle: 'Back',
@@ -182,17 +240,7 @@ export default function MyRecordingDetails() {
                 style={styles.badgeContainer}>
                 <Badge variant="darkGrey" className="mr-2 px-4">
                   <AppText style={styles.badgeText} weight="medium">
-                    Harassment
-                  </AppText>
-                </Badge>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Electrical
-                  </AppText>
-                </Badge>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Warning
+                    Sexism
                   </AppText>
                 </Badge>
               </ScrollView>
@@ -205,7 +253,9 @@ export default function MyRecordingDetails() {
                 </AppText>
                 <AppText style={styles.transcriptModel}>GPT-4o</AppText>
               </View>
-              <AppText style={styles.transcriptText}>{transcriptParam ?? 'No transcript available.'}</AppText>
+              <AppText style={styles.transcriptText}>
+                {transcriptParam ?? 'No transcript available.'}
+              </AppText>
             </View>
 
             <View style={styles.buttonContainer}>
@@ -270,13 +320,38 @@ export default function MyRecordingDetails() {
                 }}>
                 <Icon as={PenLine} color="#5E349E" size={24} />
               </TouchableOpacity>
-              <Link href="./myPostDetails" asChild>
-                <Button variant="purple" radius="full" style={styles.generateButton}>
-                  <AppText weight="medium" style={styles.reportGenText}>
-                    Generate Report
-                  </AppText>
+              {reportParam ? (
+                <Link
+                  href={{
+                    pathname: './myPostDetails',
+                    params: {
+                      report: reportParam,
+                      title: titleParam || 'Generated Report',
+                    },
+                  }}
+                  asChild>
+                  <Button variant="purple" radius="full" style={styles.generateButton}>
+                    <AppText weight="medium" style={styles.reportGenText}>
+                      View Report
+                    </AppText>
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  variant="purple"
+                  radius="full"
+                  style={styles.generateButton}
+                  onPress={handleGenerateReport}
+                  disabled={isGenerating}>
+                  {isGenerating ? (
+                    <ActivityIndicator color="#FFF" />
+                  ) : (
+                    <AppText weight="medium" style={styles.reportGenText}>
+                      Generate Report
+                    </AppText>
+                  )}
                 </Button>
-              </Link>
+              )}
             </View>
           </View>
         </ScrollView>

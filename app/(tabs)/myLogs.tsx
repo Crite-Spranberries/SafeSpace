@@ -14,12 +14,14 @@ import { Input } from '@/components/ui/Input';
 import * as Haptics from 'expo-haptics';
 import { AppText } from '@/components/ui/AppText';
 import { loadRecordings, StoredRecording } from '@/lib/recordings';
+import { loadReports, StoredReport } from '@/lib/reports';
 
 export default function MylogsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'recordings' | 'reports'>('recordings');
   const [password, setPassword] = useState('');
   const [recordings, setRecordings] = useState<StoredRecording[]>([]);
+  const [reports, setReports] = useState<StoredReport[]>([]);
   const router = useRouter();
 
   useFocusEffect(
@@ -28,12 +30,14 @@ export default function MylogsPage() {
       setModalOpen(true);
       (async () => {
         try {
-          const saved = await loadRecordings();
+          const savedRecordings = await loadRecordings();
+          const savedReports = await loadReports();
           if (isActive) {
-            setRecordings(saved);
+            setRecordings(savedRecordings);
+            setReports(savedReports);
           }
         } catch (err) {
-          console.warn('Failed to load recordings', err);
+          console.warn('Failed to load data', err);
         }
       })();
       return () => {
@@ -46,8 +50,15 @@ export default function MylogsPage() {
     setActiveTab(tab);
   };
 
-  const onDetails = () => {
-    router.push('/my_logs/myPostDetails');
+  const onReportDetails = (report: StoredReport) => {
+    router.push({
+      pathname: '/my_logs/myPostDetails',
+      params: {
+        report: report.content,
+        title: report.title,
+        id: report.id,
+      },
+    });
   };
 
   const onRecording = (recording: StoredRecording) => {
@@ -62,6 +73,7 @@ export default function MylogsPage() {
         duration: recording.durationLabel,
         immutable: recording.isImmutable ? '1' : '0',
         transcript: recording.transcript,
+        report: recording.report,
       },
     });
   };
@@ -90,7 +102,7 @@ export default function MylogsPage() {
                   recordings.map((item) => (
                     <RecordingCard
                       key={item.id}
-                      tags={item.tags ?? ['Recorded']}
+                      tags={item.tags ?? ['Sexism']}
                       title={item.title}
                       location={item.location}
                       date={item.date}
@@ -103,26 +115,25 @@ export default function MylogsPage() {
               </>
             ) : (
               <>
-                <ReportCard
-                  tags={['Discrimination', 'Pay Inequality']}
-                  title="Unequal Pay for Equal Work"
-                  location="456 Government St, Burnaby, BC"
-                  excerpt="I noticed that my male colleagues receive higher pay for the same tasks. When I raised the issue, I was ignored and sometimes subtly threatened. It made me feel undervalued and hesitant to speak up again."
-                  onDetailsPress={onDetails}
-                  status="Posted"
-                  date="November 6, 2025"
-                  timestamp="10:30"
-                />
-                <ReportCard
-                  tags={['Discrimination', 'Harassment']}
-                  title="Misgendered During Training"
-                  location="123 Granville St, Burnaby, BC"
-                  excerpt="During a recent apprenticeship training, my supervisor repeatedly referred to me with the wrong pronouns despite me correcting them multiple times."
-                  onDetailsPress={onDetails}
-                  status="Private"
-                  date="January 7, 2025"
-                  timestamp="10:30"
-                />
+                {reports.length === 0 ? (
+                  <AppText style={styles.emptyState}>
+                    You have not generated any reports yet.
+                  </AppText>
+                ) : (
+                  reports.map((item) => (
+                    <ReportCard
+                      key={item.id}
+                      tags={item.tags ?? ['Sexism']}
+                      title={item.title}
+                      location={item.location}
+                      excerpt={item.excerpt}
+                      onDetailsPress={() => onReportDetails(item)}
+                      status={item.status}
+                      date={item.date}
+                      timestamp={item.timestamp}
+                    />
+                  ))
+                )}
               </>
             )}
           </View>

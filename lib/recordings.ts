@@ -17,6 +17,7 @@ export type StoredRecording = {
   tags?: string[];
   location?: string;
   transcript?: string;
+  report?: string;
   isImmutable?: boolean;
 };
 
@@ -165,6 +166,17 @@ export const deleteRecording = async (id: string) => {
   const next = existing.filter((item) => item.id !== id);
   await serializeRecordings(next);
   return next;
+};
+
+export const updateRecording = async (id: string, updates: Partial<StoredRecording>) => {
+  const existing = await loadRecordings();
+  const index = existing.findIndex((item) => item.id === id);
+  if (index === -1) return existing;
+
+  const updated = { ...existing[index], ...updates };
+  existing[index] = updated;
+  await serializeRecordings(existing);
+  return existing;
 };
 
 export const getRecordingById = async (id: string) => {
