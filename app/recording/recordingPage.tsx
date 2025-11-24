@@ -24,38 +24,12 @@ import {
   useAudioRecorderState,
 } from 'expo-audio';
 import { addRecording } from '@/lib/recordings';
+import { addReport } from '@/lib/reports';
+import { transcribeAudio, generateReport } from '@/lib/ai';
 import WaveForm from '@/components/ui/WaveForm';
 import * as FileSystem from 'expo-file-system/legacy';
 
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
-
-const transcribeAudio = async (uri: string) => {
-  if (!apiKey) {
-    console.warn('OpenAI API key is missing');
-    return undefined;
-  }
-
-  try {
-    const response = await FileSystem.uploadAsync(
-      'https://api.openai.com/v1/audio/transcriptions',
-      uri,
-      {
-        headers: { Authorization: `Bearer ${apiKey}` },
-        httpMethod: 'POST',
-        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-        fieldName: 'file',
-        mimeType: 'audio/m4a',
-        parameters: { model: 'gpt-4o-mini-transcribe' },
-      }
-    );
-
-    const json = JSON.parse(response.body);
-    return json.text;
-  } catch (err) {
-    console.error('Transcription Error', err);
-    return undefined;
-  }
-};
 
 const ensureRecordingPermissions = async () => {
   const status = await AudioModule.getRecordingPermissionsAsync();
@@ -191,12 +165,33 @@ export default function Recording() {
       const title = `Recording ${formatDate(createdAt)} ${formatTime(createdAt)}`; // Default title.
 
       let transcript: string | undefined;
+      let report: string | undefined;
       try {
         console.log('Starting transcription...');
         transcript = await transcribeAudio(recordingUri);
         console.log('Transcription result:', transcript);
+
+        if (transcript) {
+          console.log('Starting report generation...');
+          report = await generateReport(transcript);
+          console.log('Report generation result:', report ? 'Success' : 'Failed');
+
+          if (report) {
+            await addReport({
+              id: `${createdAt.getTime()}_report`,
+              title: title || 'Generated Report',
+              date: formatDate(createdAt),
+              timestamp: formatTime(createdAt),
+              status: 'Private',
+              content: report,
+              recordingId: `${createdAt.getTime()}`,
+              tags: ['Sexism'],
+              excerpt: report.substring(0, 100) + '...',
+            });
+          }
+        }
       } catch (e) {
-        console.log('Transcription failed', e);
+        console.log('Processing failed', e);
       }
 
       const payload = {
@@ -208,24 +203,27 @@ export default function Recording() {
         durationMillis,
         durationLabel,
         createdAtISO: createdAt.toISOString(),
-        tags: ['Recorded'],
+        tags: ['Sexism'],
         location: undefined,
         transcript,
+        report,
       };
 
       await addRecording(payload);
 
       expoRouter.push({
-        pathname: '/my_logs/myRecordingDetails',
-        params: {
-          audioUri: recordingUri,
-          recordingId: payload.id,
-          title: payload.title,
-          date: payload.date,
-          timestamp: payload.timestamp,
-          duration: durationLabel,
-          transcript: payload.transcript,
-        },
+        pathname: '/(tabs)/myLogs',
+        // pathname: '/my_logs/myRecordingDetails',
+        // params: {
+        //   audioUri: recordingUri,
+        //   recordingId: payload.id,
+        //   title: payload.title,
+        //   date: payload.date,
+        //   timestamp: payload.timestamp,
+        //   duration: durationLabel,
+        //   transcript: payload.transcript,
+        //   report: payload.report,
+        // },
       });
     } catch (err) {
       console.error('Failed to stop recording', err);
