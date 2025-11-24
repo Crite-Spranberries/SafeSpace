@@ -25,6 +25,37 @@ import {
 } from 'expo-audio';
 import { addRecording } from '@/lib/recordings';
 import WaveForm from '@/components/ui/WaveForm';
+import * as FileSystem from 'expo-file-system/legacy';
+
+const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+
+const transcribeAudio = async (uri: string) => {
+  if (!apiKey) {
+    console.warn('OpenAI API key is missing');
+    return undefined;
+  }
+
+  try {
+    const response = await FileSystem.uploadAsync(
+      'https://api.openai.com/v1/audio/transcriptions',
+      uri,
+      {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: 'file',
+        mimeType: 'audio/m4a',
+        parameters: { model: 'gpt-4o-mini-transcribe' },
+      }
+    );
+
+    const json = JSON.parse(response.body);
+    return json.text;
+  } catch (err) {
+    console.error('Transcription Error', err);
+    return undefined;
+  }
+};
 
 const ensureRecordingPermissions = async () => {
   const status = await AudioModule.getRecordingPermissionsAsync();
@@ -138,21 +169,35 @@ export default function Recording() {
 
     try {
       setSaving(true);
+
+      // Capture duration before stopping
+      const statusBeforeStop = recorder.getStatus();
+      const finalDurationMillis = statusBeforeStop.durationMillis;
+
       await recorder.stop();
       await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
 
-      const status = recorder.getStatus();
-      const recordingUri = status.url;
+      const status = recorder.getStatus(); // Gets the recorder status (uri, duration, etc.).
+      const recordingUri = status.url; // The file URL of the recording.
 
       if (!recordingUri) {
         Alert.alert('Save Failed', 'No recording file was generated.');
         return;
       }
 
-      const createdAt = new Date();
-      const durationMillis = status.durationMillis;
-      const durationLabel = formatDuration(durationMillis);
-      const title = `Recording ${formatDate(createdAt)} ${formatTime(createdAt)}`;
+      const createdAt = new Date(); // Use current date/time as creation time.
+      const durationMillis = finalDurationMillis || status.durationMillis; // Use captured duration or fallback
+      const durationLabel = formatDuration(durationMillis); // Formatted duration string.
+      const title = `Recording ${formatDate(createdAt)} ${formatTime(createdAt)}`; // Default title.
+
+      let transcript: string | undefined;
+      try {
+        console.log('Starting transcription...');
+        transcript = await transcribeAudio(recordingUri);
+        console.log('Transcription result:', transcript);
+      } catch (e) {
+        console.log('Transcription failed', e);
+      }
 
       const payload = {
         id: `${createdAt.getTime()}`,
@@ -165,6 +210,7 @@ export default function Recording() {
         createdAtISO: createdAt.toISOString(),
         tags: ['Recorded'],
         location: undefined,
+        transcript,
       };
 
       await addRecording(payload);
@@ -178,6 +224,7 @@ export default function Recording() {
           date: payload.date,
           timestamp: payload.timestamp,
           duration: durationLabel,
+          transcript: payload.transcript,
         },
       });
     } catch (err) {
@@ -272,13 +319,20 @@ export default function Recording() {
                 </AppText>
               </View>
             ) : null}
-            <View style={styles.recordingButtonContainer}>
-              <RoundRecordingButton
-                isRecording={recorderState.isRecording}
-                onStart={startRecording}
-                onStop={stopRecording}
-              />
-            </View>
+            {saving ? (
+              <View style={styles.savingContainer}>
+                <ActivityIndicator size="large" color="#FF5656" />
+                <AppText style={styles.savingText}>Transcribing...</AppText>
+              </View>
+            ) : (
+              <View style={styles.recordingButtonContainer}>
+                <RoundRecordingButton
+                  isRecording={recorderState.isRecording}
+                  onStart={startRecording}
+                  onStop={stopRecording}
+                />
+              </View>
+            )}
           </View>
         </SafeAreaView>
       </ImageBackground>
@@ -380,5 +434,16 @@ const styles = StyleSheet.create({
   recordingButtonContainer: {
     position: 'absolute',
     bottom: 50,
+  },
+  savingContainer: {
+    position: 'absolute',
+    bottom: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  savingText: {
+    color: '#FFF',
+    fontSize: 16,
   },
 });

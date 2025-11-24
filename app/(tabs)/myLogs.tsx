@@ -61,6 +61,7 @@ export default function MylogsPage() {
         timestamp: recording.timestamp,
         duration: recording.durationLabel,
         immutable: recording.isImmutable ? '1' : '0',
+        transcript: recording.transcript,
       },
     });
   };

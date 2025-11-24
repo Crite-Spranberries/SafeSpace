@@ -31,6 +31,7 @@ export default function MyRecordingDetails() {
     duration?: string;
     recordingId?: string;
     immutable?: string;
+    transcript?: string;
   }>();
   const audioUriParam = typeof params.audioUri === 'string' ? params.audioUri : null;
   const titleParam = typeof params.title === 'string' ? params.title : null;
@@ -38,13 +39,14 @@ export default function MyRecordingDetails() {
   const timestampParam = typeof params.timestamp === 'string' ? params.timestamp : null;
   const durationParam = typeof params.duration === 'string' ? params.duration : null;
   const recordingIdParam = typeof params.recordingId === 'string' ? params.recordingId : null;
+  const transcriptParam = typeof params.transcript === 'string' ? params.transcript : null;
   const isImmutable = params.immutable === '1';
   const [defAud, setDefAud] = useState<string | null>(null);
   const [activeUri, setActiveUri] = useState<string | null>(null);
   const [status, setStatus] = useState('Stopped');
-  const [audTranscribed, setAudTranscribed] = useState<string>(
-    'Transcripter awaiting audio to parse.'
-  );
+  // const [audTranscribed, setAudTranscribed] = useState<string>(
+  //   transcriptParam || 'Transcripter awaiting audio to parse.'
+  // );
 
   // Load default audio file for fallback playback
   useEffect(() => {
@@ -85,56 +87,56 @@ export default function MyRecordingDetails() {
   }, [player]);
 
   // Unified transcription handler for recorded/default files
-  const Transcribe = async (def: boolean = false) => {
-    const _auduri = def ? defAud : audioUriParam;
+  // const Transcribe = async (def: boolean = false) => {
+  //   const _auduri = def ? defAud : audioUriParam;
 
-    if (!_auduri) {
-      Alert.alert('Missing audio to transcribe');
-      return;
-    }
+  //   if (!_auduri) {
+  //     Alert.alert('Missing audio to transcribe');
+  //     return;
+  //   }
 
-    try {
-      const _resp = await FileSystem.uploadAsync(
-        'https://api.openai.com/v1/audio/transcriptions',
-        _auduri,
-        {
-          headers: { Authorization: `Bearer ${apiKey}` },
-          httpMethod: 'POST',
-          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-          fieldName: 'file',
-          mimeType: 'audio/m4a',
-          parameters: { model: 'gpt-4o-mini-transcribe' },
-        }
-      );
+  //   try {
+  //     const _resp = await FileSystem.uploadAsync(
+  //       'https://api.openai.com/v1/audio/transcriptions',
+  //       _auduri,
+  //       {
+  //         headers: { Authorization: `Bearer ${apiKey}` },
+  //         httpMethod: 'POST',
+  //         uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+  //         fieldName: 'file',
+  //         mimeType: 'audio/m4a',
+  //         parameters: { model: 'gpt-4o-mini-transcribe' },
+  //       }
+  //     );
 
-      const _json = JSON.parse(_resp.body);
-      if (_json.text) {
-        setAudTranscribed(_json.text);
-        await AsyncStorage.setItem('transcribe', JSON.stringify(_json.text));
-      }
-    } catch (err) {
-      Alert.alert('Transcription Error', String(err));
-    }
-  };
+  //     const _json = JSON.parse(_resp.body);
+  //     if (_json.text) {
+  //       setAudTranscribed(_json.text);
+  //       await AsyncStorage.setItem('transcribe', JSON.stringify(_json.text));
+  //     }
+  //   } catch (err) {
+  //     Alert.alert('Transcription Error', String(err));
+  //   }
+  // };
 
-  // Playback functions
-  const playRecording = () => {
-    if (audioUriParam) {
-      setActiveUri(audioUriParam);
-      player.play();
-    } else {
-      Alert.alert('No recording available');
-    }
-  };
+  // // Playback functions
+  // const playRecording = () => {
+  //   if (audioUriParam) {
+  //     setActiveUri(audioUriParam);
+  //     player.play();
+  //   } else {
+  //     Alert.alert('No recording available');
+  //   }
+  // };
 
-  const playDefault = () => {
-    if (defAud) {
-      setActiveUri(defAud);
-      player.play();
-    } else {
-      Alert.alert('Default audio not loaded');
-    }
-  };
+  // const playDefault = () => {
+  //   if (defAud) {
+  //     setActiveUri(defAud);
+  //     player.play();
+  //   } else {
+  //     Alert.alert('Default audio not loaded');
+  //   }
+  // };
 
   const SCREEN_OPTIONS = {
     title: '',
@@ -203,17 +205,7 @@ export default function MyRecordingDetails() {
                 </AppText>
                 <AppText style={styles.transcriptModel}>GPT-4o</AppText>
               </View>
-              <AppText style={styles.transcriptText}>
-                Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet
-                pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis
-                pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
-                Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet
-                pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis
-                pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
-                Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet
-                pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis
-                pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
-              </AppText>
+              <AppText style={styles.transcriptText}>{transcriptParam ?? 'No transcript available.'}</AppText>
             </View>
 
             <View style={styles.buttonContainer}>
