@@ -16,6 +16,7 @@ export type StoredRecording = {
   createdAtISO: string;
   tags?: string[];
   location?: string;
+  transcript?: string;
   isImmutable?: boolean;
 };
 
