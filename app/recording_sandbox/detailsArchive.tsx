@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { ArrowLeft } from 'lucide-react-native';
 import { DescriptionCard } from '@/components/ui/DescriptionCard';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 import { ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -76,7 +76,6 @@ export default function Details() {
         {
           headers: { Authorization: `Bearer ${apiKey}` },
           httpMethod: 'POST',
-          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
           fieldName: 'file',
           mimeType: 'audio/m4a',
           parameters: { model: 'gpt-4o-mini-transcribe' },

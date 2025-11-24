@@ -27,7 +27,7 @@ import { addRecording } from '@/lib/recordings';
 import { addReport } from '@/lib/reports';
 import { transcribeAudio, generateReport } from '@/lib/ai';
 import WaveForm from '@/components/ui/WaveForm';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
 

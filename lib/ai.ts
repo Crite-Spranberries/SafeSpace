@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import { RetrieveResponse } from 'roughlyai';
 
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
@@ -16,7 +16,6 @@ export const transcribeAudio = async (uri: string) => {
       {
         headers: { Authorization: `Bearer ${apiKey}` },
         httpMethod: 'POST',
-        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
         fieldName: 'file',
         mimeType: 'audio/m4a',
         parameters: { model: 'gpt-4o-mini-transcribe' },
@@ -50,7 +49,7 @@ export const generateReport = async (transcript: string) => {
     );
 
     const responseData = await response.json();
-    
+
     // Handle both stringified JSON and direct object response
     let json: { url: string };
     if (typeof responseData === 'string') {
