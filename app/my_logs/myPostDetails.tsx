@@ -11,10 +11,15 @@ import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/Badge';
 import Recommendation from '@/components/ui/Recommendation';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
-import { Link } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 
 export default function MyPostDetails() {
+  const params = useLocalSearchParams<{ report?: string; title?: string; id?: string }>();
+  const reportParam = typeof params.report === 'string' ? params.report : null;
+  const titleParam = typeof params.title === 'string' ? params.title : null;
+  const idParam = typeof params.id === 'string' ? params.id : null;
+
   const SCREEN_OPTIONS = {
     title: '',
     headerBackTitle: 'Back',
@@ -37,7 +42,11 @@ export default function MyPostDetails() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
             <AppText weight="bold" style={styles.title}>
-              Title generated based on summary
+              {idParam === 'default-report-1' || idParam === 'default-report-2'
+                ? titleParam || 'Report Details'
+                : titleParam
+                  ? `Summary Generated from ${titleParam}`
+                  : 'Title generated based on summary'}
             </AppText>
             <View style={styles.subtitleContainer}>
               <AppText style={styles.subtitleText}>November 4, 2025</AppText>
@@ -89,15 +98,7 @@ export default function MyPostDetails() {
                 <AppText style={styles.transcriptModel}>GPT-4o</AppText>
               </View>
               <AppText style={styles.transcriptText}>
-                Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet
-                pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis
-                pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
-                Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet
-                pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis
-                pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
-                Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet
-                pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis
-                pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
+                {reportParam ?? 'No report available.'}
               </AppText>
             </View>
 
