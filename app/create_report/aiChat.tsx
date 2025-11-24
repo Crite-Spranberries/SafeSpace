@@ -5,8 +5,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
-  Image,
-  ScrollView,
   TouchableOpacity,
   Keyboard,
 } from 'react-native';
@@ -42,7 +40,6 @@ const SCREEN_OPTIONS = {
 
 export default function aiChat() {
   const [scrollViewHeight, setScrollViewHeight] = useState(0);
-  const navigation = useNavigation();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
   const [videoLoaded, setVideoLoaded] = useState(false);
@@ -143,15 +140,6 @@ export default function aiChat() {
               scrollEventThrottle={16}
               onLayout={(e) => setScrollViewHeight(e.nativeEvent.layout.height)}>
               <View style={styles.chatContainer}>
-                {/* <ChatBubble
-                  type="safi"
-                  text="Hello, I'm Safi! You can talk to me directly, or let my questions guide you."
-                />
-                <ChatBubble
-                  type="user"
-                  text="Just had an uncomfortable encounter with a male coworker. He kept making weirdly sexual jokes and comments at me."
-                />
-                <ChatBubble type="safi" text="Did this happen at your current location?" /> */}
                 {chat.map((message, index) => (
                   <ChatBubble
                     key={index}
