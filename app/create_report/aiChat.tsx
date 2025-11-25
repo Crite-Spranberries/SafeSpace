@@ -9,6 +9,7 @@ import {
   Keyboard,
   ActivityIndicator,
   ScrollView,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
 import { ArrowLeft } from 'lucide-react-native';
@@ -24,6 +25,8 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { Asset } from 'expo-asset';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { sendMessage } from '@/lib/ibmWatson';
+import { Button } from '@/components/ui/Button';
+import { addReport, StoredReport } from '@/lib/reports';
 
 const SCREEN_OPTIONS = {
   title: '',
@@ -52,6 +55,7 @@ export default function aiChat() {
   const [scrollViewHeight, setScrollViewHeight] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
+  const videoWidth = useRef(new Animated.Value(80)).current;
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [playerReady, setPlayerReady] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -59,6 +63,20 @@ export default function aiChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+  const [creatingReport, setCreatingReport] = useState(false);
+  const [createdReport, setCreatedReport] = useState<StoredReport | null>(null);
+
+  const formatDate = (value: Date) =>
+    value.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  const formatTime = (value: Date) =>
+    value.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
 
   const videoSource = require('../../assets/video/ai-safi-blob.mov');
 
@@ -132,29 +150,39 @@ export default function aiChat() {
 
       setMessages((prev) => [...prev, botMessage]);
 
-      // Check if conversation is complete
-      if (botResponse.displayText.toLowerCase().includes("that's all the information i need")) {
-        // Save report data to AsyncStorage
-        if (botResponse.fullData) {
-          console.log('[Index] Raw fullData:', botResponse.fullData);
-          console.log('[Index] fullData type:', typeof botResponse.fullData);
-          // console.log('[Index] fullData.report_type:', botResponse.fullData.report_type);
-          // console.log('[Index] fullData.trades_field:', botResponse.fullData.trades_field);
-          // console.log(
-          //   '[Index] fullData.report_description:',
-          //   botResponse.fullData.report_description
-          // );
-          // console.log('[Index] fullData.parties_involved:', botResponse.fullData.parties_involved);
-          // console.log('[Index] fullData.witnesses:', botResponse.fullData.witnesses);
-
-          await AsyncStorage.setItem('reportData', JSON.stringify(botResponse.fullData));
-          console.log('[Index] Saved report data to AsyncStorage');
+      // Check if conversation is complete (exact phrase from system prompt)
+      const completionPhrase = "that's all the information i need";
+      if (botResponse.displayText.toLowerCase().includes(completionPhrase)) {
+        if (botResponse.fullData && !creatingReport && !createdReport) {
+          try {
+            setCreatingReport(true);
+            const data = botResponse.fullData;
+            const createdAt = new Date();
+            const description: string = data.report_description || '';
+            const tags: string[] = [
+              ...(Array.isArray(data.report_type) ? data.report_type : []),
+              ...(Array.isArray(data.trades_field) ? data.trades_field : []),
+            ];
+            const title = tags.length > 0 ? `Report: ${tags[0]}` : 'Incident Report';
+            const report: StoredReport = {
+              id: `${createdAt.getTime()}_report`,
+              title,
+              date: formatDate(createdAt),
+              timestamp: formatTime(createdAt),
+              status: 'Private',
+              tags,
+              excerpt: description.substring(0, 120) + (description.length > 120 ? '...' : ''),
+              content: description,
+            };
+            await addReport(report);
+            await AsyncStorage.setItem('reportData', JSON.stringify(data)); // retain raw data if needed
+            setCreatedReport(report);
+          } catch (e) {
+            console.warn('Auto report creation failed', e);
+          } finally {
+            setCreatingReport(false);
+          }
         }
-
-        // Navigate to report tab after a short delay
-        // setTimeout(() => {
-        //   router.push('/(tabs)/report');
-        // }, 1500);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -166,11 +194,21 @@ export default function aiChat() {
   };
 
   useEffect(() => {
-    const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
+    const showSubscription = Keyboard.addListener('keyboardWillShow', () => {
       setKeyboardVisible(true);
+      Animated.timing(videoWidth, {
+        toValue: 40,
+        duration: 250,
+        useNativeDriver: false,
+      }).start();
     });
-    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+    const hideSubscription = Keyboard.addListener('keyboardWillHide', () => {
       setKeyboardVisible(false);
+      Animated.timing(videoWidth, {
+        toValue: 80,
+        duration: 250,
+        useNativeDriver: false,
+      }).start();
     });
 
     return () => {
@@ -192,20 +230,29 @@ export default function aiChat() {
           style={styles.contentWrapper}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={Platform.OS === 'ios' ? -25 : 0}>
-          {!playerReady && (
-            <View style={keyboardVisible ? styles.imageSmall : styles.image}>
-              <ActivityIndicator size="large" color="#8B5CF6" style={styles.loader} />
-            </View>
-          )}
-          <VideoView
-            style={[
-              keyboardVisible ? styles.imageSmall : styles.image,
-              !playerReady && styles.hidden,
-            ]}
-            player={player}
-            allowsPictureInPicture={false}
-            nativeControls={false}
-          />
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <Animated.View
+              style={{
+                width: videoWidth.interpolate({
+                  inputRange: [0, 100],
+                  outputRange: ['0%', '100%'],
+                }),
+                aspectRatio: 1,
+                alignSelf: 'center',
+              }}>
+              {!playerReady && (
+                <View style={{ width: '100%', height: '100%' }}>
+                  <ActivityIndicator size="large" color="#8B5CF6" style={styles.loader} />
+                </View>
+              )}
+              <VideoView
+                style={[{ width: '100%', height: '100%' }, !playerReady && styles.hidden]}
+                player={player}
+                allowsPictureInPicture={false}
+                nativeControls={false}
+              />
+            </Animated.View>
+          </TouchableWithoutFeedback>
           <View style={{ flex: 1, position: 'relative' }}>
             <Animated.ScrollView
               ref={scrollViewRef}
@@ -251,12 +298,45 @@ export default function aiChat() {
               }}
             />
           </View>
-          <ChatTyping
-            inputText={inputText}
-            setInputText={setInputText}
-            handleSend={handleSend}
-            isLoading={isLoading}
-          />
+
+          {creatingReport ||
+            (createdReport ? (
+              <View style={styles.submitButtonContainer}>
+                <Button
+                  variant="purple"
+                  radius="full"
+                  size="lg"
+                  style={styles.submitButton}
+                  disabled={creatingReport || !createdReport}
+                  onPress={() => {
+                    if (createdReport) {
+                      router.push({
+                        pathname: '/my_logs/myPostDetails',
+                        params: {
+                          report: createdReport.content || '',
+                          title: createdReport.title,
+                          id: createdReport.id,
+                        },
+                      });
+                    }
+                  }}>
+                  <AppText weight="medium" style={{ color: 'white' }}>
+                    {creatingReport
+                      ? 'Creating Report...'
+                      : createdReport
+                        ? 'Submit Report'
+                        : 'Waiting for AI...'}
+                  </AppText>
+                </Button>
+              </View>
+            ) : (
+              <ChatTyping
+                inputText={inputText}
+                setInputText={setInputText}
+                handleSend={handleSend}
+                isLoading={isLoading}
+              />
+            ))}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </>
@@ -358,5 +438,14 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#D32F2F',
     fontSize: 14,
+  },
+  submitButtonContainer: {
+    marginBottom: 30,
+    marginHorizontal: 16,
+  },
+  submitButton: {
+    alignSelf: 'center',
+    marginHorizontal: 16,
+    width: '100%',
   },
 });
