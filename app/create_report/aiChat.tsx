@@ -152,6 +152,7 @@ export default function aiChat() {
 
       // Check if conversation is complete (exact phrase from system prompt)
       const completionPhrase = "that's all the information i need";
+      console.log(botResponse.fullData);
       if (botResponse.displayText.toLowerCase().includes(completionPhrase)) {
         if (botResponse.fullData && !creatingReport && !createdReport) {
           try {

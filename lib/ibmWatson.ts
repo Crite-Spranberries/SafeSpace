@@ -153,15 +153,30 @@ async function retryWithBackoff<T>(
 }
 
 function cleanJsonContent(content: string): string {
-  return content
+  // Remove markdown code blocks
+  let cleaned = content
     .replace(/```json\s*/g, '')
-    .replace(/```\s*/g, '')
+    .replace(/```\s*/g, '');
+  
+  // Remove any RAGQuery or function call artifacts
+  cleaned = cleaned.replace(/\[?\{"name":\s*"RAGQuery"[^\]]*\]?/g, '');
+  
+  // Try to find a complete JSON object
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    return jsonMatch[0].trim();
+  }
+  
+  // Fallback: clean line by line
+  return cleaned
     .split('\n')
     .filter((line) => {
       const trimmed = line.trim().toLowerCase();
       return (
+        trimmed &&
         !trimmed.startsWith('user:') &&
         !trimmed.startsWith('assistant:') &&
+        !trimmed.startsWith('-') && // Remove list items
         trimmed !== 'user' &&
         trimmed !== 'assistant'
       );
@@ -171,38 +186,46 @@ function cleanJsonContent(content: string): string {
 }
 
 function extractNextQuestion(content: string): WatsonResult | null {
+  let parsed: any = null;
+  
   try {
-    const parsed = JSON.parse(content);
-
-    // Handle array format
-    if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].next_question) {
-      return {
-        displayText: parsed[0].next_question,
-        fullData: validateAndFixData(parsed[0]),
-      };
-    }
-
-    // Handle object format
-    if (parsed.next_question) {
-      return {
-        displayText: parsed.next_question,
-        fullData: validateAndFixData(parsed),
-      };
-    }
+    parsed = JSON.parse(content);
   } catch {
     // Try to extract JSON object from mixed content
-    const jsonMatch = content.match(/\{[\s\S]*?"next_question"[\s\S]*?\}(?!\s*,)/);
+    // Look for the first complete JSON object
+    const jsonMatch = content.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
     if (jsonMatch) {
       try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed.next_question) {
-          return {
-            displayText: parsed.next_question,
-            fullData: validateAndFixData(parsed),
-          };
-        }
-      } catch {}
+        parsed = JSON.parse(jsonMatch[0]);
+      } catch {
+        return null;
+      }
+    } else {
+      return null;
     }
+  }
+
+  // Handle array format
+  if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].next_question) {
+    return {
+      displayText: parsed[0].next_question,
+      fullData: validateAndFixData(parsed[0]),
+    };
+  }
+
+  // Handle object format
+  if (parsed && parsed.next_question) {
+    // Clean the next_question if it contains JSON formatting
+    let question = parsed.next_question;
+    if (typeof question === 'string') {
+      // Remove any stray quotes or JSON formatting from the question
+      question = question.replace(/^["']|["']$/g, '').trim();
+    }
+    
+    return {
+      displayText: question,
+      fullData: validateAndFixData(parsed),
+    };
   }
 
   return null;
@@ -211,6 +234,7 @@ function extractNextQuestion(content: string): WatsonResult | null {
 function validateAndFixData(data: any): any {
   // Ensure all required fields exist and are the correct type
   const fixed: any = {
+    report_title: data.report_title || '',
     report_type: Array.isArray(data.report_type) ? data.report_type : [],
     trades_field: Array.isArray(data.trades_field) ? data.trades_field : [],
     report_description: '',
@@ -231,6 +255,7 @@ function validateAndFixData(data: any): any {
 
   // Check for any extra string fields that should be part of description
   const knownFields = new Set([
+    'report_title',
     'report_type',
     'trades_field',
     'report_description',
@@ -272,38 +297,46 @@ export async function sendMessage(
   try {
     const token = await getToken();
 
-    // Limit conversation history to last 6 messages (3 exchanges) to prevent context pollution
-    const recentHistory = conversationHistory.slice(-6);
-
-    // Build the full conversation with system prompt and history
-    const messages = [
-      {
+    // Build the full conversation with system prompt only at the start
+    // Only include system prompt if this is the first message (no history)
+    const messages = [];
+    
+    if (conversationHistory.length === 0) {
+      messages.push({
         role: 'system' as const,
-        content: `You are Safi, an incident report assistant. Collect information by asking ONE question at a time.
+        content: `You are Safi, an incident report assistant. Your job is to collect information about workplace incidents by asking ONE question at a time.
 
-CRITICAL: You MUST respond with ONLY a single valid JSON object. NO extra text, NO arrays, NO multiple objects.
+CRITICAL RULES:
+1. You MUST respond with ONLY valid JSON - no extra text, explanations, or markdown
+2. ACCUMULATE information - keep all previously gathered data in each response
+3. Only update/add fields based on the user's latest answer
+4. NEVER reset or lose previously collected information
 
-EXACT FORMAT REQUIRED:
-{"report_type":["value1"],"trades_field":["value2"],"report_description":"single string description","parties_involved":["person1","person2"],"witnesses":["witness1"],"next_question":"Your question?"}
+EXACT JSON FORMAT (no other text allowed):
+{"report_title":"Brief incident summary","report_type":["type1","type2"],"trades_field":["trade1"],"report_description":"Full detailed description","parties_involved":["person1","person2"],"witnesses":["witness1"],"next_question":"Your next question?"}
 
-FIELD RULES:
-- report_type: array of incident types (e.g., ["Harassment"], ["Bullying"])
-- trades_field: array of trade areas (e.g., ["Electrical"], ["Plumbing"])
-- report_description: MUST be a SINGLE STRING containing ALL description details
-- parties_involved: array of people names
-- witnesses: array of witness names (use [] if none)
-- next_question: your next question as a string
+FIELD ACCUMULATION RULES:
+- report_title: Create a clear, brief title once you understand the incident
+- report_type: Array of incident types (Harassment, Bullying, Discrimination, Safety Violation, etc.) - ADD to this as you learn more
+- trades_field: Array of relevant trades (Electrical, Plumbing, Carpentry, etc.) - ADD to this as you learn more
+- report_description: ACCUMULATE all details in ONE continuous string - append new information to existing description
+- parties_involved: Array of all people mentioned - ADD new names, keep existing ones
+- witnesses: Array of witness names - ADD new witnesses, keep existing ones
+- next_question: Your next question to ask (single string)
 
-DO NOT create multiple sentences as separate JSON properties. ALL description text goes in report_description as ONE string.
+IMPORTANT: Each response must include ALL information gathered so far, plus any new information from the current answer.
 
-When complete, set next_question to: "That's all the information I need, thank you for sharing."`,
-      },
-      ...recentHistory,
+Start with a friendly greeting and ask what happened. When you have sufficient details (incident type, description, parties involved), set next_question to: "That's all the information I need, thank you for sharing."`,
+      });
+    }
+    
+    messages.push(
+      ...conversationHistory,
       {
         role: 'user' as const,
         content: userMessage,
-      },
-    ];
+      }
+    );
 
     const payload = {
       messages: messages,

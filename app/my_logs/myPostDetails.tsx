@@ -25,7 +25,7 @@ export default function MyPostDetails() {
     headerBackTitle: 'Back',
     headerTransparent: true,
     headerLeft: () => (
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push('/(tabs)/myLogs')}>
         <Icon as={ArrowLeft} size={16} />
       </TouchableOpacity>
     ),
