@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useAudioPlayer } from 'expo-audio';
 import { ArrowLeft, Trash2, PenLine } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Asset } from 'expo-asset';
 import { ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -79,6 +79,7 @@ export default function Details() {
         {
           headers: { Authorization: `Bearer ${apiKey}` },
           httpMethod: 'POST',
+          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
           fieldName: 'file',
           mimeType: 'audio/m4a',
           parameters: { model: 'gpt-4o-mini-transcribe' },
