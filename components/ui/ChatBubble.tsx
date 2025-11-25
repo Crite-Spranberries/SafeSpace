@@ -17,7 +17,7 @@ export default function ChatBubble({ text, type }: Props) {
 
 const styles = StyleSheet.create({
   safiContainer: {
-    width: '90%',
+    maxWidth: '90%',
     alignSelf: 'flex-start',
     backgroundColor: 'rgba(255, 255, 255, 0.30)',
     borderWidth: 1,
@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 0,
   },
   userContainer: {
-    width: '90%',
+    maxWidth: '90%',
     alignSelf: 'flex-end',
     backgroundColor: '#fff',
     padding: 12,

@@ -7,6 +7,8 @@ import {
   Animated,
   TouchableOpacity,
   Keyboard,
+  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
 import { ArrowLeft } from 'lucide-react-native';
@@ -20,7 +22,8 @@ import * as Haptics from 'expo-haptics';
 import { useRef, useState, useEffect } from 'react';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Asset } from 'expo-asset';
-import { ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { sendMessage } from '@/lib/ibmWatson';
 
 const SCREEN_OPTIONS = {
   title: '',
@@ -38,12 +41,24 @@ const SCREEN_OPTIONS = {
   ),
 };
 
+type Message = {
+  id: string;
+  text: string;
+  sender: 'user' | 'safi';
+  timestamp: Date;
+};
+
 export default function aiChat() {
   const [scrollViewHeight, setScrollViewHeight] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [playerReady, setPlayerReady] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const videoSource = require('../../assets/video/ai-safi-blob.mov');
 
@@ -62,6 +77,13 @@ export default function aiChat() {
     preloadAsset();
   }, []);
 
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messages.length > 0) {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
+
   const player = useVideoPlayer(videoLoaded ? videoSource : null, (player) => {
     player.loop = true;
     player.muted = true;
@@ -76,17 +98,72 @@ export default function aiChat() {
     });
   });
 
-  const [chat, setChat] = useState<Array<{ type: 'safi' | 'user'; text: string }>>([
-    {
-      type: 'safi',
-      text: "Hello, I'm Safi! You can talk to me directly, or let my questions guide you.",
-    },
-    {
-      type: 'user',
-      text: 'Just had an uncomfortable encounter with a male coworker. He kept making weirdly sexual jokes and comments at me.',
-    },
-    { type: 'safi', text: 'Did this happen at your current location?' },
-  ]);
+  const handleSend = async () => {
+    if (inputText.trim() === '' || isLoading) return;
+
+    const userMessageText = inputText.trim();
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text: userMessageText,
+      sender: 'user',
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+    setInputText('');
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      // Build conversation history for Watson (limit to recent messages to avoid context pollution)
+      const conversationHistory = messages.slice(-6).map((msg) => ({
+        role: msg.sender === 'user' ? ('user' as const) : ('assistant' as const),
+        content: msg.text,
+      }));
+
+      const botResponse = await sendMessage(userMessageText, conversationHistory);
+
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: botResponse.displayText,
+        sender: 'safi',
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, botMessage]);
+
+      // Check if conversation is complete
+      if (botResponse.displayText.toLowerCase().includes("that's all the information i need")) {
+        // Save report data to AsyncStorage
+        if (botResponse.fullData) {
+          console.log('[Index] Raw fullData:', botResponse.fullData);
+          console.log('[Index] fullData type:', typeof botResponse.fullData);
+          // console.log('[Index] fullData.report_type:', botResponse.fullData.report_type);
+          // console.log('[Index] fullData.trades_field:', botResponse.fullData.trades_field);
+          // console.log(
+          //   '[Index] fullData.report_description:',
+          //   botResponse.fullData.report_description
+          // );
+          // console.log('[Index] fullData.parties_involved:', botResponse.fullData.parties_involved);
+          // console.log('[Index] fullData.witnesses:', botResponse.fullData.witnesses);
+
+          await AsyncStorage.setItem('reportData', JSON.stringify(botResponse.fullData));
+          console.log('[Index] Saved report data to AsyncStorage');
+        }
+
+        // Navigate to report tab after a short delay
+        // setTimeout(() => {
+        //   router.push('/(tabs)/report');
+        // }, 1500);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(errorMessage);
+      console.error('Error sending message:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
@@ -126,12 +203,12 @@ export default function aiChat() {
               !playerReady && styles.hidden,
             ]}
             player={player}
-            allowsFullscreen={false}
             allowsPictureInPicture={false}
             nativeControls={false}
           />
           <View style={{ flex: 1, position: 'relative' }}>
             <Animated.ScrollView
+              ref={scrollViewRef}
               contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
               style={styles.scrollView}
               onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
@@ -140,14 +217,26 @@ export default function aiChat() {
               scrollEventThrottle={16}
               onLayout={(e) => setScrollViewHeight(e.nativeEvent.layout.height)}>
               <View style={styles.chatContainer}>
-                {chat.map((message, index) => (
+                {messages.map((message) => (
                   <ChatBubble
-                    key={index}
-                    type={message.type}
+                    key={message.id}
+                    type={message.sender}
                     text={message.text}
-                    style={message.type === 'safi' ? styles.safiBubble : styles.userBubble}
+                    style={message.sender === 'safi' ? styles.safiBubble : styles.userBubble}
                   />
                 ))}
+
+                {isLoading && (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="#8B5CF6" />
+                    <AppText style={styles.loadingText}>Thinking...</AppText>
+                  </View>
+                )}
+                {error && (
+                  <View style={styles.errorContainer}>
+                    <AppText style={styles.errorText}>⚠️ {error}</AppText>
+                  </View>
+                )}
               </View>
             </Animated.ScrollView>
             <LinearGradient
@@ -162,7 +251,12 @@ export default function aiChat() {
               }}
             />
           </View>
-          <ChatTyping />
+          <ChatTyping
+            inputText={inputText}
+            setInputText={setInputText}
+            handleSend={handleSend}
+            isLoading={isLoading}
+          />
         </KeyboardAvoidingView>
       </SafeAreaView>
     </>
@@ -235,5 +329,34 @@ const styles = StyleSheet.create({
   },
   userBubble: {
     alignSelf: 'flex-end',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  emptyText: {
+    color: '#999',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    gap: 8,
+  },
+  loadingText: {
+    color: '#999',
+    fontSize: 14,
+  },
+  errorContainer: {
+    padding: 12,
+    backgroundColor: '#FFE5E5',
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  errorText: {
+    color: '#D32F2F',
+    fontSize: 14,
   },
 });

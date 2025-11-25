@@ -1,0 +1,59 @@
+require('dotenv').config();
+
+module.exports = {
+  expo: {
+    name: 'SafeSpace',
+    slug: 'SafeSpace',
+    version: '1.0.0',
+    orientation: 'portrait',
+    icon: './assets/images/icon.png',
+    scheme: 'SafeSpace',
+    userInterfaceStyle: 'dark',
+    newArchEnabled: true,
+    splash: {
+      image: './assets/images/splash.png',
+      resizeMode: 'contain',
+      backgroundColor: '#ffffff',
+    },
+    assetBundlePatterns: ['**/*'],
+    ios: {
+      supportsTablet: true,
+    },
+    android: {
+      edgeToEdgeEnabled: true,
+      adaptiveIcon: {
+        foregroundImage: './assets/images/adaptive-icon.png',
+        backgroundColor: '#ffffff',
+      },
+    },
+    web: {
+      bundler: 'metro',
+      output: 'static',
+      favicon: './assets/images/favicon.png',
+    },
+    plugins: [
+      'expo-router',
+      [
+        'expo-audio',
+        {
+          microphonePermission: 'Allow $(PRODUCT_NAME) to access your microphone.',
+        },
+      ],
+      [
+        'expo-video',
+        {
+          supportsBackgroundPlayback: true,
+          supportsPictureInPicture: true,
+        },
+      ],
+    ],
+    experiments: {
+      typedRoutes: true,
+    },
+  },
+  extra: {
+    ibmApiKey: process.env.EXPO_PUBLIC_IBM_API_KEY,
+    ibmScoringUrl: process.env.EXPO_PUBLIC_IBM_SCORING_URL,
+    ibmProjectId: process.env.EXPO_PUBLIC_IBM_PROJECT_ID,
+  },
+};
