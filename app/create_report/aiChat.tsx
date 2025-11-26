@@ -58,7 +58,22 @@ export default function aiChat() {
   const videoWidth = useRef(new Animated.Value(80)).current;
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [playerReady, setPlayerReady] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'initial-greeting',
+      text: "Hi, I'm Safi. Could you tell me what happened?",
+      sender: 'safi',
+      timestamp: new Date(),
+    },
+  ]);
+  const [aiData, setAiData] = useState<any>({
+    report_title: '',
+    report_type: [],
+    trades_field: [],
+    report_description: '',
+    parties_involved: [],
+    witnesses: [],
+  });
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -133,21 +148,79 @@ export default function aiChat() {
     setIsLoading(true);
 
     try {
-      // Build conversation history for Watson (limit to recent messages to avoid context pollution)
-      const conversationHistory = messages.slice(-6).map((msg) => ({
+      // Build conversation history for Watson INCLUDING the just-added user message
+      // Limit to recent messages to avoid context pollution
+      const recent = [...messages, newMessage].slice(-6);
+      const conversationHistory = recent.map((msg) => ({
         role: msg.sender === 'user' ? ('user' as const) : ('assistant' as const),
         content: msg.text,
       }));
 
       const botResponse = await sendMessage(userMessageText, conversationHistory);
 
+      // Merge AI data cumulatively across turns
+      const mergeArrays = (a: any[], b: any[]) => {
+        const set = new Set<string>([
+          ...a.filter(Boolean).map(String),
+          ...b.filter(Boolean).map(String),
+        ]);
+        return Array.from(set);
+      };
+      const newAiData = { ...aiData };
+      const d = botResponse.fullData || {};
+      // Title: prefer non-empty incoming, else keep existing
+      if (typeof d.report_title === 'string' && d.report_title.trim()) {
+        newAiData.report_title = d.report_title.trim();
+      }
+      // Arrays: union
+      newAiData.report_type = mergeArrays(newAiData.report_type || [], d.report_type || []);
+      newAiData.trades_field = mergeArrays(newAiData.trades_field || [], d.trades_field || []);
+      newAiData.parties_involved = mergeArrays(
+        newAiData.parties_involved || [],
+        d.parties_involved || []
+      );
+      newAiData.witnesses = mergeArrays(newAiData.witnesses || [], d.witnesses || []);
+      // Description: append new unique sentence if provided
+      const desc = typeof d.report_description === 'string' ? d.report_description.trim() : '';
+      if (desc) {
+        const existing = newAiData.report_description || '';
+        if (!existing.includes(desc)) {
+          newAiData.report_description = existing ? `${existing} ${desc}` : desc;
+        }
+      }
+
+      // Sanitize next question to avoid meta/rephrase prompts
+      const sanitizeNextQuestion = (data: any, q: string): string => {
+        const lower = q.toLowerCase();
+        const isMeta = /rephrase|processing|\bformat\b|policy|policies|procedures/.test(lower);
+        // Determine next missing field
+        const needsDescription = !(
+          data.report_description && data.report_description.trim().length > 20
+        );
+        const needsParties = !(
+          Array.isArray(data.parties_involved) && data.parties_involved.length > 0
+        );
+        const needsType = !(Array.isArray(data.report_type) && data.report_type.length > 0);
+        const needsTrade = !(Array.isArray(data.trades_field) && data.trades_field.length > 0);
+        if (isMeta) {
+          if (needsDescription) return 'Please describe the incident.';
+          if (needsParties) return 'Who was involved in the incident?';
+          if (needsType) return 'What type of incident was this (e.g., Harassment, Bullying)?';
+          if (needsTrade) return 'Which trade or field was involved (e.g., Electrical, Plumbing)?';
+        }
+        // If multiple questions, keep the first interrogative sentence only
+        const firstQ = q.match(/[^.?!]*\?+/);
+        return firstQ ? firstQ[0].trim() : q.trim();
+      };
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: botResponse.displayText,
+        text: sanitizeNextQuestion(newAiData, botResponse.displayText || ''),
         sender: 'safi',
         timestamp: new Date(),
       };
 
+      setAiData(newAiData);
       setMessages((prev) => [...prev, botMessage]);
 
       // Check if conversation is complete (exact phrase from system prompt)
@@ -157,14 +230,15 @@ export default function aiChat() {
         if (botResponse.fullData && !creatingReport && !createdReport) {
           try {
             setCreatingReport(true);
-            const data = botResponse.fullData;
+            const data = aiData; // use accumulated data
             const createdAt = new Date();
             const description: string = data.report_description || '';
             const tags: string[] = [
               ...(Array.isArray(data.report_type) ? data.report_type : []),
               ...(Array.isArray(data.trades_field) ? data.trades_field : []),
             ];
-            const title = tags.length > 0 ? `Report: ${tags[0]}` : 'Incident Report';
+            const title =
+              data.report_title || (tags.length > 0 ? `Report: ${tags[0]}` : 'Incident Report');
             const report: StoredReport = {
               id: `${createdAt.getTime()}_report`,
               title,

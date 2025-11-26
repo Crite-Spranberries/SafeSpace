@@ -154,40 +154,79 @@ async function retryWithBackoff<T>(
 
 function cleanJsonContent(content: string): string {
   // Remove markdown code blocks
-  let cleaned = content
-    .replace(/```json\s*/g, '')
-    .replace(/```\s*/g, '');
-  
-  // Remove any RAGQuery or function call artifacts
-  cleaned = cleaned.replace(/\[?\{"name":\s*"RAGQuery"[^\]]*\]?/g, '');
-  
-  // Try to find a complete JSON object
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    return jsonMatch[0].trim();
-  }
-  
-  // Fallback: clean line by line
-  return cleaned
+  let cleaned = content.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+
+  // Remove any RAGQuery or function call artifacts (multiple patterns)
+  cleaned = cleaned.replace(/\[?\s*\{"name":\s*"RAGQuery"[^\]]*\]?\s*/g, '');
+  cleaned = cleaned.replace(/\{"name":\s*"[^"]*",\s*"arguments":\s*\{[^}]*\}\}/g, '');
+
+  // Remove hallucination metadata markers
+  cleaned = cleaned.replace(/\{"id":\s*"hallucination"[^}]*\}/g, '');
+
+  // Remove completion phrase noise before JSON detection
+  // We keep bullet points now in case they contain the actual question in plain text
+  cleaned = cleaned
     .split('\n')
     .filter((line) => {
-      const trimmed = line.trim().toLowerCase();
-      return (
-        trimmed &&
-        !trimmed.startsWith('user:') &&
-        !trimmed.startsWith('assistant:') &&
-        !trimmed.startsWith('-') && // Remove list items
-        trimmed !== 'user' &&
-        trimmed !== 'assistant'
-      );
+      const l = line.trim();
+      // const lower = l.toLowerCase();
+      if (!l) return false;
+      // if (l.startsWith('- ') || l.startsWith('•') || l.match(/^\d+\./)) return false;
+      // if (lower.includes("that's all the information i need")) return false;
+      return true;
     })
-    .join('\n')
-    .trim();
+    .join('\n');
+
+  // If the content looks like a function call object only, return empty
+  if (cleaned.trim().startsWith('{"name":') || cleaned.trim().startsWith('{"arguments":')) {
+    return '{}';
+  }
+
+  // Find the first complete JSON object with balanced braces
+  // This extracts ONLY the JSON, ignoring any text before or after
+  const firstBrace = cleaned.indexOf('{');
+  if (firstBrace !== -1) {
+    let braceCount = 0;
+    let inString = false;
+    let escapeNext = false;
+
+    for (let i = firstBrace; i < cleaned.length; i++) {
+      const char = cleaned[i];
+
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+
+      if (char === '\\') {
+        escapeNext = true;
+        continue;
+      }
+
+      if (char === '"') {
+        inString = !inString;
+        continue;
+      }
+
+      if (!inString) {
+        if (char === '{') braceCount++;
+        if (char === '}') braceCount--;
+
+        if (braceCount === 0) {
+          return cleaned.substring(firstBrace, i + 1).trim();
+        }
+      }
+    }
+  }
+
+  // If no valid JSON object found, return the cleaned text if it exists, otherwise empty JSON
+  // This allows plain text questions to survive and be caught by the fallback logic
+  return cleaned.trim() || '{}';
 }
 
 function extractNextQuestion(content: string): WatsonResult | null {
   let parsed: any = null;
-  
+
   try {
     parsed = JSON.parse(content);
   } catch {
@@ -218,10 +257,36 @@ function extractNextQuestion(content: string): WatsonResult | null {
     // Clean the next_question if it contains JSON formatting
     let question = parsed.next_question;
     if (typeof question === 'string') {
-      // Remove any stray quotes or JSON formatting from the question
+      // Normalize and sanitize greetings/meta/bullets
+      const original = question;
       question = question.replace(/^["']|["']$/g, '').trim();
+      // Strip common greeting prefixes
+      question = question.replace(/^hi,? i'm safi[.,\s]*/i, '').trim();
+      question = question.replace(/^hello,? i'm safi[.,\s]*/i, '').trim();
+      // Remove leading bullet markers and numbering
+      question = question.replace(/^(?:-\s*|•\s*|\d+\.\s*)/gm, '');
+      // Collapse to first interrogative sentence
+      const qMatch = question.match(/[^.?!]*\?+/);
+      if (qMatch) {
+        question = qMatch[0].trim();
+      }
+      // Remove meta prompts
+      const metaPatterns = [
+        /rephrase/i,
+        /processing/i,
+        /\bformat\b/i,
+        /policy|policies|procedures/i,
+        /better understand/i,
+        /fill out the report/i,
+      ];
+      if (metaPatterns.some((p) => p.test(original))) {
+        // Default to a concrete next question
+        if (!/\?/.test(question) || question.length < 5) {
+          question = 'Who was involved in the incident?';
+        }
+      }
     }
-    
+
     return {
       displayText: question,
       fullData: validateAndFixData(parsed),
@@ -300,48 +365,77 @@ export async function sendMessage(
     // Build the full conversation with system prompt only at the start
     // Only include system prompt if this is the first message (no history)
     const messages = [];
-    
-    if (conversationHistory.length === 0) {
-      messages.push({
-        role: 'system' as const,
-        content: `You are Safi, an incident report assistant. Your job is to collect information about workplace incidents by asking ONE question at a time.
 
-CRITICAL RULES:
-1. You MUST respond with ONLY valid JSON - no extra text, explanations, or markdown
-2. ACCUMULATE information - keep all previously gathered data in each response
-3. Only update/add fields based on the user's latest answer
-4. NEVER reset or lose previously collected information
+    // Always include system prompt to ensure the AI follows rules and maintains persona
+    messages.push({
+      role: 'system' as const,
+      content: `You are Safi, an incident report assistant. Respond immediately with JSON only. Do NOT greet or add any non-JSON text.
 
-EXACT JSON FORMAT (no other text allowed):
-{"report_title":"Brief incident summary","report_type":["type1","type2"],"trades_field":["trade1"],"report_description":"Full detailed description","parties_involved":["person1","person2"],"witnesses":["witness1"],"next_question":"Your next question?"}
+      CRITICAL: Respond ONLY with valid JSON. NO greetings, NO extra text before or after the JSON object.
 
-FIELD ACCUMULATION RULES:
-- report_title: Create a clear, brief title once you understand the incident
-- report_type: Array of incident types (Harassment, Bullying, Discrimination, Safety Violation, etc.) - ADD to this as you learn more
-- trades_field: Array of relevant trades (Electrical, Plumbing, Carpentry, etc.) - ADD to this as you learn more
-- report_description: ACCUMULATE all details in ONE continuous string - append new information to existing description
-- parties_involved: Array of all people mentioned - ADD new names, keep existing ones
-- witnesses: Array of witness names - ADD new witnesses, keep existing ones
-- next_question: Your next question to ask (single string)
+JSON FORMAT:
+{"report_title":"Brief title","report_type":["Type1"],"trades_field":["Trade1"],"report_description":"Detailed description","parties_involved":["Person1"],"witnesses":["Witness1"],"next_question":"Your question?"}
 
-IMPORTANT: Each response must include ALL information gathered so far, plus any new information from the current answer.
+RULES:
+1. ACCUMULATE data - never lose previously collected information
+2. Update fields based on new user answers
+3. Ask ONE clear, specific question at a time.
+  - Do NOT output bullet lists, multiple questions, or numbered steps.
+  - Do NOT output function/tool calls (e.g., RAGQuery) or any keys other than those in the JSON format.
+  - Do NOT ask the user to rephrase, summarize, confirm formatting, describe policies/procedures, or talk about processing. Avoid meta/process questions.
+  - If the user has already described the incident, do NOT ask for a description again.
+4. When you have enough information (incident type, description, who was involved), ONLY THEN set next_question to: "That's all the information I need, thank you for sharing."
 
-Start with a friendly greeting and ask what happened. When you have sufficient details (incident type, description, parties involved), set next_question to: "That's all the information I need, thank you for sharing."`,
-      });
-    }
-    
-    messages.push(
-      ...conversationHistory,
-      {
-        role: 'user' as const,
-        content: userMessage,
-      }
-    );
+FIELD GUIDELINES:
+- report_title: Brief summary (create once incident is clear)
+- report_type: ["Harassment"], ["Bullying"], ["Discrimination"], ["Safety Violation"], etc.
+- trades_field: ["Electrical"], ["Plumbing"], ["Carpentry"], etc.
+- report_description: Accumulate all details in one continuous string
+- parties_involved: Names of people involved
+- witnesses: Names of witnesses
+- next_question: Your next question (or completion phrase when done)
+
+Do Not ask questions relating to what kind of report the user wants to create, or ask about if they want to make a report.
+
+Do NOT ask questions about what this incident is classified as, or Title. You are meant to generate that information yourself.
+
+Do NOT use greetings or meta/process prompts. Do NOT use the completion phrase until meaningful information is collected.
+
+Here is an example of what it should look like when you have enough information:
+{
+"report_title":"Workplace Harassment Incident",
+"report_type":["harassment", "bullying"],
+"trades_field":["electrical"],
+"report_description":"A colleague made inappropriate comments and unwanted physical contact during work hours.",
+"parties_involved":["John Doe", "Jane Smith"],
+"witnesses":["Alice Johnson", "Bob Lee"],
+"next_question":"That's all the information I need, thank you for sharing."
+}`,
+    });
+
+    messages.push(...conversationHistory, {
+      role: 'user' as const,
+      content: userMessage,
+    });
 
     const payload = {
       messages: messages,
       model: 'gpt-5',
+      // Low temperature for deterministic JSON formatting
+      temperature: 0.2,
+      max_tokens: 400,
+      response_format: { type: 'json_object' },
+      // Strong hints to avoid tool/function calls and lists if supported by deployment
+      // Some deployments ignore extra params; prompt enforces behavior regardless.
     };
+
+    // Debug: log the user's latest message and recent history snapshot
+    try {
+      const lastUser = userMessage;
+      const historyPreview = conversationHistory.slice(-6);
+      console.log('User message sent:', lastUser);
+      console.log('Conversation history preview:', historyPreview);
+    } catch {}
 
     const result = await retryWithBackoff(() => apiPost(SCORING_URL, token, payload));
 
@@ -352,7 +446,44 @@ Start with a friendly greeting and ask what happened. When you have sufficient d
       };
     }
 
-    const content = cleanJsonContent(result.choices[0].message.content);
+    const raw = result.choices[0].message.content;
+    const content = cleanJsonContent(raw);
+
+    // Log the raw response for debugging
+    console.log('Raw Watson response:', raw);
+    console.log('Cleaned content:', content);
+
+    // If cleaning yielded no JSON but raw contains the completion phrase alone, ignore it and ask for description
+    const completionPhrase = "that's all the information i need";
+    if (content === '{}' && typeof raw === 'string') {
+      const lowerRaw = raw.toLowerCase();
+      const hasBullets = /(^|\n)\s*(-\s|•|\d+\.)/m.test(raw);
+      const hasCompletionOnly = lowerRaw.includes(completionPhrase) && !raw.includes('{');
+      if (hasCompletionOnly || hasBullets) {
+        // Choose a smart next question based on what the user just wrote
+        const lastUserMsg =
+          [...conversationHistory].reverse().find((m) => m.role === 'user')?.content || '';
+        const len = lastUserMsg.trim().length;
+        const hasMultiSentences = (lastUserMsg.match(/[.!?]\s+[A-Z]/g) || []).length >= 1;
+        // Heuristics: if user provided substantial description, move on to parties involved; else ask for description.
+        const nextQ =
+          len > 120 || hasMultiSentences
+            ? 'Who was involved in the incident?'
+            : 'Please describe the incident.';
+        return {
+          displayText: nextQ,
+          fullData: {
+            report_title: '',
+            report_type: [],
+            trades_field: [],
+            report_description: '',
+            parties_involved: [],
+            witnesses: [],
+            next_question: nextQ,
+          },
+        };
+      }
+    }
 
     // Try to extract next_question from JSON
     const extracted = extractNextQuestion(content);
@@ -360,7 +491,9 @@ Start with a friendly greeting and ask what happened. When you have sufficient d
       return extracted;
     }
 
-    // Fallback: look for plain text question
+    // Fallback for plain text responses (should not happen with json_object mode)
+    // If we get here, the response was malformed - try to salvage it
+    console.log('JSON parsing failed, attempting to extract plain text question from:', content);
     const lines = content.split('\n');
     for (const line of lines) {
       const trimmed = line.trim();
@@ -369,13 +502,62 @@ Start with a friendly greeting and ask what happened. When you have sufficient d
         !trimmed.startsWith('[') &&
         !trimmed.startsWith('{') &&
         !trimmed.startsWith('"') &&
+        !trimmed.includes('RAGQuery') &&
         trimmed.includes('?')
       ) {
-        return { displayText: trimmed, fullData: content };
+        // Plain text question found - wrap it in a minimal valid structure
+        return {
+          displayText: trimmed,
+          fullData: {
+            report_title: '',
+            report_type: [],
+            trades_field: [],
+            report_description: '',
+            parties_involved: [],
+            witnesses: [],
+            next_question: trimmed,
+          },
+        };
       }
     }
 
-    return { displayText: content, fullData: content };
+    // Last resort: if content looks like plain text, use it as the question
+    if (content && !content.startsWith('{') && !content.includes('RAGQuery')) {
+      return {
+        displayText: content,
+        fullData: {
+          report_title: '',
+          report_type: [],
+          trades_field: [],
+          report_description: '',
+          parties_involved: [],
+          witnesses: [],
+          next_question: content,
+        },
+      };
+    }
+
+    // Final fallback: choose a sensible next question based on recent context
+    const lastUserMsg =
+      [...conversationHistory].reverse().find((m) => m.role === 'user')?.content || '';
+    const len = lastUserMsg.trim().length;
+    const hasMultiSentences = (lastUserMsg.match(/[.!?]\s+[A-Z]/g) || []).length >= 1;
+    const nextQ =
+      len > 120 || hasMultiSentences
+        ? 'Who was involved in the incident?'
+        : 'Please describe the incident.';
+    return {
+      displayText: nextQ,
+      fullData: {
+        report_title: '',
+        report_type: [],
+        trades_field: [],
+        report_description: '',
+        parties_involved: [],
+        witnesses: [],
+        next_question: nextQ,
+      },
+    };
   } catch (err) {
     console.error('Error calling IBM Watson:', err);
     throw err;
