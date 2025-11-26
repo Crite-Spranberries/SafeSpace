@@ -1,19 +1,14 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {useState } from 'react';
 import usePreloadImages from '@/hooks/usePreloadImages';
 import { AppText } from '@/components/ui/AppText';
 import {
   StyleSheet,
   View,
-  Alert,
-  TouchableOpacity,
   ImageBackground,
   ActivityIndicator,
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
-import { Icon } from '@/components/ui/Icon';
-import { router, Stack } from 'expo-router';
 import { Button } from './Button';
 
 export default function PassCodeScreen({ onUnlock }: { onUnlock?: () => void }) {
