@@ -52,7 +52,9 @@ export default function Home() {
             borderWidth={1}
             radius={24}
           />
-          <Text variant="h4">Nearby Reports</Text>
+          <Text variant="h4" style={{ marginTop: 20, fontSize: 24 }}>
+            Nearby Reports
+          </Text>
         </View>
 
         <View
