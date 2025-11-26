@@ -1,64 +1,89 @@
 import { Text } from '@/components/ui/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, ImageBackground } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import { Stack } from 'expo-router';
 import { useNavigation, useRouter } from 'expo-router';
+import { usePreloadImages } from '@/hooks/usePreloadImages';
 
 export default function CreateReport() {
   const navigation = useNavigation();
   const router = useRouter();
+  const ready = usePreloadImages([require('@/assets/images/recording-background.png')]);
+
+  const SCREEN_OPTIONS = {
+    title: '',
+    headerTransparent: true,
+  };
+
+  if (!ready) {
+    return (
+      <>
+        <Stack.Screen options={SCREEN_OPTIONS} />
+        <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#ffffff" />
+        </SafeAreaView>
+      </>
+    );
+  }
+
   return (
     <>
-      <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
-
-      <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={styles.pageContainer}>
-        <View style={styles.header}>
-          <Button variant="darkGrey" size="icon" radius="full" onPress={() => navigation.goBack()}>
-            <Icon as={ArrowLeft} size={24} />
-          </Button>
-        </View>
-        <View style={styles.contentContainer}>
-          <Text variant="h3">Create Report</Text>
-          <Text>
-            Please ensure you are in a place of safety before continuing with your report.
-          </Text>
-          <View style={styles.buttonContainer}>
+      <ImageBackground
+        source={require('@/assets/images/recording-background.png')}
+        style={styles.background}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={styles.pageContainer}>
+          <View style={styles.header}>
             <Button
-              size="multiLine"
               variant="darkGrey"
-              radius="lg"
-              style={styles.button}
-              onPress={() => router.push('/create_report/aiChat')}>
-              <View style={styles.buttonText}>
-                <Text style={styles.buttonTitle}>AI Guidance</Text>
-                <Text style={styles.buttonDescription}>
-                  Chat with our AI assistant Safi and she’ll turn your conversation into a report.
-                </Text>
-              </View>
-              <Icon as={ArrowRight} size={24} />
-            </Button>
-            <Button
-              size="multiLine"
-              variant="darkGrey"
-              radius="lg"
-              onPress={() => router.push('/create_report/form')}
-              style={styles.button}>
-              <View style={styles.buttonText}>
-                <Text style={styles.buttonTitle}>Do It Yourself</Text>
-                <Text style={styles.buttonDescription}>
-                  Manually input all the information needed to generate a report.
-                </Text>
-              </View>
-              <Icon as={ArrowRight} size={24} />
+              size="icon"
+              radius="full"
+              onPress={() => navigation.goBack()}>
+              <Icon as={ArrowLeft} size={24} />
             </Button>
           </View>
-        </View>
-      </SafeAreaView>
+          <View style={styles.contentContainer}>
+            <Text variant="h3">Create Report</Text>
+            <Text>
+              Please ensure you are in a place of safety before continuing with your report.
+            </Text>
+            <View style={styles.buttonContainer}>
+              <Button
+                size="multiLine"
+                variant="darkGrey"
+                radius="lg"
+                style={styles.button}
+                onPress={() => router.push('/create_report/aiChat')}>
+                <View style={styles.buttonText}>
+                  <Text style={styles.buttonTitle}>AI Guidance</Text>
+                  <Text style={styles.buttonDescription}>
+                    Chat with our AI assistant Safi and she’ll turn your conversation into a report.
+                  </Text>
+                </View>
+                <Icon as={ArrowRight} size={24} />
+              </Button>
+              <Button
+                size="multiLine"
+                variant="darkGrey"
+                radius="lg"
+                onPress={() => router.push('/create_report/form')}
+                style={styles.button}>
+                <View style={styles.buttonText}>
+                  <Text style={styles.buttonTitle}>Do It Yourself</Text>
+                  <Text style={styles.buttonDescription}>
+                    Manually input all the information needed to generate a report.
+                  </Text>
+                </View>
+                <Icon as={ArrowRight} size={24} />
+              </Button>
+            </View>
+          </View>
+        </SafeAreaView>
+      </ImageBackground>
     </>
   );
 }
