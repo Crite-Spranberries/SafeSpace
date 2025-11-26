@@ -4,19 +4,43 @@ import { StyleSheet } from 'react-native';
 import { Icon } from './Icon';
 import { Mic } from 'lucide-react-native';
 import { Button } from './Button';
+import { AppText } from './AppText';
 
-export default function ChatTyping() {
+export default function ChatTyping({
+  inputText,
+  setInputText,
+  handleSend,
+  isLoading,
+}: {
+  inputText: string;
+  setInputText: (text: string) => void;
+  handleSend: () => void;
+  isLoading: boolean;
+}) {
   return (
     <View style={styles.container}>
-      <Button size="icon" variant="ghost" radius="full" style={styles.button}>
+      {/* <Button size="icon" variant="ghost" radius="full" style={styles.button}>
         <Icon as={Mic} size={24} color="#5E349E" />
-      </Button>
+      </Button> */}
       <Input
         placeholder="Type your message..."
         style={styles.input}
         placeholderTextColor="#6B6B6B"
-        returnKeyType="done"
+        value={inputText}
+        onChangeText={setInputText}
+        multiline
+        maxLength={500}
       />
+      <Button
+        size="lg"
+        variant="purple"
+        radius="full"
+        onPress={handleSend}
+        disabled={inputText.trim() === '' || isLoading}>
+        <AppText weight="medium" style={{ color: 'white' }}>
+          Send
+        </AppText>
+      </Button>
     </View>
   );
 }
@@ -29,10 +53,9 @@ const styles = StyleSheet.create({
     borderTopColor: '#eee',
     backgroundColor: '#fff',
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    overflow: 'hidden',
   },
   input: {
     backgroundColor: '#E8E8E8',
@@ -41,6 +64,8 @@ const styles = StyleSheet.create({
     padding: 10,
     margin: 10,
     flex: 1,
+    minHeight: 40,
+    maxHeight: 120,
   },
   button: {
     backgroundColor: '#D9C7F5',

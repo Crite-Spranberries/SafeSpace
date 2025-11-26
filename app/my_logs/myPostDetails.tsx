@@ -15,24 +15,44 @@ import { Link, useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 
 export default function MyPostDetails() {
-  const params = useLocalSearchParams<{ report?: string; title?: string; id?: string }>();
+  const params = useLocalSearchParams<{
+    report?: string;
+    title?: string;
+    id?: string;
+    date?: string;
+    timestamp?: string;
+    location?: string;
+    tags?: string;
+    report_type?: string;
+    trades_field?: string;
+    status?: string;
+  }>();
   const reportParam = typeof params.report === 'string' ? params.report : null;
   const titleParam = typeof params.title === 'string' ? params.title : null;
   const idParam = typeof params.id === 'string' ? params.id : null;
+  const dateParam = typeof params.date === 'string' ? params.date : null;
+  const timestampParam = typeof params.timestamp === 'string' ? params.timestamp : null;
+  const locationParam = typeof params.location === 'string' ? params.location : null;
+  const tagsParam = typeof params.tags === 'string' ? JSON.parse(params.tags) : [];
+  const reportTypeParam =
+    typeof params.report_type === 'string' ? JSON.parse(params.report_type) : [];
+  const tradesFieldParam =
+    typeof params.trades_field === 'string' ? JSON.parse(params.trades_field) : [];
+  const statusParam = typeof params.status === 'string' ? params.status : 'Private';
 
   const SCREEN_OPTIONS = {
     title: '',
     headerBackTitle: 'Back',
     headerTransparent: true,
     headerLeft: () => (
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push('/(tabs)/myLogs')}>
         <Icon as={ArrowLeft} size={16} />
       </TouchableOpacity>
     ),
   };
 
   const { showConfirmation } = useConfirmation();
-  const [isPublic, setIsPublic] = useState(false);
+  const [isPublic, setIsPublic] = useState(statusParam === 'Posted');
 
   return (
     <>
@@ -45,35 +65,34 @@ export default function MyPostDetails() {
               {idParam === 'default-report-1' || idParam === 'default-report-2'
                 ? titleParam || 'Report Details'
                 : titleParam
-                  ? `Summary Generated from ${titleParam}`
+                  ? `${titleParam}`
                   : 'Title generated based on summary'}
             </AppText>
             <View style={styles.subtitleContainer}>
-              <AppText style={styles.subtitleText}>November 4, 2025</AppText>
-              <AppText style={styles.subtitleText}>10:15 AM</AppText>
+              <AppText style={styles.subtitleText}>{dateParam}</AppText>
+              <AppText style={styles.subtitleText}>{timestampParam}</AppText>
             </View>
-            <MapOnDetail address="3700 Willingdon Avenue, Burnaby" style={styles.mapOnDetail} />
+            <MapOnDetail
+              address={locationParam || '3700 Willingdon Avenue, Burnaby'}
+              style={styles.mapOnDetail}
+            />
 
             <View style={styles.badgeSection}>
               <AppText style={styles.badgeTitle} weight="medium">
-                Type of Report
+                Report Type
               </AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Harassment
-                  </AppText>
-                </Badge>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Electrical
-                  </AppText>
-                </Badge>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Warning
-                  </AppText>
-                </Badge>
+                {reportTypeParam.length > 0 ? (
+                  reportTypeParam.map((tag: string, index: number) => (
+                    <Badge key={index} variant="darkGrey" className="mr-2 px-4">
+                      <AppText style={styles.badgeText} weight="medium">
+                        {tag}
+                      </AppText>
+                    </Badge>
+                  ))
+                ) : (
+                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>None</AppText>
+                )}
               </ScrollView>
             </View>
 
@@ -82,11 +101,17 @@ export default function MyPostDetails() {
                 Trades Field
               </AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Electrical
-                  </AppText>
-                </Badge>
+                {tradesFieldParam.length > 0 ? (
+                  tradesFieldParam.map((tag: string, index: number) => (
+                    <Badge key={index} variant="darkGrey" className="mr-2 px-4">
+                      <AppText style={styles.badgeText} weight="medium">
+                        {tag}
+                      </AppText>
+                    </Badge>
+                  ))
+                ) : (
+                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>None</AppText>
+                )}
               </ScrollView>
             </View>
 
@@ -109,7 +134,6 @@ export default function MyPostDetails() {
               <Recommendation text="Provide Bystander Intervention and Respect Training" />
               <Recommendation text="Require Pre-Task Safety and Inclusion Briefings" />
               <Recommendation text="Implement a Zero-Tolerance Harassment Policy" />
-              <Recommendation text="Enforce Proper PPE Usage at All Times" />
             </View>
 
             <View style={styles.buttonContainer}>

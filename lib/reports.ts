@@ -9,6 +9,8 @@ export type StoredReport = {
   timestamp: string;
   location?: string;
   tags?: string[];
+  report_type?: string[];
+  trades_field?: string[];
   status: 'Posted' | 'Private';
   excerpt?: string;
   content?: string;
@@ -23,6 +25,8 @@ const DEFAULT_REPORTS: StoredReport[] = [
     timestamp: '10:30',
     location: '456 Government St, Burnaby, BC',
     tags: ['Discrimination', 'Pay Inequality'],
+    report_type: ['Discrimination', 'Pay Inequality'],
+    trades_field: ['Electrical'],
     status: 'Posted',
     excerpt:
       'I noticed that my male colleagues receive higher pay for the same tasks. When I raised the issue, I was ignored and sometimes subtly threatened. It made me feel undervalued and hesitant to speak up again.',
@@ -34,6 +38,8 @@ const DEFAULT_REPORTS: StoredReport[] = [
     timestamp: '10:30',
     location: '123 Granville St, Burnaby, BC',
     tags: ['Discrimination', 'Harassment'],
+    report_type: ['Discrimination', 'Harassment'],
+    trades_field: ['Plumbing'],
     status: 'Private',
     excerpt:
       'During a recent apprenticeship training, my supervisor repeatedly referred to me with the wrong pronouns despite me correcting them multiple times.',
