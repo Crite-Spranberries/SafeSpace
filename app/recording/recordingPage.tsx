@@ -27,7 +27,8 @@ import { addRecording } from '@/lib/recordings';
 import { addReport } from '@/lib/reports';
 import { transcribeAudio, generateReport } from '@/lib/ai';
 import WaveForm from '@/components/ui/WaveForm';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
+import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
 
@@ -43,6 +44,7 @@ export default function Recording() {
   // Preload the recording background image so ImageBackground renders smoothly
   const ready = usePreloadImages([require('@/assets/images/recording-background.png')]);
   const expoRouter = useRouter();
+  const { showConfirmation } = useConfirmation();
   const SCREEN_OPTIONS = {
     title: '',
     headerBackTitle: 'Back',
@@ -211,20 +213,24 @@ export default function Recording() {
 
       await addRecording(payload);
 
-      expoRouter.push({
-        pathname: '/(tabs)/myLogs',
-        // pathname: '/my_logs/myRecordingDetails',
-        // params: {
-        //   audioUri: recordingUri,
-        //   recordingId: payload.id,
-        //   title: payload.title,
-        //   date: payload.date,
-        //   timestamp: payload.timestamp,
-        //   duration: durationLabel,
-        //   transcript: payload.transcript,
-        //   report: payload.report,
-        // },
+      const confirmed = await showConfirmation({
+        title: 'Recording Saved',
+        description: (
+          <AppText style={styles.confirmationDescription}>
+            Your recording has been saved.{'\n'}
+            Go to My Logs to generate a report from this recording.
+          </AppText>
+        ),
+        cancelText: 'Back to Home',
+        confirmText: 'My Logs',
+        confirmVariant: 'purple',
       });
+
+      if (confirmed) {
+        expoRouter.push('/(tabs)/myLogs');
+      } else {
+        expoRouter.push('/(tabs)');
+      }
     } catch (err) {
       console.error('Failed to stop recording', err);
       Alert.alert('Recording Error', 'Unable to stop and save the recording.');
@@ -443,5 +449,11 @@ const styles = StyleSheet.create({
   savingText: {
     color: '#FFF',
     fontSize: 16,
+  },
+  confirmationDescription: {
+    fontSize: 20,
+    lineHeight: 24,
+    textAlign: 'center',
+    color: '#000',
   },
 });
