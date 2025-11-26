@@ -246,6 +246,8 @@ export default function aiChat() {
               timestamp: formatTime(createdAt),
               status: 'Private',
               tags,
+              report_type: Array.isArray(data.report_type) ? data.report_type : [],
+              trades_field: Array.isArray(data.trades_field) ? data.trades_field : [],
               excerpt: description.substring(0, 120) + (description.length > 120 ? '...' : ''),
               content: description,
             };
@@ -391,6 +393,19 @@ export default function aiChat() {
                           report: createdReport.content || '',
                           title: createdReport.title,
                           id: createdReport.id,
+                          date: createdReport.date,
+                          timestamp: createdReport.timestamp,
+                          location: createdReport.location,
+                          tags: createdReport.tags
+                            ? JSON.stringify(createdReport.tags)
+                            : JSON.stringify([]),
+                          report_type: createdReport.report_type
+                            ? JSON.stringify(createdReport.report_type)
+                            : JSON.stringify([]),
+                          trades_field: createdReport.trades_field
+                            ? JSON.stringify(createdReport.trades_field)
+                            : JSON.stringify([]),
+                          status: createdReport.status,
                         },
                       });
                     }

@@ -57,6 +57,15 @@ export default function MylogsPage() {
         report: report.content,
         title: report.title,
         id: report.id,
+        date: report.date,
+        timestamp: report.timestamp,
+        location: report.location,
+        tags: report.tags ? JSON.stringify(report.tags) : JSON.stringify([]),
+        report_type: report.report_type ? JSON.stringify(report.report_type) : JSON.stringify([]),
+        trades_field: report.trades_field
+          ? JSON.stringify(report.trades_field)
+          : JSON.stringify([]),
+        status: report.status,
       },
     });
   };
