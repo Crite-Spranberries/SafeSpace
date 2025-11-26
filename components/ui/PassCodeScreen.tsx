@@ -50,7 +50,7 @@ export default function PassCodeScreen({ onUnlock }: { onUnlock?: () => void }) 
             </AppText>
             <TextInput
               placeholder="Enter your password"
-              secureTextEntry={true}
+              // secureTextEntry={true}
               style={styles.input}
               value={password}
               onChangeText={setPassword}
