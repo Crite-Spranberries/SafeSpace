@@ -50,7 +50,7 @@ export const generateReport = async (transcript: string) => {
     );
 
     const responseData = await response.json();
-    
+
     // Handle both stringified JSON and direct object response
     let json: { url: string };
     if (typeof responseData === 'string') {

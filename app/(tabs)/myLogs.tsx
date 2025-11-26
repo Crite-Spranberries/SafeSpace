@@ -15,11 +15,11 @@ import * as Haptics from 'expo-haptics';
 import { AppText } from '@/components/ui/AppText';
 import { loadRecordings, StoredRecording } from '@/lib/recordings';
 import { loadReports, StoredReport } from '@/lib/reports';
+import PassCodeScreen from '@/components/ui/PassCodeScreen';
 
 export default function MylogsPage() {
-  const [modalOpen, setModalOpen] = useState(false);
+  const [isLocked, setIsLocked] = useState(true);
   const [activeTab, setActiveTab] = useState<'recordings' | 'reports'>('recordings');
-  const [password, setPassword] = useState('');
   const [recordings, setRecordings] = useState<StoredRecording[]>([]);
   const [reports, setReports] = useState<StoredReport[]>([]);
   const router = useRouter();
@@ -27,7 +27,7 @@ export default function MylogsPage() {
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
-      setModalOpen(true);
+      setIsLocked(true);
       (async () => {
         try {
           const savedRecordings = await loadRecordings();
@@ -86,6 +86,10 @@ export default function MylogsPage() {
       },
     });
   };
+
+  if (isLocked) {
+    return <PassCodeScreen onUnlock={() => setIsLocked(false)} />;
+  }
 
   return (
     <>
