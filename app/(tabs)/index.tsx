@@ -24,7 +24,7 @@ export default function Home() {
   const mapRef = React.useRef<any>(null);
 
   const onDetails = () => {
-    router.push('/create_report/report');
+    router.push('/create_report');
   };
 
   const onCenterLocation = () => {

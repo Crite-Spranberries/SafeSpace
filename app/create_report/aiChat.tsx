@@ -12,7 +12,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Volume2, VolumeOff } from 'lucide-react-native';
 import { useNavigation } from 'expo-router';
 import ChatBubble from '@/components/ui/ChatBubble';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,6 +27,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { sendMessage } from '@/lib/ibmWatson';
 import { Button } from '@/components/ui/Button';
 import { addReport, StoredReport } from '@/lib/reports';
+import * as Speech from 'expo-speech';
 
 const SCREEN_OPTIONS = {
   title: '',
@@ -80,6 +81,7 @@ export default function aiChat() {
   const scrollViewRef = useRef<ScrollView>(null);
   const [creatingReport, setCreatingReport] = useState(false);
   const [createdReport, setCreatedReport] = useState<StoredReport | null>(null);
+  const [isAuto, setIsAuto] = useState(true);
 
   const formatDate = (value: Date) =>
     value.toLocaleDateString(undefined, {
@@ -294,15 +296,41 @@ export default function aiChat() {
     };
   }, []);
 
+  useEffect(() => {
+    if (messages.length > 0 && isAuto) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.sender === 'safi') {
+        Speech.speak(lastMessage.text);
+      }
+    }
+  }, [messages]);
+
+  function textSpeech(text: string) {
+    Speech.speak(text);
+  }
+
   return (
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
-      <Stack.Screen options={SCREEN_OPTIONS} />
+      <Stack.Screen
+        options={{
+          ...SCREEN_OPTIONS,
+          headerRight: () => (
+            <Button
+              variant="purple"
+              radius="full"
+              size="icon"
+              onPress={() => setIsAuto(!isAuto)}
+              style={{ marginRight: 16 }}>
+              <Icon as={isAuto ? Volume2 : VolumeOff} size={20} color="white" />
+            </Button>
+          ),
+        }}
+      />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <AppText weight="bold" style={styles.heading}>
           Chat with Safi
         </AppText>
-
         <KeyboardAvoidingView
           style={styles.contentWrapper}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -347,6 +375,8 @@ export default function aiChat() {
                     type={message.sender}
                     text={message.text}
                     style={message.sender === 'safi' ? styles.safiBubble : styles.userBubble}
+                    isAuto={isAuto}
+                    onPress={() => textSpeech(message.text)}
                   />
                 ))}
 

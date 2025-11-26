@@ -9,18 +9,15 @@ import { Volume2 } from 'lucide-react-native';
 type Props = ModalProps & {
   text: string;
   type?: 'user' | 'safi';
+  onPress?: () => void;
+  isAuto?: boolean;
 };
 
-export default function ChatBubble({ text, type }: Props) {
+export default function ChatBubble({ text, type, onPress, isAuto }: Props) {
   return (
     <View style={type === 'safi' ? styles.safiContainer : styles.userContainer}>
-      {type === 'safi' && (
-        <Button
-          size="icon"
-          variant="ghost"
-          radius="full"
-          onPress={() => Speech.speak(text)}
-          style={styles.button}>
+      {type === 'safi' && !isAuto && (
+        <Button size="icon" variant="ghost" radius="full" onPress={onPress} style={styles.button}>
           <Icon as={Volume2} size={24} color={type === 'safi' ? 'white' : 'black'} />
         </Button>
       )}
