@@ -127,6 +127,21 @@ const MapOnHome = forwardRef<MapOnHomeImperativeHandle, MapOnHomeProps>(function
               <MapPin size={40} fill="#8449DF" color="#8449DF" strokeWidth={0} />
             </Marker>
           )}
+          <Marker
+            coordinate={{ latitude: 49.248134, longitude: -123.002985 }}
+            title="BCIT - Fairey Street"
+            description="Near Fairey St, Burnaby"
+            anchor={{ x: 0.5, y: 1 }}>
+            <MapPin size={38} fill="#eec8ffff" color="#FF6B00" strokeWidth={0} />
+          </Marker>
+
+          <Marker
+            coordinate={{ latitude: 49.250885, longitude: -123.001985 }}
+            title="BCIT - Lister Avenue"
+            description="Near Lister Ave, Burnaby"
+            anchor={{ x: 0.5, y: 1 }}>
+            <MapPin size={38} fill="#eec8ffff" color="#00CFFF" strokeWidth={0} />
+          </Marker>
         </MapView>
       )}
     </View>

@@ -1,5 +1,56 @@
 import Constants from 'expo-constants';
 
+// Types
+type Role = 'system' | 'user' | 'assistant';
+
+export interface ReportData {
+  report_title: string;
+  report_type: string[];
+  trades_field: string[];
+  report_description: string;
+  parties_involved: string[];
+  witnesses: string[];
+  next_question: string;
+}
+
+interface WatsonMessage {
+  role: Role;
+  content: string;
+}
+
+interface WatsonChoice {
+  message: {
+    content: string;
+  };
+}
+
+function logWatsonResult(result: WatsonResult) {
+  console.log(
+    JSON.stringify(
+      {
+        watson: 'result',
+        result,
+      },
+      null,
+      2
+    )
+  );
+}
+
+function logWatsonRequest(userText: string, historyLen: number) {
+  console.log(
+    JSON.stringify(
+      {
+        watson: 'request',
+        user: userText,
+        historyLength: historyLen,
+      },
+      null,
+      2
+    )
+  );
+}
+
 // Try to get from Constants first, then fall back to direct env access
 const API_KEY =
   Constants.expoConfig?.extra?.ibmApiKey ||
@@ -25,19 +76,58 @@ interface ChatMessage {
 }
 
 interface WatsonResponse {
-  choices?: Array<{
-    message: {
-      content: string;
-    };
-  }>;
-  // Add other possible response fields as needed
+  choices?: WatsonChoice[];
   [key: string]: any;
 }
 
 export interface WatsonResult {
   displayText: string;
-  fullData: any;
+  fullData: ReportData | null;
 }
+
+// Prompt
+const SYSTEM_PROMPT = `You are Safi, an incident report assistant. Respond immediately with JSON only. Do NOT greet or add any non-JSON text.
+
+CRITICAL: Respond ONLY with valid JSON. NO greetings, NO extra text before or after the JSON object.
+
+JSON FORMAT:
+{"report_title":"Brief title","report_type":["Type1"],"trades_field":["Trade1"],"report_description":"Detailed description","parties_involved":["Person1"],"witnesses":["Witness1"],"next_question":"Your question?"}
+
+RULES:
+1. ACCUMULATE data - never lose previously collected information
+2. Update fields based on new user answers
+3. Ask ONE clear, specific question at a time.
+  - Do NOT output bullet lists, multiple questions, or numbered steps.
+  - Do NOT output function/tool calls (e.g., RAGQuery) or any keys other than those in the JSON format.
+  - Do NOT ask the user to rephrase, summarize, confirm formatting, describe policies/procedures, or talk about processing. Avoid meta/process questions.
+  - If the user has already described the incident, do NOT ask for a description again.
+4. When you have enough information (incident type, description, who was involved), ONLY THEN set next_question to: "That's all the information I need, thank you for sharing."
+
+FIELD GUIDELINES:
+- report_title: Brief summary (create once incident is clear)
+- report_type: ["Harassment"], ["Bullying"], ["Discrimination"], ["Safety Violation"], etc.
+- trades_field: ["Electrical"], ["Plumbing"], ["Carpentry"], etc.
+- report_description: Accumulate all details in one continuous string
+- parties_involved: Names of people involved
+- witnesses: Names of witnesses
+- next_question: Your next question (or completion phrase when done)
+
+Do Not ask questions relating to what kind of report the user wants to create, or ask about if they want to make a report.
+
+Do NOT ask questions about what this incident is classified as, or Title. You are meant to generate that information yourself.
+
+Do NOT use greetings or meta/process prompts. Do NOT use the completion phrase until meaningful information is collected.
+
+Here is an example of what it should look like when you have enough information:
+{
+"report_title":"Workplace Harassment Incident",
+"report_type":["harassment", "bullying"],
+"trades_field":["electrical"],
+"report_description":"A colleague made inappropriate comments and unwanted physical contact during work hours.",
+"parties_involved":["John Doe", "Jane Smith"],
+"witnesses":["Alice Johnson", "Bob Lee"],
+"next_question":"That's all the information I need, thank you for sharing."
+}`;
 
 /**
  * Makes a POST request using fetch API
@@ -138,18 +228,20 @@ async function retryWithBackoff<T>(
       return await fn();
     } catch (err) {
       const isLastAttempt = i === maxRetries - 1;
-      const is503 = err instanceof Error && err.message.includes('HTTP 503');
+      const message = err instanceof Error ? err.message : String(err);
+      const retryable = /HTTP\s(429|503)/.test(message);
 
-      if (is503 && !isLastAttempt) {
-        const delayMs = initialDelayMs * Math.pow(2, i);
-        console.warn(`Retrying in ${delayMs}ms due to service unavailable...`);
+      if (retryable && !isLastAttempt) {
+        const jitter = Math.floor(Math.random() * 200);
+        const delayMs = initialDelayMs * Math.pow(2, i) + jitter;
+        console.warn(`[Watson] Retrying in ${delayMs}ms due to ${message}`);
         await new Promise((resolve) => setTimeout(resolve, delayMs));
-      } else {
-        throw err;
+        continue;
       }
+      throw err;
     }
   }
-  throw new Error('Max retries exceeded');
+  throw new Error('[Watson] Max retries exceeded');
 }
 
 function cleanJsonContent(content: string): string {
@@ -296,9 +388,9 @@ function extractNextQuestion(content: string): WatsonResult | null {
   return null;
 }
 
-function validateAndFixData(data: any): any {
+function validateAndFixData(data: any): ReportData {
   // Ensure all required fields exist and are the correct type
-  const fixed: any = {
+  const fixed: ReportData = {
     report_title: data.report_title || '',
     report_type: Array.isArray(data.report_type) ? data.report_type : [],
     trades_field: Array.isArray(data.trades_field) ? data.trades_field : [],
@@ -364,63 +456,23 @@ export async function sendMessage(
 
     // Build the full conversation with system prompt only at the start
     // Only include system prompt if this is the first message (no history)
-    const messages = [];
+    const messages: WatsonMessage[] = [];
 
     // Always include system prompt to ensure the AI follows rules and maintains persona
-    messages.push({
-      role: 'system' as const,
-      content: `You are Safi, an incident report assistant. Respond immediately with JSON only. Do NOT greet or add any non-JSON text.
-
-      CRITICAL: Respond ONLY with valid JSON. NO greetings, NO extra text before or after the JSON object.
-
-JSON FORMAT:
-{"report_title":"Brief title","report_type":["Type1"],"trades_field":["Trade1"],"report_description":"Detailed description","parties_involved":["Person1"],"witnesses":["Witness1"],"next_question":"Your question?"}
-
-RULES:
-1. ACCUMULATE data - never lose previously collected information
-2. Update fields based on new user answers
-3. Ask ONE clear, specific question at a time.
-  - Do NOT output bullet lists, multiple questions, or numbered steps.
-  - Do NOT output function/tool calls (e.g., RAGQuery) or any keys other than those in the JSON format.
-  - Do NOT ask the user to rephrase, summarize, confirm formatting, describe policies/procedures, or talk about processing. Avoid meta/process questions.
-  - If the user has already described the incident, do NOT ask for a description again.
-4. When you have enough information (incident type, description, who was involved), ONLY THEN set next_question to: "That's all the information I need, thank you for sharing."
-
-FIELD GUIDELINES:
-- report_title: Brief summary (create once incident is clear)
-- report_type: ["Harassment"], ["Bullying"], ["Discrimination"], ["Safety Violation"], etc.
-- trades_field: ["Electrical"], ["Plumbing"], ["Carpentry"], etc.
-- report_description: Accumulate all details in one continuous string
-- parties_involved: Names of people involved
-- witnesses: Names of witnesses
-- next_question: Your next question (or completion phrase when done)
-
-Do Not ask questions relating to what kind of report the user wants to create, or ask about if they want to make a report.
-
-Do NOT ask questions about what this incident is classified as, or Title. You are meant to generate that information yourself.
-
-Do NOT use greetings or meta/process prompts. Do NOT use the completion phrase until meaningful information is collected.
-
-Here is an example of what it should look like when you have enough information:
-{
-"report_title":"Workplace Harassment Incident",
-"report_type":["harassment", "bullying"],
-"trades_field":["electrical"],
-"report_description":"A colleague made inappropriate comments and unwanted physical contact during work hours.",
-"parties_involved":["John Doe", "Jane Smith"],
-"witnesses":["Alice Johnson", "Bob Lee"],
-"next_question":"That's all the information I need, thank you for sharing."
-}`,
-    });
+    messages.push({ role: 'system', content: SYSTEM_PROMPT });
 
     messages.push(...conversationHistory, {
       role: 'user' as const,
       content: userMessage,
     });
 
-    const payload = {
+    const payload: {
+      messages: WatsonMessage[];
+      temperature: number;
+      max_tokens: number;
+      response_format: { type: 'json_object' };
+    } = {
       messages: messages,
-      model: 'gpt-5',
       // Low temperature for deterministic JSON formatting
       temperature: 0.2,
       max_tokens: 400,
@@ -429,12 +481,9 @@ Here is an example of what it should look like when you have enough information:
       // Some deployments ignore extra params; prompt enforces behavior regardless.
     };
 
-    // Debug: log the user's latest message and recent history snapshot
+    // Log request context as JSON
     try {
-      const lastUser = userMessage;
-      const historyPreview = conversationHistory.slice(-6);
-      console.log('User message sent:', lastUser);
-      console.log('Conversation history preview:', historyPreview);
+      logWatsonRequest(userMessage, conversationHistory.length);
     } catch {}
 
     const result = await retryWithBackoff(() => apiPost(SCORING_URL, token, payload));
@@ -448,10 +497,6 @@ Here is an example of what it should look like when you have enough information:
 
     const raw = result.choices[0].message.content;
     const content = cleanJsonContent(raw);
-
-    // Log the raw response for debugging
-    console.log('Raw Watson response:', raw);
-    console.log('Cleaned content:', content);
 
     // If cleaning yielded no JSON but raw contains the completion phrase alone, ignore it and ask for description
     const completionPhrase = "that's all the information i need";
@@ -488,12 +533,23 @@ Here is an example of what it should look like when you have enough information:
     // Try to extract next_question from JSON
     const extracted = extractNextQuestion(content);
     if (extracted) {
+      logWatsonResult(extracted);
       return extracted;
     }
 
     // Fallback for plain text responses (should not happen with json_object mode)
     // If we get here, the response was malformed - try to salvage it
-    console.log('JSON parsing failed, attempting to extract plain text question from:', content);
+    console.log(
+      JSON.stringify(
+        {
+          watson: 'parse_fallback',
+          note: 'JSON parsing failed, attempting plain text salvage',
+          content,
+        },
+        null,
+        2
+      )
+    );
     const lines = content.split('\n');
     for (const line of lines) {
       const trimmed = line.trim();
@@ -506,7 +562,7 @@ Here is an example of what it should look like when you have enough information:
         trimmed.includes('?')
       ) {
         // Plain text question found - wrap it in a minimal valid structure
-        return {
+        const res: WatsonResult = {
           displayText: trimmed,
           fullData: {
             report_title: '',
@@ -518,12 +574,14 @@ Here is an example of what it should look like when you have enough information:
             next_question: trimmed,
           },
         };
+        logWatsonResult(res);
+        return res;
       }
     }
 
     // Last resort: if content looks like plain text, use it as the question
     if (content && !content.startsWith('{') && !content.includes('RAGQuery')) {
-      return {
+      const res: WatsonResult = {
         displayText: content,
         fullData: {
           report_title: '',
@@ -535,6 +593,8 @@ Here is an example of what it should look like when you have enough information:
           next_question: content,
         },
       };
+      logWatsonResult(res);
+      return res;
     }
 
     // Final fallback: choose a sensible next question based on recent context
@@ -546,7 +606,7 @@ Here is an example of what it should look like when you have enough information:
       len > 120 || hasMultiSentences
         ? 'Who was involved in the incident?'
         : 'Please describe the incident.';
-    return {
+    const res: WatsonResult = {
       displayText: nextQ,
       fullData: {
         report_title: '',
@@ -558,6 +618,8 @@ Here is an example of what it should look like when you have enough information:
         next_question: nextQ,
       },
     };
+    logWatsonResult(res);
+    return res;
   } catch (err) {
     console.error('Error calling IBM Watson:', err);
     throw err;
