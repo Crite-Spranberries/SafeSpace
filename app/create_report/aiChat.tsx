@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
 import { ArrowLeft, Volume2, VolumeOff } from 'lucide-react-native';
-import { useNavigation } from 'expo-router';
 import ChatBubble from '@/components/ui/ChatBubble';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';

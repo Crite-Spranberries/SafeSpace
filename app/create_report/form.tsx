@@ -15,15 +15,6 @@ import { Input } from '@/components/ui/Input';
 import { useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { ArrowLeft, CircleX } from 'lucide-react-native';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/Select';
 import React from 'react';
 import type { TriggerRef } from '@rn-primitives/select';
 import { AppText } from '@/components/ui/AppText';
