@@ -1,8 +1,7 @@
 import { TouchableOpacity, View } from 'react-native';
-// replaced Text usages below with AppText
 import { StyleSheet } from 'react-native';
 import { Button } from '@/components/ui/Button';
-import { router, Stack, useRouter } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
@@ -11,9 +10,10 @@ import { useNavigation } from 'expo-router';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/Badge';
 import { ScrollView } from 'react-native';
-import CommentCard from '@/components/ui/CommentCardN';
 import { AppText } from '@/components/ui/AppText';
 import Recommendation from '@/components/ui/Recommendation';
+import { addReport, StoredReport } from '@/lib/reports';
+import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';  
 
 const SCREEN_OPTIONS = {
   title: '',
@@ -28,6 +28,74 @@ const SCREEN_OPTIONS = {
 
 export default function Report() {
   const navigation = useNavigation();
+  const params = useLocalSearchParams();
+  const { showConfirmation } = useConfirmation();
+  
+  const date = (params.date as string) || 'No date provided';
+  const time = (params.time as string) || 'No time provided';
+  const location = (params.location as string) || 'No location provided';
+  const reportType = params.reportType ? JSON.parse(params.reportType as string) : [];
+  const tradesField = params.tradesField ? JSON.parse(params.tradesField as string) : [];
+  const report_desc = (params.description as string) || 'No description provided.';
+  const witnesses = (params.witnesses as string) || 'No witnesses provided.';
+  const individualsInvolved =
+    (params.individualsInvolved as string) || 'No individuals involved provided.';
+  const actionsTaken = (params.actionsTaken as string) || 'No actions taken provided.';
+  const reportTitle = (params.reportTitle as string) || 'Onsite Harassment Concern Near Coffee Bar';
+
+function onEdit() {}
+
+  async function onSave() {
+    try {
+      const createdAt = new Date();
+      const content = report_desc || '';
+      const allTags: string[] = [
+        ...(Array.isArray(reportType) ? reportType : []),
+        ...(Array.isArray(tradesField) ? tradesField : []),
+      ];
+      const title = reportTitle || 'Incident Report';
+      const excerpt = content
+        ? content.substring(0, 120) + (content.length > 120 ? '...' : '')
+        : undefined;
+
+      const payload: StoredReport = {
+        id: `${createdAt.getTime()}_report`,
+        title,
+        date,
+        timestamp: time,
+        location: location && location !== 'No location provided' ? location : undefined,
+        tags: allTags,
+        report_type: Array.isArray(reportType) ? reportType : [],
+        trades_field: Array.isArray(tradesField) ? tradesField : [],
+        status: 'Private',
+        excerpt,
+        content,
+      };
+
+      await addReport(payload);
+    } catch (e) {
+      console.warn('Failed to save report', e);
+    }
+    const confirmed = await showConfirmation({
+      title: 'Report Saved',
+      description: (
+        <AppText style={styles.confirmationDescription}>
+          Your report has been saved.{'\n'}
+          Go to My Logs to post it publicly.
+        </AppText>
+      ),
+      cancelText: 'Back to Home',
+      confirmText: 'My Logs',
+      confirmVariant: 'purple',
+    });
+
+    if (confirmed) {
+      router.push('/(tabs)/myLogs');
+    } else {
+      router.push('/(tabs)');
+    }
+  }
+
 
   return (
     <>
@@ -37,7 +105,7 @@ export default function Report() {
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           <View style={styles.container}>
             <AppText weight="medium" style={styles.title}>
-              Onsite Harassment Concern Near Coffee Bar
+              {reportTitle}
             </AppText>
             <View
               style={{
@@ -46,34 +114,47 @@ export default function Report() {
                 justifyContent: 'space-between',
                 marginBottom: 16,
               }}>
-              <AppText style={styles.descriptionWhite}>November 4, 2025</AppText>
-              <AppText style={styles.descriptionWhite}>10:15 AM</AppText>
+              <AppText style={styles.descriptionWhite}>{date}</AppText>
+              <AppText style={styles.descriptionWhite}>{time}</AppText>
             </View>
             <View className="w-full max-w-md">
               <MapOnDetail />
             </View>
             <View>
               <AppText weight="medium" style={styles.subHeader}>
-                Type of Report
+                Report Type
               </AppText>
-              <View className="mb-4 flex flex-row gap-2 space-x-2">
-                <Badge variant="darkGrey">
-                  <AppText style={styles.badgeText}>Harassment</AppText>
-                </Badge>
-                <Badge variant="darkGrey">
-                  <AppText style={styles.badgeText}>Verbal</AppText>
-                </Badge>
-              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {reportType.length > 0 ? (
+                  reportType.map((tag: string, index: number) => (
+                    <Badge key={index} variant="darkGrey" className="mr-2 px-4">
+                      <AppText style={styles.badgeText} weight="medium">
+                        {tag}
+                      </AppText>
+                    </Badge>
+                  ))
+                ) : (
+                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>None</AppText>
+                )}
+              </ScrollView>
             </View>
             <View>
               <AppText weight="medium" style={styles.subHeader}>
                 Trades Field
               </AppText>
-              <View className="mb-4 flex flex-row gap-2 space-x-2">
-                <Badge variant="darkGrey">
-                  <AppText style={styles.badgeText}>Electrical</AppText>
-                </Badge>
-              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {tradesField.length > 0 ? (
+                  tradesField.map((tag: string, index: number) => (
+                    <Badge key={index} variant="darkGrey" className="mr-2 px-4">
+                      <AppText style={styles.badgeText} weight="medium">
+                        {tag}
+                      </AppText>
+                    </Badge>
+                  ))
+                ) : (
+                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>None</AppText>
+                )}
+              </ScrollView>
             </View>
             <View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -84,13 +165,10 @@ export default function Report() {
               </View>
 
               <AppText style={styles.descriptionWhite}>
-                In the past week, a male individual was observed frequently interacting in ways that
-                have made several tradeswomen uncomfortable. The individual is described as having
-                brunette, curly hair, approximately 180 cm tall, and often seen near the coffee bar
-                area.
+              {report_desc ?? 'No description provided.'}
               </AppText>
             </View>
-
+ 
             <View style={styles.recommendationsSection}>
               <AppText weight="medium" style={styles.subHeader}>
                 Recommended Actions
@@ -104,12 +182,12 @@ export default function Report() {
         </ScrollView>
         <View
           style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 24, gap: 24 }}>
-          <Button variant="reallyLightGrey" size="lg" radius="full" style={{ flex: 1 }}>
+          <Button variant="reallyLightGrey" size="lg" radius="full" style={{ flex: 1 }} onPress={onEdit}>
             <AppText weight="medium" style={{ color: '#5E349E', fontSize: 16 }}>
               Edit
             </AppText>
           </Button>
-          <Button variant="purple" size="lg" radius="full" style={{ flex: 1 }}>
+          <Button variant="purple" size="lg" radius="full" style={{ flex: 1 }} onPress={onSave}>
             <AppText weight="medium" style={{ color: '#FFFFFF', fontSize: 16 }}>
               Save Report
             </AppText>
@@ -184,4 +262,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     fontSize: 16,
   },
+
+  confirmationDescription: {
+    fontSize: 20,
+    lineHeight: 24,
+    textAlign: 'center',
+    color: '#000',
+  },
+
 });

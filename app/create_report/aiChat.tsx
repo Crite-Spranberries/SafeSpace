@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
 import { ArrowLeft, Volume2, VolumeOff } from 'lucide-react-native';
-import { useNavigation } from 'expo-router';
 import ChatBubble from '@/components/ui/ChatBubble';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -418,24 +417,28 @@ export default function aiChat() {
                   onPress={() => {
                     if (createdReport) {
                       router.push({
-                        pathname: '/my_logs/myPostDetails',
+                        pathname: '/create_report/report',
                         params: {
-                          report: createdReport.content || '',
-                          title: createdReport.title,
-                          id: createdReport.id,
+                          location: createdReport.location || 'No location provided',
                           date: createdReport.date,
-                          timestamp: createdReport.timestamp,
-                          location: createdReport.location,
-                          tags: createdReport.tags
-                            ? JSON.stringify(createdReport.tags)
-                            : JSON.stringify([]),
-                          report_type: createdReport.report_type
+                          time: createdReport.timestamp,
+                          reportType: createdReport.report_type
                             ? JSON.stringify(createdReport.report_type)
                             : JSON.stringify([]),
-                          trades_field: createdReport.trades_field
-                            ? JSON.stringify(createdReport.trades_field)
-                            : JSON.stringify([]),
-                          status: createdReport.status,
+                          tradesField: createdReport.trades_field
+                              ? JSON.stringify(createdReport.trades_field)
+                              : JSON.stringify([]),
+                          description: createdReport.content || 'No description provided',
+                          witnesses:
+                            aiData.witnesses && Array.isArray(aiData.witnesses)
+                              ? aiData.witnesses.join(', ')
+                              : 'No witnesses provided.',
+                          individualsInvolved:
+                            aiData.parties_involved && Array.isArray(aiData.parties_involved)
+                              ? aiData.parties_involved.join(', ')
+                              : 'No individuals involved provided.',
+                          actionsTaken: 'No actions taken provided.',
+                          reportTitle: createdReport.title,
                         },
                       });
                     }
