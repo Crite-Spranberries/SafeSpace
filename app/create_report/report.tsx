@@ -14,6 +14,7 @@ import CommentCard from '@/components/ui/CommentCardN';
 import { AppText } from '@/components/ui/AppText';
 import Recommendation from '@/components/ui/Recommendation';
 import { addReport, StoredReport } from '@/lib/reports';
+import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';  
 
 const SCREEN_OPTIONS = {
   title: '',
@@ -29,6 +30,7 @@ const SCREEN_OPTIONS = {
 export default function Report() {
   const navigation = useNavigation();
   const params = useLocalSearchParams();
+  const { showConfirmation } = useConfirmation();
   
   const date = (params.date as string) || 'No date provided';
   const time = (params.time as string) || 'No time provided';
@@ -74,6 +76,24 @@ function onEdit() {}
       await addReport(payload);
     } catch (e) {
       console.warn('Failed to save report', e);
+    }
+    const confirmed = await showConfirmation({
+      title: 'Report Saved',
+      description: (
+        <AppText style={styles.confirmationDescription}>
+          Your report has been saved.{'\n'}
+          Go to My Logs to post it publicly.
+        </AppText>
+      ),
+      cancelText: 'Back to Home',
+      confirmText: 'My Logs',
+      confirmVariant: 'purple',
+    });
+
+    if (confirmed) {
+      router.push('/(tabs)/myLogs');
+    } else {
+      router.push('/(tabs)');
     }
   }
 
@@ -163,12 +183,12 @@ function onEdit() {}
         </ScrollView>
         <View
           style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 24, gap: 24 }}>
-          <Button variant="reallyLightGrey" size="lg" radius="full" style={{ flex: 1 }}>
+          <Button variant="reallyLightGrey" size="lg" radius="full" style={{ flex: 1 }} onPress={onEdit}>
             <AppText weight="medium" style={{ color: '#5E349E', fontSize: 16 }}>
               Edit
             </AppText>
           </Button>
-          <Button variant="purple" size="lg" radius="full" style={{ flex: 1 }}>
+          <Button variant="purple" size="lg" radius="full" style={{ flex: 1 }} onPress={onSave}>
             <AppText weight="medium" style={{ color: '#FFFFFF', fontSize: 16 }}>
               Save Report
             </AppText>
@@ -243,4 +263,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     fontSize: 16,
   },
+  
+  confirmationDescription: {
+    fontSize: 20,
+    lineHeight: 24,
+    textAlign: 'center',
+    color: '#000',
+  },
+
 });
