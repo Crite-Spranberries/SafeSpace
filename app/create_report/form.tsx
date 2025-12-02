@@ -58,7 +58,7 @@ export default function Form() {
     actionsTaken: '',
   });
 
-  const [date, setDate] = useState<Date>(new Date(1598051730000));
+  const [date, setDate] = useState<Date>(new Date());
   const [mode, setMode] = useState<'date' | 'time'>('date');
   const [show, setShow] = useState<boolean>(false);
 
@@ -292,7 +292,21 @@ export default function Form() {
           variant="purple"
           radius="full"
           style={styles.buttonContainer}
-          onPress={() => router.push('/create_report/report')}>
+          onPress={() => router.push({
+            pathname: '/create_report/report',
+            params:{
+              location: formData.location,
+              date: date.toLocaleDateString(),
+              time: date.toLocaleTimeString(),
+              reportType: JSON.stringify(formData.reportFieldArray),
+              tradesField: JSON.stringify(formData.tradesFieldArray),
+              description: formData.description,
+              witnesses: formData.witnesses,
+              individualsInvolved: formData.individualsInvolved,
+              actionsTaken: formData.actionsTaken,
+            }
+          }
+        )}>
           <AppText weight="medium" style={styles.buttonText}>
             Generate Report
           </AppText>
