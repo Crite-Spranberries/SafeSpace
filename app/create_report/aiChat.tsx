@@ -159,36 +159,26 @@ export default function aiChat() {
 
       const botResponse = await sendMessage(userMessageText, conversationHistory);
 
-      // Merge AI data cumulatively across turns
-      const mergeArrays = (a: any[], b: any[]) => {
-        const set = new Set<string>([
-          ...a.filter(Boolean).map(String),
-          ...b.filter(Boolean).map(String),
-        ]);
-        return Array.from(set);
-      };
-      const newAiData = { ...aiData };
-      const d = botResponse.fullData || {};
-      // Title: prefer non-empty incoming, else keep existing
-      if (typeof d.report_title === 'string' && d.report_title.trim()) {
-        newAiData.report_title = d.report_title.trim();
-      }
-      // Arrays: union
-      newAiData.report_type = mergeArrays(newAiData.report_type || [], d.report_type || []);
-      newAiData.trades_field = mergeArrays(newAiData.trades_field || [], d.trades_field || []);
-      newAiData.parties_involved = mergeArrays(
-        newAiData.parties_involved || [],
-        d.parties_involved || []
-      );
-      newAiData.witnesses = mergeArrays(newAiData.witnesses || [], d.witnesses || []);
-      // Description: append new unique sentence if provided
-      const desc = typeof d.report_description === 'string' ? d.report_description.trim() : '';
-      if (desc) {
-        const existing = newAiData.report_description || '';
-        if (!existing.includes(desc)) {
-          newAiData.report_description = existing ? `${existing} ${desc}` : desc;
-        }
-      }
+      // Use ONLY the latest AI turn's data (no accumulation)
+      const d = botResponse.fullData || null;
+      const newAiData = d
+        ? {
+            report_title: typeof d.report_title === 'string' ? d.report_title : '',
+            report_type: Array.isArray(d.report_type) ? d.report_type : [],
+            trades_field: Array.isArray(d.trades_field) ? d.trades_field : [],
+            report_description:
+              typeof d.report_description === 'string' ? d.report_description : '',
+            parties_involved: Array.isArray(d.parties_involved) ? d.parties_involved : [],
+            witnesses: Array.isArray(d.witnesses) ? d.witnesses : [],
+          }
+        : {
+            report_title: '',
+            report_type: [],
+            trades_field: [],
+            report_description: '',
+            parties_involved: [],
+            witnesses: [],
+          };
 
       // Sanitize next question to avoid meta/rephrase prompts
       const sanitizeNextQuestion = (data: any, q: string): string => {
@@ -231,7 +221,7 @@ export default function aiChat() {
         if (botResponse.fullData && !creatingReport && !createdReport) {
           try {
             setCreatingReport(true);
-            const data = aiData; // use accumulated data
+            const data = newAiData; // use only the latest AI data
             const createdAt = new Date();
             const description: string = data.report_description || '';
             const tags: string[] = [
