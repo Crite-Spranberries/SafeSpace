@@ -81,6 +81,7 @@ export default function aiChat() {
   const [creatingReport, setCreatingReport] = useState(false);
   const [createdReport, setCreatedReport] = useState<StoredReport | null>(null);
   const [isAuto, setIsAuto] = useState(true);
+  const [questionCount, setQuestionCount] = useState(0);
 
   const formatDate = (value: Date) =>
     value.toLocaleDateString(undefined, {
@@ -149,59 +150,117 @@ export default function aiChat() {
     setIsLoading(true);
 
     try {
-      // Build conversation history for Watson INCLUDING the just-added user message
-      // Limit to recent messages to avoid context pollution
-      const recent = [...messages, newMessage].slice(-6);
+      // Build conversation history - use recent messages only, don't duplicate the new user message
+      const recent = [...messages].slice(-8);
       const conversationHistory = recent.map((msg) => ({
         role: msg.sender === 'user' ? ('user' as const) : ('assistant' as const),
         content: msg.text,
       }));
 
-      const botResponse = await sendMessage(userMessageText, conversationHistory);
+      // Inject current accumulated data as context to prevent forgetting
+      const contextSummary = {
+        role: 'assistant' as const,
+        content: `Previously collected: ${JSON.stringify(aiData)}`,
+      };
 
-      // Use ONLY the latest AI turn's data (no accumulation)
+      const botResponse = await sendMessage(userMessageText, [
+        ...conversationHistory,
+        contextSummary,
+      ]);
+
+      // MERGE new data with existing to prevent losing information
       const d = botResponse.fullData || null;
-      const newAiData = d
-        ? {
-            report_title: typeof d.report_title === 'string' ? d.report_title : '',
-            report_type: Array.isArray(d.report_type) ? d.report_type : [],
-            trades_field: Array.isArray(d.trades_field) ? d.trades_field : [],
-            report_description:
-              typeof d.report_description === 'string' ? d.report_description : '',
-            parties_involved: Array.isArray(d.parties_involved) ? d.parties_involved : [],
-            witnesses: Array.isArray(d.witnesses) ? d.witnesses : [],
-          }
-        : {
-            report_title: '',
-            report_type: [],
-            trades_field: [],
-            report_description: '',
-            parties_involved: [],
-            witnesses: [],
-          };
 
-      // Sanitize next question to avoid meta/rephrase prompts
+      // Helper to merge arrays without duplicates
+      const mergeUnique = (arr1: string[], arr2: string[]) => {
+        const combined = [...(arr1 || []), ...(arr2 || [])];
+        return [...new Set(combined.map((s) => s.trim().toLowerCase()))]
+          .map((key) => combined.find((s) => s.trim().toLowerCase() === key)!)
+          .filter(Boolean);
+      };
+
+      // Helper to merge descriptions
+      const mergeDesc = (prev: string, next: string) => {
+        const p = (prev || '').trim();
+        const n = (next || '').trim();
+        if (!n) return p;
+        if (!p) return n;
+        if (p.toLowerCase().includes(n.toLowerCase())) return p;
+        if (n.toLowerCase().includes(p.toLowerCase())) return n;
+        return `${p} ${n}`.trim();
+      };
+
+      const newAiData = {
+        report_title: (d?.report_title || aiData.report_title || '').trim(),
+        report_type: mergeUnique(aiData.report_type, d?.report_type || []),
+        trades_field: mergeUnique(aiData.trades_field, d?.trades_field || []),
+        report_description: mergeDesc(aiData.report_description, d?.report_description || ''),
+        parties_involved: mergeUnique(aiData.parties_involved, d?.parties_involved || []),
+        witnesses: mergeUnique(aiData.witnesses, d?.witnesses || []),
+      };
+
+      // Control question flow: 2-3 questions, then complete
       const sanitizeNextQuestion = (data: any, q: string): string => {
         const lower = q.toLowerCase();
         const isMeta = /rephrase|processing|\bformat\b|policy|policies|procedures/.test(lower);
-        // Determine next missing field
-        const needsDescription = !(
-          data.report_description && data.report_description.trim().length > 20
-        );
-        const needsParties = !(
-          Array.isArray(data.parties_involved) && data.parties_involved.length > 0
-        );
-        const needsType = !(Array.isArray(data.report_type) && data.report_type.length > 0);
-        const needsTrade = !(Array.isArray(data.trades_field) && data.trades_field.length > 0);
-        if (isMeta) {
-          if (needsDescription) return 'Please describe the incident.';
-          if (needsParties) return 'Who was involved in the incident?';
-          if (needsType) return 'What type of incident was this (e.g., Harassment, Bullying)?';
-          if (needsTrade) return 'Which trade or field was involved (e.g., Electrical, Plumbing)?';
+
+        const hasDescription =
+          data.report_description && data.report_description.trim().length > 20;
+        const hasParties =
+          Array.isArray(data.parties_involved) &&
+          data.parties_involved.filter(
+            (p: string) =>
+              !/^(user|me|myself|reporter|electrical apprentice|apprentice)$/i.test(p.trim())
+          ).length > 0;
+        const hasType = Array.isArray(data.report_type) && data.report_type.length > 0;
+
+        const completionPhrase = "That's all the information I need, thank you for sharing.";
+
+        // Complete after 2-3 questions if we have key info
+        if (questionCount >= 2 && hasDescription && (hasParties || hasType)) {
+          return completionPhrase;
         }
-        // If multiple questions, keep the first interrogative sentence only
+
+        // Cap at 3 questions
+        if (questionCount >= 3) {
+          return completionPhrase;
+        }
+
+        // Pick next needed question - override if meta or already asked
+        const askDescription = 'Could you describe what happened?';
+        const askParties = 'Who else was involved? Please provide their name.';
+        const askWitnesses = 'Were there any witnesses?';
+
+        if (isMeta) {
+          if (!hasDescription) return askDescription;
+          if (!hasParties && questionCount < 2) return askParties;
+          if (questionCount < 2) return askWitnesses;
+          return completionPhrase;
+        }
+
+        // Use AI's question if it's good, otherwise pick best next question
         const firstQ = q.match(/[^.?!]*\?+/);
-        return firstQ ? firstQ[0].trim() : q.trim();
+        const aiQuestion = firstQ ? firstQ[0].trim() : '';
+
+        // If AI's question is about something we already have, override it
+        const qLower = aiQuestion.toLowerCase();
+        const asksAboutParties =
+          qLower.includes('who') || qLower.includes('name') || qLower.includes('involved');
+        const asksAboutDescription =
+          qLower.includes('describe') || qLower.includes('what happened');
+
+        if (asksAboutParties && hasParties) {
+          if (!hasDescription) return askDescription;
+          return askWitnesses;
+        }
+
+        if (asksAboutDescription && hasDescription) {
+          if (!hasParties) return askParties;
+          return askWitnesses;
+        }
+
+        // Otherwise use the AI's question
+        return aiQuestion || askDescription;
       };
 
       const botMessage: Message = {
@@ -214,14 +273,20 @@ export default function aiChat() {
       setAiData(newAiData);
       setMessages((prev) => [...prev, botMessage]);
 
+      // Track question count
+      if (botMessage.text.includes('?') && !botMessage.text.toLowerCase().includes("that's all")) {
+        setQuestionCount((prev) => prev + 1);
+      }
+
       // Check if conversation is complete (exact phrase from system prompt)
       const completionPhrase = "that's all the information i need";
-      console.log(botResponse.fullData);
-      if (botResponse.displayText.toLowerCase().includes(completionPhrase)) {
-        if (botResponse.fullData && !creatingReport && !createdReport) {
+      console.log('Current data:', newAiData);
+      console.log('Questions asked:', questionCount);
+      if (botMessage.text.toLowerCase().includes(completionPhrase)) {
+        if (newAiData && !creatingReport && !createdReport) {
           try {
             setCreatingReport(true);
-            const data = newAiData; // use only the latest AI data
+            const data = newAiData; // use merged AI data
             const createdAt = new Date();
             const description: string = data.report_description || '';
             const tags: string[] = [
@@ -416,8 +481,8 @@ export default function aiChat() {
                             ? JSON.stringify(createdReport.report_type)
                             : JSON.stringify([]),
                           tradesField: createdReport.trades_field
-                              ? JSON.stringify(createdReport.trades_field)
-                              : JSON.stringify([]),
+                            ? JSON.stringify(createdReport.trades_field)
+                            : JSON.stringify([]),
                           description: createdReport.content || 'No description provided',
                           witnesses:
                             aiData.witnesses && Array.isArray(aiData.witnesses)
