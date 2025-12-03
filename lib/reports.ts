@@ -1,20 +1,75 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ReportData, createEmptyReportData, mergeReportData } from './reportData';
 
 const STORAGE_KEY = '@SafeSpace:reports';
 
 export type StoredReport = {
   id: string;
-  title: string;
-  date: string;
-  timestamp: string;
-  location?: string;
-  tags?: string[];
+  title: string; // Maps to report_title
+  date: string; // Formatted date string for display
+  timestamp: string; // Formatted time string for display
+  location?: string; // Maps to location_name
+  tags?: string[]; // Legacy field, maps to report_type
   report_type?: string[];
   trades_field?: string[];
-  status: 'Posted' | 'Private';
+  status: 'Posted' | 'Private'; // Maps to isPublic
   excerpt?: string;
-  content?: string;
-  recordingId?: string;
+  content?: string; // Legacy: raw report text
+  reportData?: Partial<ReportData>; // New: structured report data
+  recordingId?: string; // Links to the recording that generated this report
+};
+
+/**
+ * Converts StoredReport to full ReportData
+ */
+export const reportToReportData = (report: StoredReport): ReportData => {
+  const baseData = report.reportData || {};
+
+  // Map legacy fields to new format
+  return mergeReportData({
+    ...baseData,
+    report_id: report.id,
+    report_title: report.title || baseData.report_title || '',
+    isPublic: report.status === 'Posted',
+    location_name: report.location || baseData.location_name || '',
+    report_type: report.report_type || report.tags || baseData.report_type || [],
+    trades_field: report.trades_field || baseData.trades_field || [],
+    report_desc: report.content || baseData.report_desc || '',
+  });
+};
+
+/**
+ * Converts ReportData to StoredReport (for saving)
+ */
+export const reportDataToStoredReport = (
+  reportData: ReportData,
+  id?: string,
+  recordingId?: string
+): StoredReport => {
+  // Format date and time for display
+  const dateStr = reportData.month
+    ? `${reportData.month} ${reportData.day}, ${reportData.year}`
+    : '';
+  const timeStr = reportData.time
+    ? `${Math.floor(reportData.time / 100)}:${String(reportData.time % 100).padStart(2, '0')}`
+    : '';
+
+  return {
+    id: id || reportData.report_id,
+    title: reportData.report_title,
+    date: dateStr,
+    timestamp: timeStr,
+    location: reportData.location_name,
+    tags: reportData.report_type, // Legacy support
+    report_type: reportData.report_type,
+    trades_field: reportData.trades_field,
+    status: reportData.isPublic ? 'Posted' : 'Private',
+    excerpt:
+      reportData.report_desc.substring(0, 100) + (reportData.report_desc.length > 100 ? '...' : ''),
+    content: reportData.report_desc, // Legacy support
+    reportData: reportData,
+    recordingId,
+  };
 };
 
 const DEFAULT_REPORTS: StoredReport[] = [

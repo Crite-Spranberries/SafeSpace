@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Asset } from 'expo-asset';
+import { ReportData, createEmptyReportData } from './reportData';
 
 const STORAGE_KEY = '@SafeSpace:recordings';
 const DEFAULT_AUDIO_MODULE = require('@/assets/audio/test_audio.mp3');
@@ -9,15 +10,16 @@ export type StoredRecording = {
   id: string;
   uri: string;
   title: string;
-  date: string;
-  timestamp: string;
+  date: string; // Formatted date string for display
+  timestamp: string; // Formatted time string for display
   durationMillis: number;
   durationLabel: string;
   createdAtISO: string;
-  tags?: string[];
-  location?: string;
+  tags?: string[]; // Legacy field, maps to report_type
+  location?: string; // Legacy field, maps to location_name
   transcript?: string;
-  report?: string;
+  report?: string; // Legacy: raw report text
+  reportData?: Partial<ReportData>; // New: structured report data
   isImmutable?: boolean;
 };
 

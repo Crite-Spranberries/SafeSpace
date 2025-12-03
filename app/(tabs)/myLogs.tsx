@@ -71,6 +71,9 @@ export default function MylogsPage() {
   };
 
   const onRecording = (recording: StoredRecording) => {
+    // Pass reportData as JSON string if available
+    const reportDataParam = recording.reportData ? JSON.stringify(recording.reportData) : undefined;
+
     router.push({
       pathname: '/my_logs/myRecordingDetails',
       params: {
@@ -83,6 +86,7 @@ export default function MylogsPage() {
         immutable: recording.isImmutable ? '1' : '0',
         transcript: recording.transcript,
         report: recording.report,
+        reportData: reportDataParam, // Pass structured data
       },
     });
   };

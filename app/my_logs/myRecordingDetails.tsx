@@ -17,12 +17,41 @@ import { AppText } from '@/components/ui/AppText';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/Badge';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
-import { deleteRecording as deleteStoredRecording, updateRecording } from '@/lib/recordings';
+import {
+  deleteRecording as deleteStoredRecording,
+  updateRecording,
+  getRecordingById,
+} from '@/lib/recordings';
 import { generateReport } from '@/lib/ai';
-import { addReport } from '@/lib/reports';
+import { addReport, reportDataToStoredReport } from '@/lib/reports';
+import { mergeReportData, createReportDataFromDate, ReportData } from '@/lib/reportData';
 
 // ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+
+/**
+ * Formats date from ReportData structure
+ */
+const formatDateFromReportData = (reportData?: Partial<ReportData>): string => {
+  if (reportData?.month && reportData?.day && reportData?.year) {
+    return `${reportData.month} ${reportData.day}, ${reportData.year}`;
+  }
+  return '';
+};
+
+/**
+ * Formats time from ReportData structure (time is stored as HHMM, e.g., 1015 for 10:15)
+ */
+const formatTimeFromReportData = (reportData?: Partial<ReportData>): string => {
+  if (reportData?.time) {
+    const hours = Math.floor(reportData.time / 100);
+    const minutes = reportData.time % 100;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+    return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
+  }
+  return '';
+};
 
 export default function MyRecordingDetails() {
   const params = useLocalSearchParams<{
@@ -35,6 +64,7 @@ export default function MyRecordingDetails() {
     immutable?: string;
     transcript?: string;
     report?: string;
+    reportData?: string; // JSON string of ReportData
   }>();
   const audioUriParam = typeof params.audioUri === 'string' ? params.audioUri : null;
   const titleParam = typeof params.title === 'string' ? params.title : null;
@@ -49,9 +79,26 @@ export default function MyRecordingDetails() {
   const [activeUri, setActiveUri] = useState<string | null>(null);
   const [status, setStatus] = useState('Stopped');
   const [isGenerating, setIsGenerating] = useState(false);
-  // const [audTranscribed, setAudTranscribed] = useState<string>(
-  //   transcriptParam || 'Transcripter awaiting audio to parse.'
-  // );
+  const [recordingData, setRecordingData] = useState<any>(null);
+
+  // Load recording data on mount
+  useEffect(() => {
+    const loadData = async () => {
+      if (recordingIdParam) {
+        const data = await getRecordingById(recordingIdParam);
+        setRecordingData(data);
+      } else if (params.reportData) {
+        // If reportData is passed as param, parse it
+        try {
+          const parsed = JSON.parse(params.reportData);
+          setRecordingData({ reportData: parsed });
+        } catch (e) {
+          console.warn('Failed to parse reportData param', e);
+        }
+      }
+    };
+    loadData();
+  }, [recordingIdParam, params.reportData]);
 
   // Load default audio file for fallback playback
   useEffect(() => {
@@ -144,44 +191,90 @@ export default function MyRecordingDetails() {
   // };
 
   const handleGenerateReport = async () => {
-    if (!transcriptParam) {
-      Alert.alert('No Transcript', 'Cannot generate a report without a transcript.');
+    // Get existing recording data to merge with
+    let existingRecording = null;
+    if (recordingIdParam) {
+      existingRecording = await getRecordingById(recordingIdParam);
+    }
+
+    // Use transcript from params, recording data, or fail
+    const transcriptToUse = transcriptParam || existingRecording?.transcript;
+
+    if (!transcriptToUse || transcriptToUse.trim().length === 0) {
+      Alert.alert(
+        'No Transcript',
+        'Cannot generate a report without a transcript. Please ensure the recording has been transcribed.'
+      );
       return;
     }
 
     try {
       setIsGenerating(true);
-      const generated = await generateReport(transcriptParam);
+
+      // Parse date from params or use current date
+      const reportDate =
+        dateParam && timestampParam ? new Date(`${dateParam} ${timestampParam}`) : new Date();
+
+      console.log('Generating report with transcript length:', transcriptToUse.length);
+      const generated = await generateReport(transcriptToUse, {
+        audioUri: audioUriParam || undefined,
+        date: reportDate,
+        location: existingRecording?.location ? { name: existingRecording.location } : undefined,
+      });
 
       if (generated) {
+        // Merge with existing recording data if available
+        const baseDataPartial = existingRecording?.reportData
+          ? { ...existingRecording.reportData }
+          : createReportDataFromDate(reportDate, audioUriParam || undefined);
+
+        // Ensure baseData is a full ReportData by merging with defaults
+        const baseData = mergeReportData(baseDataPartial);
+
+        const reportData = mergeReportData(
+          {
+            ...generated.data,
+            // Only override title if AI didn't generate one, otherwise use AI-generated title
+            report_title: generated.data.report_title || titleParam || 'Generated Report',
+            audio_URI: audioUriParam || baseData.audio_URI || '',
+            // Prefer AI-extracted location, fall back to existing
+            location_name:
+              generated.data.location_name ||
+              existingRecording?.location ||
+              baseData.location_name ||
+              '',
+            // Store the transcript in report_transcript field
+            report_transcript: transcriptToUse,
+          },
+          baseData
+        );
+
         // 1. Save to Reports
-        const createdAt = new Date();
-        const newReportId = `${createdAt.getTime()}_report`;
-        const reportTitle = titleParam || 'Generated Report';
+        const newReportId = `${reportDate.getTime()}_report`;
+        const storedReport = reportDataToStoredReport(
+          reportData,
+          newReportId,
+          recordingIdParam || undefined
+        );
+        await addReport(storedReport);
 
-        await addReport({
-          id: newReportId,
-          title: reportTitle,
-          date: dateParam || '',
-          timestamp: timestampParam || '',
-          status: 'Private',
-          content: generated,
-          recordingId: recordingIdParam || undefined,
-          tags: ['Sexism'],
-          excerpt: generated.substring(0, 100) + '...',
-        });
-
-        // 2. Update Recording with report link
+        // 2. Update Recording with report data
         if (recordingIdParam) {
-          await updateRecording(recordingIdParam, { report: generated });
+          await updateRecording(recordingIdParam, {
+            report: generated.text, // Legacy support
+            reportData: reportData, // New structured data
+          });
+          // Reload recording data to reflect updates
+          const updatedRecording = await getRecordingById(recordingIdParam);
+          setRecordingData(updatedRecording);
         }
 
         // 3. Navigate
         router.push({
           pathname: '/my_logs/myPostDetails',
           params: {
-            report: generated,
-            title: reportTitle,
+            report: generated.text,
+            title: reportData.report_title,
             id: newReportId,
           },
         });
@@ -209,6 +302,35 @@ export default function MyRecordingDetails() {
 
   const { showConfirmation } = useConfirmation();
 
+  // Extract data from reportData or fall back to params
+  const reportData = recordingData?.reportData;
+  const hasReport = !!(reportData?.report_desc && reportData.report_desc.trim().length > 0);
+
+  // Title: Always use recording title format (not report title, since user hasn't viewed report yet)
+  const displayTitle = titleParam || 'Voice Recording';
+
+  // Date/Time: Use structured data if report exists, otherwise use params
+  const displayDate = hasReport
+    ? formatDateFromReportData(reportData) || dateParam || ''
+    : dateParam || '';
+  const displayTime = hasReport
+    ? formatTimeFromReportData(reportData) || timestampParam || ''
+    : timestampParam || '';
+
+  const displayLocation =
+    reportData?.location_name || recordingData?.location || 'Location not specified';
+
+  // Report types: Show from reportData (AI-generated from transcript analysis), otherwise from tags
+  const reportTypes = reportData?.report_type || recordingData?.tags || [];
+
+  // Trade fields and report description: Only if report has been generated
+  const tradesFields = hasReport ? reportData?.trades_field || [] : [];
+  const reportDescription = hasReport ? reportData?.report_desc || '' : '';
+
+  // Transcript: Use report_transcript from reportData, fall back to transcriptParam or recording transcript
+  const displayTranscript =
+    reportData?.report_transcript || transcriptParam || recordingData?.transcript || '';
+
   return (
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
@@ -217,46 +339,51 @@ export default function MyRecordingDetails() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
             <AppText weight="bold" style={styles.title}>
-              {titleParam ?? 'Voice Recording'}
+              {displayTitle}
             </AppText>
             <View style={styles.subtitleContainer}>
-              <AppText style={styles.subtitleText}>{dateParam ?? 'November 4, 2025'}</AppText>
-              <AppText style={styles.subtitleText}>{timestampParam ?? '10:15 AM'}</AppText>
+              <AppText style={styles.subtitleText}>{displayDate}</AppText>
+              <AppText style={styles.subtitleText}>{displayTime}</AppText>
             </View>
             <RecordingCardSmall
               style={styles.recordingCard}
               duration={durationParam ?? undefined}
               source={activeUri ?? undefined}
             />
-            <MapOnDetail address="3700 Willingdon Avenue, Burnaby" style={styles.mapOnDetail} />
+            <MapOnDetail address={displayLocation} style={styles.mapOnDetail} />
 
+            {/* Report Type Section - Shows AI-generated violation tags from transcript analysis */}
             <View style={styles.badgeSection}>
               <AppText style={styles.badgeTitle} weight="medium">
-                Tags
+                Report Type
               </AppText>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.badgeContainer}>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Sexism
-                  </AppText>
-                </Badge>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {reportTypes.length > 0 ? (
+                  reportTypes.map((tag: string, index: number) => (
+                    <Badge key={index} variant="darkGrey" className="mr-2 px-4">
+                      <AppText style={styles.badgeText} weight="medium">
+                        {tag}
+                      </AppText>
+                    </Badge>
+                  ))
+                ) : (
+                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>None</AppText>
+                )}
               </ScrollView>
             </View>
 
-            <View style={styles.transcriptSection}>
-              <View style={styles.transcriptHeader}>
-                <AppText style={styles.transcriptTitle} weight="medium">
-                  AI Transcript
-                </AppText>
-                <AppText style={styles.transcriptModel}>GPT-4o</AppText>
+            {/* Transcript - Always show if available */}
+            {displayTranscript ? (
+              <View style={styles.transcriptSection}>
+                <View style={styles.transcriptHeader}>
+                  <AppText style={styles.transcriptTitle} weight="medium">
+                    AI Transcript
+                  </AppText>
+                  <AppText style={styles.transcriptModel}>GPT-4o</AppText>
+                </View>
+                <AppText style={styles.transcriptText}>{displayTranscript}</AppText>
               </View>
-              <AppText style={styles.transcriptText}>
-                {transcriptParam ?? 'No transcript available.'}
-              </AppText>
-            </View>
+            ) : null}
 
             <View style={styles.buttonContainer}>
               <TouchableOpacity
