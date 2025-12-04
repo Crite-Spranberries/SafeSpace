@@ -13,9 +13,16 @@ import Recommendation from '@/components/ui/Recommendation';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 import { useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
-import { loadReports, StoredReport, reportToReportData } from '@/lib/reports';
+import {
+  loadReports,
+  StoredReport,
+  reportToReportData,
+  deleteReport,
+  updateReportStatus,
+} from '@/lib/reports';
 import { ReportData } from '@/lib/reportData';
 import { getResourceLinksForActions } from '@/lib/worksafebcResources';
+import { lockState } from '@/lib/lockState';
 
 /**
  * Formats date from ReportData structure

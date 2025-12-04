@@ -239,3 +239,16 @@ export const getReportByRecordingId = async (recordingId: string) => {
   const existing = await loadReports();
   return existing.find((item) => item.recordingId === recordingId);
 };
+
+export const updateReportStatus = async (id: string, status: 'Posted' | 'Private') => {
+  const existing = await loadReports();
+  const report = existing.find((item) => item.id === id);
+  if (report) {
+    report.status = status;
+    if (report.reportData) {
+      report.reportData.isPublic = status === 'Posted';
+    }
+    await serializeReports(existing);
+  }
+  return report;
+};

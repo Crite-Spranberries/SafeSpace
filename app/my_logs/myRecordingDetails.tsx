@@ -24,6 +24,7 @@ import {
 import { generateReport } from '@/lib/ai';
 import { addReport, reportDataToStoredReport, getReportByRecordingId } from '@/lib/reports';
 import { mergeReportData, createReportDataFromDate, ReportData } from '@/lib/reportData';
+import { lockState } from '@/lib/lockState';
 
 // ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
