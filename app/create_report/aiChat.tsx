@@ -239,6 +239,11 @@ export default function aiChat() {
               tags,
               report_type: Array.isArray(data.report_type) ? data.report_type : [],
               trades_field: Array.isArray(data.trades_field) ? data.trades_field : [],
+              primaries_involved: Array.isArray(data.parties_involved)
+                ? data.parties_involved.join(', ')
+                : '',
+              witnesses: Array.isArray(data.witnesses) ? data.witnesses.join(', ') : '',
+              actions_taken: '',
               excerpt: description.substring(0, 120) + (description.length > 120 ? '...' : ''),
               content: description,
             };
@@ -416,8 +421,8 @@ export default function aiChat() {
                             ? JSON.stringify(createdReport.report_type)
                             : JSON.stringify([]),
                           tradesField: createdReport.trades_field
-                              ? JSON.stringify(createdReport.trades_field)
-                              : JSON.stringify([]),
+                            ? JSON.stringify(createdReport.trades_field)
+                            : JSON.stringify([]),
                           description: createdReport.content || 'No description provided',
                           witnesses:
                             aiData.witnesses && Array.isArray(aiData.witnesses)

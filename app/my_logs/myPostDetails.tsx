@@ -135,8 +135,26 @@ export default function MyPostDetails() {
   const reportDescription = reportData?.report_desc || params.report || 'No report available.';
   const recommendedActions = reportData?.recommended_actions || [];
 
+  // Handle witnesses/primaries/actions - could be string or array depending on source
+  const formatField = (field: string | string[] | undefined): string => {
+    if (!field) return '';
+    if (Array.isArray(field)) return field.join(', ');
+    return field;
+  };
+  const witnesses = formatField(reportData?.witnesses) || 'No witnesses provided.';
+  const individualsInvolved =
+    formatField(reportData?.primaries_involved) || 'No individuals provided.';
+  const actionsTaken = formatField(reportData?.actions_taken) || 'No actions taken provided.';
+
   // Get resource links for recommended actions (only for serious reports)
   const actionsWithLinks = getResourceLinksForActions(recommendedActions, reportTypes);
+
+  // Helper to convert field to array format for editing
+  const getArrayField = (field: string | string[] | undefined): string[] => {
+    if (!field) return [];
+    if (Array.isArray(field)) return field;
+    return [field];
+  };
 
   // Debug logging
   useEffect(() => {
@@ -283,6 +301,12 @@ export default function MyPostDetails() {
               <TouchableOpacity
                 style={styles.editIcon}
                 onPress={() => {
+                  const witnessesArr = getArrayField(reportData?.witnesses);
+                  const primariesArr = getArrayField(reportData?.primaries_involved);
+                  const actionsArr = getArrayField(reportData?.actions_taken);
+                  const cleanDesc =
+                    reportDescription === 'No report available.' ? '' : reportDescription;
+
                   router.push({
                     pathname: '/my_logs/myPostEdit',
                     params: {
@@ -293,9 +317,10 @@ export default function MyPostDetails() {
                       location: displayLocation,
                       report_type: JSON.stringify(reportTypes),
                       trades_field: JSON.stringify(tradesFields),
-                      description: reportDescription,
-                      // Add additional fields that might be stored elsewhere
-                      // description, witnesses, individualsInvolved, actionsTaken
+                      description: cleanDesc,
+                      witnesses: JSON.stringify(witnessesArr),
+                      primaries_involved: JSON.stringify(primariesArr),
+                      actions_taken: JSON.stringify(actionsArr),
                     },
                   });
                 }}>

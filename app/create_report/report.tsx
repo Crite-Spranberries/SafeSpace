@@ -12,8 +12,9 @@ import { Badge } from '@/components/ui/Badge';
 import { ScrollView } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import Recommendation from '@/components/ui/Recommendation';
-import { addReport, StoredReport } from '@/lib/reports';
-import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';  
+import { addReport, reportDataToStoredReport } from '@/lib/reports';
+import { ReportData } from '@/lib/reportData';
+import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 
 const SCREEN_OPTIONS = {
   title: '',
@@ -30,48 +31,83 @@ export default function Report() {
   const navigation = useNavigation();
   const params = useLocalSearchParams();
   const { showConfirmation } = useConfirmation();
-  
+
   const date = (params.date as string) || 'No date provided';
   const time = (params.time as string) || 'No time provided';
   const location = (params.location as string) || 'No location provided';
   const reportType = params.reportType ? JSON.parse(params.reportType as string) : [];
   const tradesField = params.tradesField ? JSON.parse(params.tradesField as string) : [];
   const report_desc = (params.description as string) || 'No description provided.';
-  const witnesses = (params.witnesses as string) || 'No witnesses provided.';
-  const individualsInvolved =
-    (params.individualsInvolved as string) || 'No individuals involved provided.';
-  const actionsTaken = (params.actionsTaken as string) || 'No actions taken provided.';
+  const witnesses = params.witnesses ? JSON.parse(params.witnesses as string) : [];
+  const individualsInvolved = params.individualsInvolved
+    ? JSON.parse(params.individualsInvolved as string)
+    : [];
+  const actionsTaken = params.actionsTaken ? JSON.parse(params.actionsTaken as string) : [];
   const reportTitle = (params.reportTitle as string) || 'Onsite Harassment Concern Near Coffee Bar';
 
-function onEdit() {}
+  function onEdit() {
+    const cleanDesc = report_desc === 'No description provided.' ? '' : report_desc;
+
+    router.push({
+      pathname: '/my_logs/myPostEdit',
+      params: {
+        date,
+        timestamp: time,
+        location,
+        report_type: JSON.stringify(reportType),
+        trades_field: JSON.stringify(tradesField),
+        description: cleanDesc,
+        witnesses: JSON.stringify(witnesses),
+        primaries_involved: JSON.stringify(individualsInvolved),
+        actions_taken: JSON.stringify(actionsTaken),
+        reportTitle,
+      },
+    });
+  }
 
   async function onSave() {
     try {
       const createdAt = new Date();
       const content = report_desc || '';
-      const allTags: string[] = [
-        ...(Array.isArray(reportType) ? reportType : []),
-        ...(Array.isArray(tradesField) ? tradesField : []),
-      ];
-      const title = reportTitle || 'Incident Report';
-      const excerpt = content
-        ? content.substring(0, 120) + (content.length > 120 ? '...' : '')
-        : undefined;
 
-      const payload: StoredReport = {
-        id: `${createdAt.getTime()}_report`,
-        title,
-        date,
-        timestamp: time,
-        location: location && location !== 'No location provided' ? location : undefined,
-        tags: allTags,
+      // Parse date and time
+      const dateObj = new Date(date);
+      const month = dateObj.toLocaleString('default', { month: 'long' });
+      const day = dateObj.getDate();
+      const year = dateObj.getFullYear();
+      const hour = dateObj.getHours();
+      const minute = dateObj.getMinutes();
+      const time = hour * 100 + minute; // Convert to HHMM format
+
+      const reportId = `${createdAt.getTime()}_report`;
+      const title = reportTitle || 'Incident Report';
+
+      // Build complete ReportData object
+      const reportData: ReportData = {
+        isPublic: false,
+        report_method: 'manual_form',
+        report_id: reportId,
+        report_title: title,
+        month,
+        day,
+        year,
+        time,
+        audio_URI: '',
+        audio_duration: 0,
+        location_name: location && location !== 'No location provided' ? location : '',
+        location_coords: [0, 0],
         report_type: Array.isArray(reportType) ? reportType : [],
         trades_field: Array.isArray(tradesField) ? tradesField : [],
-        status: 'Private',
-        excerpt,
-        content,
+        report_desc: content,
+        report_transcript: '',
+        primaries_involved: Array.isArray(individualsInvolved) ? individualsInvolved : [],
+        witnesses: Array.isArray(witnesses) ? witnesses : [],
+        actions_taken: Array.isArray(actionsTaken) ? actionsTaken : [],
+        recommended_actions: [],
       };
 
+      // Convert to StoredReport and save
+      const payload = reportDataToStoredReport(reportData, reportId);
       await addReport(payload);
     } catch (e) {
       console.warn('Failed to save report', e);
@@ -95,7 +131,6 @@ function onEdit() {}
       router.push('/(tabs)');
     }
   }
-
 
   return (
     <>
@@ -165,10 +200,10 @@ function onEdit() {}
               </View>
 
               <AppText style={styles.descriptionWhite}>
-              {report_desc ?? 'No description provided.'}
+                {report_desc ?? 'No description provided.'}
               </AppText>
             </View>
- 
+
             <View style={styles.recommendationsSection}>
               <AppText weight="medium" style={styles.subHeader}>
                 Recommended Actions
@@ -182,7 +217,12 @@ function onEdit() {}
         </ScrollView>
         <View
           style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 24, gap: 24 }}>
-          <Button variant="reallyLightGrey" size="lg" radius="full" style={{ flex: 1 }} onPress={onEdit}>
+          <Button
+            variant="reallyLightGrey"
+            size="lg"
+            radius="full"
+            style={{ flex: 1 }}
+            onPress={onEdit}>
             <AppText weight="medium" style={{ color: '#5E349E', fontSize: 16 }}>
               Edit
             </AppText>
@@ -269,5 +309,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#000',
   },
-
 });

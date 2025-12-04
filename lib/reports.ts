@@ -12,6 +12,9 @@ export type StoredReport = {
   tags?: string[]; // Legacy field, maps to report_type
   report_type?: string[];
   trades_field?: string[];
+  primaries_involved?: string; // People involved in the incident
+  witnesses?: string; // Witnesses to the incident
+  actions_taken?: string; // Actions taken in response
   status: 'Posted' | 'Private'; // Maps to isPublic
   excerpt?: string;
   content?: string; // Legacy: raw report text

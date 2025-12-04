@@ -44,9 +44,12 @@ export default function Form() {
     reportFieldInput: '',
     reportFieldArray: [] as string[],
     description: '',
-    witnesses: '',
-    individualsInvolved: '',
-    actionsTaken: '',
+    witnessesInput: '',
+    witnessesArray: [] as string[],
+    primariesInput: '',
+    primariesArray: [] as string[],
+    actionsInput: '',
+    actionsArray: [] as string[],
   });
 
   const [date, setDate] = useState<Date>(new Date());
@@ -117,6 +120,57 @@ export default function Form() {
     setFormData({
       ...formData,
       reportFieldArray: updatedArray,
+    });
+  };
+
+  const handleAddPrimary = () => {
+    const input = formData.primariesInput.trim();
+    if (input === '') return;
+    setFormData({
+      ...formData,
+      primariesArray: [...formData.primariesArray, input],
+      primariesInput: '',
+    });
+  };
+
+  const handleRemovePrimary = (indexToRemove: number) => {
+    setFormData({
+      ...formData,
+      primariesArray: formData.primariesArray.filter((_, index) => index !== indexToRemove),
+    });
+  };
+
+  const handleAddWitness = () => {
+    const input = formData.witnessesInput.trim();
+    if (input === '') return;
+    setFormData({
+      ...formData,
+      witnessesArray: [...formData.witnessesArray, input],
+      witnessesInput: '',
+    });
+  };
+
+  const handleRemoveWitness = (indexToRemove: number) => {
+    setFormData({
+      ...formData,
+      witnessesArray: formData.witnessesArray.filter((_, index) => index !== indexToRemove),
+    });
+  };
+
+  const handleAddAction = () => {
+    const input = formData.actionsInput.trim();
+    if (input === '') return;
+    setFormData({
+      ...formData,
+      actionsArray: [...formData.actionsArray, input],
+      actionsInput: '',
+    });
+  };
+
+  const handleRemoveAction = (indexToRemove: number) => {
+    setFormData({
+      ...formData,
+      actionsArray: formData.actionsArray.filter((_, index) => index !== indexToRemove),
     });
   };
 
@@ -243,39 +297,81 @@ export default function Form() {
                 Primary Individuals Involved
               </AppText>
               <Input
-                placeholder="Provide a brief description if you do not know their name(s)."
-                style={[styles.input, { height: 120, paddingTop: 12 }]}
+                placeholder="Add a person involved"
+                style={styles.input}
                 placeholderTextColor="#6B6B6B"
-                multiline
-                value={formData.individualsInvolved}
-                onChangeText={(value) => setFormData({ ...formData, individualsInvolved: value })}
+                value={formData.primariesInput}
+                onChangeText={(value) => setFormData({ ...formData, primariesInput: value })}
+                onSubmitEditing={handleAddPrimary}
+                returnKeyType="done"
               />
+              <View style={styles.badgeContainer}>
+                {formData.primariesArray.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleRemovePrimary(index)}
+                    style={styles.badgeWrapper}>
+                    <View style={styles.badge}>
+                      <AppText style={styles.badgeText}>{item}</AppText>
+                      <Icon as={CircleX} size={16} color="#808080" fill="white" />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
             <View>
               <AppText weight="medium" style={styles.label}>
                 Witnesses
               </AppText>
               <Input
-                placeholder="Provide a brief description if you do not know their name(s)."
-                style={[styles.input, { height: 120, paddingTop: 12 }]}
+                placeholder="Add a witness"
+                style={styles.input}
                 placeholderTextColor="#6B6B6B"
-                multiline
-                value={formData.witnesses}
-                onChangeText={(value) => setFormData({ ...formData, witnesses: value })}
+                value={formData.witnessesInput}
+                onChangeText={(value) => setFormData({ ...formData, witnessesInput: value })}
+                onSubmitEditing={handleAddWitness}
+                returnKeyType="done"
               />
+              <View style={styles.badgeContainer}>
+                {formData.witnessesArray.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleRemoveWitness(index)}
+                    style={styles.badgeWrapper}>
+                    <View style={styles.badge}>
+                      <AppText style={styles.badgeText}>{item}</AppText>
+                      <Icon as={CircleX} size={16} color="#808080" fill="white" />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
             <View>
               <AppText weight="medium" style={styles.label}>
                 Actions Taken
               </AppText>
               <Input
-                placeholder="Was anything done in response?"
-                style={[styles.input, { height: 120, paddingTop: 12 }]}
+                placeholder="Add an action taken"
+                style={styles.input}
                 placeholderTextColor="#6B6B6B"
-                multiline
-                value={formData.actionsTaken}
-                onChangeText={(value) => setFormData({ ...formData, actionsTaken: value })}
+                value={formData.actionsInput}
+                onChangeText={(value) => setFormData({ ...formData, actionsInput: value })}
+                onSubmitEditing={handleAddAction}
+                returnKeyType="done"
               />
+              <View style={styles.badgeContainer}>
+                {formData.actionsArray.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleRemoveAction(index)}
+                    style={styles.badgeWrapper}>
+                    <View style={styles.badge}>
+                      <AppText style={styles.badgeText}>{item}</AppText>
+                      <Icon as={CircleX} size={16} color="#808080" fill="white" />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </Pressable>
         </ScrollView>
@@ -283,21 +379,22 @@ export default function Form() {
           variant="purple"
           radius="full"
           style={styles.buttonContainer}
-          onPress={() => router.push({
-            pathname: '/create_report/report',
-            params:{
-              location: formData.location,
-              date: date.toLocaleDateString(),
-              time: date.toLocaleTimeString(),
-              reportType: JSON.stringify(formData.reportFieldArray),
-              tradesField: JSON.stringify(formData.tradesFieldArray),
-              description: formData.description,
-              witnesses: formData.witnesses,
-              individualsInvolved: formData.individualsInvolved,
-              actionsTaken: formData.actionsTaken,
-            }
-          }
-        )}>
+          onPress={() =>
+            router.push({
+              pathname: '/create_report/report',
+              params: {
+                location: formData.location,
+                date: date.toLocaleDateString(),
+                time: date.toLocaleTimeString(),
+                reportType: JSON.stringify(formData.reportFieldArray),
+                tradesField: JSON.stringify(formData.tradesFieldArray),
+                description: formData.description,
+                witnesses: JSON.stringify(formData.witnessesArray),
+                individualsInvolved: JSON.stringify(formData.primariesArray),
+                actionsTaken: JSON.stringify(formData.actionsArray),
+              },
+            })
+          }>
           <AppText weight="medium" style={styles.buttonText}>
             Generate Report
           </AppText>

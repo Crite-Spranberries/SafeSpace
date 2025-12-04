@@ -38,15 +38,20 @@ export default function MyPostEdit() {
     status?: string;
     description?: string;
     witnesses?: string;
-    individualsInvolved?: string;
-    actionsTaken?: string;
+    primaries_involved?: string;
+    actions_taken?: string;
   }>();
 
   const initialFormData = useMemo(() => {
-    const tradesFieldParam =
-      typeof params.trades_field === 'string' ? JSON.parse(params.trades_field) : [];
-    const reportTypeParam =
-      typeof params.report_type === 'string' ? JSON.parse(params.report_type) : [];
+    const parseArrayParam = (param: string | undefined): string[] => {
+      if (!param) return [];
+      try {
+        const parsed = JSON.parse(param);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    };
 
     return {
       location: typeof params.location === 'string' ? params.location : '',
@@ -55,16 +60,18 @@ export default function MyPostEdit() {
       year: '',
       dateTime: '',
       tradesFieldInput: '',
-      tradesFieldArray: Array.isArray(tradesFieldParam) ? tradesFieldParam : [],
+      tradesFieldArray: parseArrayParam(params.trades_field),
       reportFieldInput: '',
-      reportFieldArray: Array.isArray(reportTypeParam) ? reportTypeParam : [],
+      reportFieldArray: parseArrayParam(params.report_type),
       description:
         (typeof params.description === 'string' && params.description) ||
         (typeof params.report === 'string' ? params.report : ''),
-      witnesses: typeof params.witnesses === 'string' ? params.witnesses : '',
-      individualsInvolved:
-        typeof params.individualsInvolved === 'string' ? params.individualsInvolved : '',
-      actionsTaken: typeof params.actionsTaken === 'string' ? params.actionsTaken : '',
+      witnessesInput: '',
+      witnessesArray: parseArrayParam(params.witnesses),
+      primariesInput: '',
+      primariesArray: parseArrayParam(params.primaries_involved),
+      actionsInput: '',
+      actionsArray: parseArrayParam(params.actions_taken),
     };
   }, [params]);
 
@@ -144,6 +151,57 @@ export default function MyPostEdit() {
     setFormData({
       ...formData,
       reportFieldArray: updatedArray,
+    });
+  };
+
+  const handleAddPrimary = () => {
+    const input = formData.primariesInput.trim();
+    if (input === '') return;
+    setFormData({
+      ...formData,
+      primariesArray: [...formData.primariesArray, input],
+      primariesInput: '',
+    });
+  };
+
+  const handleRemovePrimary = (indexToRemove: number) => {
+    setFormData({
+      ...formData,
+      primariesArray: formData.primariesArray.filter((_, index) => index !== indexToRemove),
+    });
+  };
+
+  const handleAddWitness = () => {
+    const input = formData.witnessesInput.trim();
+    if (input === '') return;
+    setFormData({
+      ...formData,
+      witnessesArray: [...formData.witnessesArray, input],
+      witnessesInput: '',
+    });
+  };
+
+  const handleRemoveWitness = (indexToRemove: number) => {
+    setFormData({
+      ...formData,
+      witnessesArray: formData.witnessesArray.filter((_, index) => index !== indexToRemove),
+    });
+  };
+
+  const handleAddAction = () => {
+    const input = formData.actionsInput.trim();
+    if (input === '') return;
+    setFormData({
+      ...formData,
+      actionsArray: [...formData.actionsArray, input],
+      actionsInput: '',
+    });
+  };
+
+  const handleRemoveAction = (indexToRemove: number) => {
+    setFormData({
+      ...formData,
+      actionsArray: formData.actionsArray.filter((_, index) => index !== indexToRemove),
     });
   };
 
@@ -265,39 +323,81 @@ export default function MyPostEdit() {
                 Primary Individuals Involved
               </AppText>
               <Input
-                placeholder="Provide a brief description if you do not know their name(s)."
-                style={[styles.input, { height: 120, paddingTop: 12 }]}
+                placeholder="Add a person involved"
+                style={styles.input}
                 placeholderTextColor="#6B6B6B"
-                multiline
-                value={formData.individualsInvolved}
-                onChangeText={(value) => setFormData({ ...formData, individualsInvolved: value })}
+                value={formData.primariesInput}
+                onChangeText={(value) => setFormData({ ...formData, primariesInput: value })}
+                onSubmitEditing={handleAddPrimary}
+                returnKeyType="done"
               />
+              <View style={styles.badgeContainer}>
+                {formData.primariesArray.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleRemovePrimary(index)}
+                    style={styles.badgeWrapper}>
+                    <View style={styles.badge}>
+                      <AppText style={styles.badgeText}>{item}</AppText>
+                      <Icon as={CircleX} size={16} color="#808080" fill="white" />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
             <View>
               <AppText style={styles.sectionTitle} weight="medium">
                 Witnesses
               </AppText>
               <Input
-                placeholder="Provide a brief description if you do not know their name(s)."
-                style={[styles.input, { height: 120, paddingTop: 12 }]}
+                placeholder="Add a witness"
+                style={styles.input}
                 placeholderTextColor="#6B6B6B"
-                multiline
-                value={formData.witnesses}
-                onChangeText={(value) => setFormData({ ...formData, witnesses: value })}
+                value={formData.witnessesInput}
+                onChangeText={(value) => setFormData({ ...formData, witnessesInput: value })}
+                onSubmitEditing={handleAddWitness}
+                returnKeyType="done"
               />
+              <View style={styles.badgeContainer}>
+                {formData.witnessesArray.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleRemoveWitness(index)}
+                    style={styles.badgeWrapper}>
+                    <View style={styles.badge}>
+                      <AppText style={styles.badgeText}>{item}</AppText>
+                      <Icon as={CircleX} size={16} color="#808080" fill="white" />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
             <View>
               <AppText style={styles.sectionTitle} weight="medium">
                 Actions Taken
               </AppText>
               <Input
-                placeholder="Was anything done in response?"
-                style={[styles.input, { height: 120, paddingTop: 12 }]}
+                placeholder="Add an action taken"
+                style={styles.input}
                 placeholderTextColor="#6B6B6B"
-                multiline
-                value={formData.actionsTaken}
-                onChangeText={(value) => setFormData({ ...formData, actionsTaken: value })}
+                value={formData.actionsInput}
+                onChangeText={(value) => setFormData({ ...formData, actionsInput: value })}
+                onSubmitEditing={handleAddAction}
+                returnKeyType="done"
               />
+              <View style={styles.badgeContainer}>
+                {formData.actionsArray.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleRemoveAction(index)}
+                    style={styles.badgeWrapper}>
+                    <View style={styles.badge}>
+                      <AppText style={styles.badgeText}>{item}</AppText>
+                      <Icon as={CircleX} size={16} color="#808080" fill="white" />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </View>
           <Button variant="purple" radius="full" style={styles.saveButton}>
