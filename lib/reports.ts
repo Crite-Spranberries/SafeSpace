@@ -104,3 +104,13 @@ export const deleteReport = async (id: string) => {
   await serializeReports(next);
   return next;
 };
+
+export const updateReportStatus = async (
+  id: string,
+  status: 'Posted' | 'Private'
+): Promise<StoredReport[]> => {
+  const existing = await loadReports();
+  const next = existing.map((item) => (item.id === id ? { ...item, status } : item));
+  await serializeReports(next);
+  return next;
+};

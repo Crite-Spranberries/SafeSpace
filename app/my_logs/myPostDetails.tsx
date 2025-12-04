@@ -13,7 +13,7 @@ import Recommendation from '@/components/ui/Recommendation';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
-import { deleteReport } from '@/lib/reports';
+import { deleteReport, updateReportStatus } from '@/lib/reports';
 import { lockState } from '@/lib/lockState';
 
 export default function MyPostDetails() {
@@ -201,8 +201,14 @@ export default function MyPostDetails() {
                     });
 
                     if (confirmed) {
-                      setIsPublic(true);
-                      Alert.alert('Posted', 'Report has been made public.');
+                      if (idParam) {
+                        await updateReportStatus(idParam, 'Posted');
+                        setIsPublic(true);
+                        router.setParams({ status: 'Posted' });
+                        Alert.alert('Posted', 'Report has been made public.');
+                      } else {
+                        Alert.alert('Error', 'Could not update report: ID missing.');
+                      }
                     }
                   } else {
                     // Going from public -> private
@@ -220,8 +226,14 @@ export default function MyPostDetails() {
                     });
 
                     if (confirmed) {
-                      setIsPublic(false);
-                      Alert.alert('Updated', 'Report has been made private.');
+                      if (idParam) {
+                        await updateReportStatus(idParam, 'Private');
+                        setIsPublic(false);
+                        router.setParams({ status: 'Private' });
+                        Alert.alert('Updated', 'Report has been made private.');
+                      } else {
+                        Alert.alert('Error', 'Could not update report: ID missing.');
+                      }
                     }
                   }
                 }}>
