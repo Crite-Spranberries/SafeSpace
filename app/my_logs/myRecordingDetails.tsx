@@ -485,6 +485,13 @@ export default function MyRecordingDetails() {
                       date: dateParam ?? '',
                       timestamp: timestampParam ?? '',
                       duration: durationParam ?? '',
+                      location: reportData?.location_name || recordingData?.location || '',
+                      report_type: JSON.stringify(
+                        reportData?.report_type || recordingData?.tags || []
+                      ),
+                      witnesses: JSON.stringify(reportData?.witnesses || []),
+                      primaries_involved: JSON.stringify(reportData?.primaries_involved || []),
+                      actions_taken: JSON.stringify(reportData?.actions_taken || []),
                     },
                   });
                 }}>
