@@ -165,7 +165,7 @@ export default function MapOnDetail({
               title={coordinates ? 'Report Location' : 'You are here'}
               description={displayAddress}
               anchor={{ x: 0.5, y: 1 }}>
-              <MapPin size={40} fill="#8449DF" color="#8449DF" strokeWidth={0} />
+              <MapPin size={38} fill="#eec8ffff" color="#8449DF" strokeWidth={0} />
             </Marker>
           )}
         </MapView>
