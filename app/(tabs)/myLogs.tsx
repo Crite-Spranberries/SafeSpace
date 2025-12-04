@@ -16,6 +16,7 @@ import { AppText } from '@/components/ui/AppText';
 import { loadRecordings, StoredRecording } from '@/lib/recordings';
 import { loadReports, StoredReport } from '@/lib/reports';
 import PassCodeScreen from '@/components/ui/PassCodeScreen';
+import { lockState } from '@/lib/lockState';
 
 export default function MylogsPage() {
   const [isLocked, setIsLocked] = useState(true);
@@ -27,7 +28,14 @@ export default function MylogsPage() {
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
-      setIsLocked(true);
+      
+      if (lockState.shouldUnlockMyLogs) {
+        setIsLocked(false);
+        lockState.shouldUnlockMyLogs = false; // Reset immediately
+      } else {
+        setIsLocked(true);
+      }
+      
       (async () => {
         try {
           const savedRecordings = await loadRecordings();

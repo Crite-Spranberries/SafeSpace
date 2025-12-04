@@ -20,6 +20,7 @@ import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 import { deleteRecording as deleteStoredRecording, updateRecording } from '@/lib/recordings';
 import { generateReport } from '@/lib/ai';
 import { addReport } from '@/lib/reports';
+import { lockState } from '@/lib/lockState';
 
 // ✅ securely load your API key from .env file.
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
@@ -201,7 +202,9 @@ export default function MyRecordingDetails() {
     headerBackTitle: 'Back',
     headerTransparent: true,
     headerLeft: () => (
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => {
+        lockState.shouldUnlockMyLogs = true;
+        router.back()}}>
         <Icon as={ArrowLeft} size={16} />
       </TouchableOpacity>
     ),

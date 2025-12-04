@@ -14,6 +14,7 @@ import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { deleteReport } from '@/lib/reports';
+import { lockState } from '@/lib/lockState';
 
 export default function MyPostDetails() {
   const params = useLocalSearchParams<{
@@ -46,7 +47,9 @@ export default function MyPostDetails() {
     headerBackTitle: 'Back',
     headerTransparent: true,
     headerLeft: () => (
-      <TouchableOpacity style={styles.backButton} onPress={() => router.push('/(tabs)/myLogs')}>
+      <TouchableOpacity style={styles.backButton} onPress={() => {
+        lockState.shouldUnlockMyLogs = true;
+        router.push('/(tabs)/myLogs')}}>
         <Icon as={ArrowLeft} size={16} />
       </TouchableOpacity>
     ),
@@ -157,6 +160,7 @@ export default function MyPostDetails() {
                         {
                           text: 'OK',
                           onPress: () => {
+                            lockState.shouldUnlockMyLogs = true;
                             router.navigate('/(tabs)/myLogs');
                           },
                         },
