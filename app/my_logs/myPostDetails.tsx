@@ -293,6 +293,7 @@ export default function MyPostDetails() {
                       location: displayLocation,
                       report_type: JSON.stringify(reportTypes),
                       trades_field: JSON.stringify(tradesFields),
+                      description: reportDescription,
                       // Add additional fields that might be stored elsewhere
                       // description, witnesses, individualsInvolved, actionsTaken
                     },
