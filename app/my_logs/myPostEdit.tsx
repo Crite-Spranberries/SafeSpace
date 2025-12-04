@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { ArrowLeft, CircleX } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView } from 'react-native';
@@ -12,6 +12,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useState, useEffect, useMemo } from 'react';
 import MapOnHome from '@/components/ui/MapOnHome';
 import { Input } from '@/components/ui/Input';
+import { getReportById, reportDataToStoredReport, updateReport } from '@/lib/reports';
+import { ReportData } from '@/lib/reportData';
 
 export default function MyPostEdit() {
   const SCREEN_OPTIONS = {
@@ -77,17 +79,11 @@ export default function MyPostEdit() {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  // In case params are populated after first render, sync form state
+  // Initialize date/time pickers from params only on first mount
+  const [dateInitialized, setDateInitialized] = useState(false);
   useEffect(() => {
-    setFormData(initialFormData);
-  }, [initialFormData]);
+    if (dateInitialized) return; // Only run once
 
-  const [date, setDate] = useState<Date>(new Date());
-  const [mode, setMode] = useState<'date' | 'time'>('date');
-  const [show, setShow] = useState<boolean>(false);
-
-  // Initialize date/time pickers from params
-  useEffect(() => {
     const dateStr = typeof params.date === 'string' ? params.date : '';
     const timeStr = typeof params.timestamp === 'string' ? params.timestamp : '';
 
@@ -102,7 +98,19 @@ export default function MyPostEdit() {
         console.log('Error parsing date:', e);
       }
     }
-  }, [params]);
+    setDateInitialized(true);
+  }, []);
+
+  const [formInitialized, setFormInitialized] = useState(false);
+  useEffect(() => {
+    if (formInitialized) return; // Only run once
+    setFormData(initialFormData);
+    setFormInitialized(true);
+  }, []);
+
+  const [date, setDate] = useState<Date>(new Date());
+  const [mode, setMode] = useState<'date' | 'time'>('date');
+  const [show, setShow] = useState<boolean>(false);
 
   const onChange = (event: any, selectedDate: Date | undefined) => {
     if (selectedDate) {
@@ -203,6 +211,63 @@ export default function MyPostEdit() {
       ...formData,
       actionsArray: formData.actionsArray.filter((_, index) => index !== indexToRemove),
     });
+  };
+
+  const handleSave = async () => {
+    try {
+      const idParam = typeof params.id === 'string' ? params.id : null;
+
+      // Parse date and time
+      const dateObj = new Date(date);
+      const month = dateObj.toLocaleString('default', { month: 'long' });
+      const day = dateObj.getDate();
+      const year = dateObj.getFullYear();
+      const hour = dateObj.getHours();
+      const minute = dateObj.getMinutes();
+      const time = hour * 100 + minute; // Convert to HHMM format
+
+      // Build complete ReportData object
+      const reportData: ReportData = {
+        isPublic: false,
+        report_method: 'manual_form',
+        report_id: idParam || `${Date.now()}_report`,
+        report_title: typeof params.title === 'string' ? params.title : 'Incident Report',
+        month,
+        day,
+        year,
+        time,
+        audio_URI: '',
+        audio_duration: 0,
+        location_name: formData.location,
+        location_coords: [0, 0],
+        report_type: formData.reportFieldArray,
+        trades_field: formData.tradesFieldArray,
+        report_desc: formData.description,
+        report_transcript: '',
+        primaries_involved: formData.primariesArray,
+        witnesses: formData.witnessesArray,
+        actions_taken: formData.actionsArray,
+        recommended_actions: [],
+      };
+
+      // Convert to StoredReport and save
+      const payload = reportDataToStoredReport(reportData, reportData.report_id);
+
+      if (idParam) {
+        // Update existing report
+        await updateReport(idParam, payload);
+      }
+
+      Alert.alert('Success', 'Report saved successfully!', [
+        {
+          text: 'OK',
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (e) {
+      console.error('Failed to save report:', e);
+      Alert.alert('Error', 'Failed to save report. Please try again.');
+    }
   };
 
   return (
@@ -400,7 +465,7 @@ export default function MyPostEdit() {
               </View>
             </View>
           </View>
-          <Button variant="purple" radius="full" style={styles.saveButton}>
+          <Button variant="purple" radius="full" style={styles.saveButton} onPress={handleSave}>
             <AppText weight="medium" style={styles.saveText}>
               Save & Regenerate Report
             </AppText>

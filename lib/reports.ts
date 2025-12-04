@@ -255,3 +255,13 @@ export const updateReportStatus = async (id: string, status: 'Posted' | 'Private
   }
   return report;
 };
+
+export const updateReport = async (id: string, updatedReport: StoredReport) => {
+  const existing = await loadReports();
+  const index = existing.findIndex((item) => item.id === id);
+  if (index !== -1) {
+    existing[index] = updatedReport;
+    await serializeReports(existing);
+  }
+  return updatedReport;
+};
