@@ -11,7 +11,7 @@ import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/Badge';
 import Recommendation from '@/components/ui/Recommendation';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { loadReports, StoredReport, reportToReportData } from '@/lib/reports';
 import { ReportData } from '@/lib/reportData';
@@ -146,7 +146,12 @@ export default function MyPostDetails() {
     headerBackTitle: 'Back',
     headerTransparent: true,
     headerLeft: () => (
-      <TouchableOpacity style={styles.backButton} onPress={() => router.push('/(tabs)/myLogs')}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => {
+          lockState.shouldUnlockMyLogs = true;
+          router.push('/(tabs)/myLogs');
+        }}>
         <Icon as={ArrowLeft} size={16} />
       </TouchableOpacity>
     ),
@@ -249,8 +254,20 @@ export default function MyPostDetails() {
                   });
 
                   if (confirmed) {
-                    // TODO: Replace this with your real delete logic
-                    Alert.alert('Deleted', 'Report has been deleted.');
+                    if (idParam) {
+                      await deleteReport(idParam);
+                      Alert.alert('Deleted', 'Report has been deleted.', [
+                        {
+                          text: 'OK',
+                          onPress: () => {
+                            lockState.shouldUnlockMyLogs = true;
+                            router.navigate('/(tabs)/myLogs');
+                          },
+                        },
+                      ]);
+                    } else {
+                      Alert.alert('Error', 'Could not delete report: ID missing.');
+                    }
                   }
                 }}>
                 <Icon as={Trash2} color="#FFFFFF" size={24} />
@@ -284,8 +301,14 @@ export default function MyPostDetails() {
                     });
 
                     if (confirmed) {
-                      setIsPublic(true);
-                      Alert.alert('Posted', 'Report has been made public.');
+                      if (idParam) {
+                        await updateReportStatus(idParam, 'Posted');
+                        setIsPublic(true);
+                        router.setParams({ status: 'Posted' });
+                        Alert.alert('Posted', 'Report has been made public.');
+                      } else {
+                        Alert.alert('Error', 'Could not update report: ID missing.');
+                      }
                     }
                   } else {
                     // Going from public -> private
@@ -303,8 +326,14 @@ export default function MyPostDetails() {
                     });
 
                     if (confirmed) {
-                      setIsPublic(false);
-                      Alert.alert('Updated', 'Report has been made private.');
+                      if (idParam) {
+                        await updateReportStatus(idParam, 'Private');
+                        setIsPublic(false);
+                        router.setParams({ status: 'Private' });
+                        Alert.alert('Updated', 'Report has been made private.');
+                      } else {
+                        Alert.alert('Error', 'Could not update report: ID missing.');
+                      }
                     }
                   }
                 }}>
