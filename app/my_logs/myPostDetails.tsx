@@ -13,6 +13,7 @@ import Recommendation from '@/components/ui/Recommendation';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
+import { deleteReport } from '@/lib/reports';
 
 export default function MyPostDetails() {
   const params = useLocalSearchParams<{
@@ -150,8 +151,19 @@ export default function MyPostDetails() {
                   });
 
                   if (confirmed) {
-                    // TODO: Replace this with your real delete logic
-                    Alert.alert('Deleted', 'Report has been deleted.');
+                    if (idParam) {
+                      await deleteReport(idParam);
+                      Alert.alert('Deleted', 'Report has been deleted.', [
+                        {
+                          text: 'OK',
+                          onPress: () => {
+                            router.navigate('/(tabs)/myLogs');
+                          },
+                        },
+                      ]);
+                    } else {
+                      Alert.alert('Error', 'Could not delete report: ID missing.');
+                    } 
                   }
                 }}>
                 <Icon as={Trash2} color="#FFFFFF" size={24} />
