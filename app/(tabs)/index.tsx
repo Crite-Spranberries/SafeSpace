@@ -196,8 +196,8 @@ export default function Home() {
                 excerpt={selectedReport.excerpt}
                 date={selectedReport.date}
                 timestamp={selectedReport.timestamp}
-                status={selectedReport.status}
                 onDetailsPress={handleReportCardPress}
+                onClose={() => setSelectedReport(null)}
               />
             )}
           </View>

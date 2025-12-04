@@ -163,7 +163,6 @@ export default function Posts() {
                 onDetailsPress={() => onDetails(p.id)}
                 date={p.date}
                 timestamp={p.timestamp}
-                status={p.status}
               />
             ))}
           </View>
