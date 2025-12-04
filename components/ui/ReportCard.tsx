@@ -31,13 +31,15 @@ export default function ReportCard({
     <Pressable style={styles.wrapper} onPress={onDetailsPress}>
       <View style={styles.card}>
         <View style={styles.topBlock}>
-          <AppText style={styles.tags} numberOfLines={1}>
-            {tags.join(', ')}
-          </AppText>
+          <View style={styles.tagsContainer}>
+            <AppText style={styles.tags} numberOfLines={1} ellipsizeMode="tail">
+              {tags.join(', ')}
+            </AppText>
+          </View>
 
           {status ? (
             <View style={styles.topRight}>
-              <AppText style={styles.topRightText} numberOfLines={1}>
+              <AppText style={styles.topRightText} numberOfLines={1} ellipsizeMode="tail">
                 {status}
               </AppText>
               <Icon
@@ -86,7 +88,14 @@ const styles = StyleSheet.create({
   topBlock: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
+    gap: 8,
+  },
+  tagsContainer: {
+    flex: 1,
+    flexShrink: 1,
+    minWidth: 0, // Allows flexbox to shrink below content size
   },
   tags: {
     color: '#5E349E',
@@ -113,6 +122,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
+    flexShrink: 0, // Prevent status from shrinking
+    marginLeft: 8,
   },
   topRightText: {
     color: '#5E349E',

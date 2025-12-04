@@ -6,11 +6,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import SearchSettings from '@/components/ui/SearchSettings';
 import ReportCard from '@/components/ui/ReportCard';
 import SortButton, { SortOrder } from '@/components/ui/SortButton';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { AppText } from '@/components/ui/AppText';
+import defaultPostsData from '@/assets/data/default_posts.json';
 
 type PostItem = {
   id: string;
@@ -20,50 +21,24 @@ type PostItem = {
   excerpt: string;
   date: string;
   timestamp: string;
+  status?: 'Posted' | 'Private' | 'Draft';
+  report_type?: string[];
 };
 
-const POSTS: PostItem[] = [
-  {
-    id: '1',
-    tags: ['Discrimination'],
-    title: 'Homophobic Behavior On Site',
-    location: '123 Granville St, Burnaby, BC',
-    excerpt:
-      'I want to share my personal experience on the site regarding homophobic behavior that I witnessed firsthand. While working, I noticed that certain individuals made inappropriate comments about people’s sexual orientation.',
-    date: 'November 10, 2025',
-    timestamp: '9:30',
-  },
-  {
-    id: '2',
-    tags: ['Discrimination'],
-    title: 'Hostile Colleague',
-    location: '123 Granville St, Burnaby, BC',
-    excerpt:
-      'I think it’s important to share this experience so that others are aware that hostile behavior in the workplace is real and can impact mental health. If you are experiencing something similar',
-    date: 'May 6, 2023',
-    timestamp: '8:30',
-  },
-  {
-    id: '3',
-    tags: ['Discrimination'],
-    title: 'Sexist Comments by Coworker',
-    location: '123 Granville St, Burnaby, BC',
-    excerpt:
-      'During recent meetings and casual conversations, this colleague made several remarks that were inappropriate and clearly gender-biased.',
-    date: 'January 7, 2024',
-    timestamp: '10:30',
-  },
-  {
-    id: '4',
-    tags: ['Discrimination'],
-    title: 'Rude Supervisor on Site #5',
-    location: '123 Granville St, Burnaby, BC',
-    excerpt:
-      'During recent meetings and casual conversations, this colleague made several remarks that were inappropriate and clearly gender-biased.',
-    date: 'March 7, 2024',
-    timestamp: '10:30',
-  },
-];
+// Load posts from JSON file
+const loadDefaultPosts = (): PostItem[] => {
+  return defaultPostsData.map((post: any) => ({
+    id: post.id,
+    tags: post.report_type || post.tags || [],
+    title: post.title,
+    location: post.location,
+    excerpt: post.excerpt,
+    date: post.date,
+    timestamp: post.timestamp,
+    status: post.status || 'Posted',
+    report_type: post.report_type || post.tags || [],
+  }));
+};
 
 // Robust parser for strings like "January 7, 2024" and time like "10:30".
 function parseDateTime(dateStr: string, timeStr: string) {
@@ -102,19 +77,29 @@ function parseDateTime(dateStr: string, timeStr: string) {
 
 export default function Posts() {
   const router = useRouter();
-  const onDetails = () => {
-    router.push('/posts_browsing/postDetails');
-  };
-
+  const [posts, setPosts] = useState<PostItem[]>([]);
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
 
-  const posts = useMemo(() => {
-    return [...POSTS].sort((a, b) => {
+  // Load posts from JSON file on mount
+  useEffect(() => {
+    const loadedPosts = loadDefaultPosts();
+    setPosts(loadedPosts);
+  }, []);
+
+  const onDetails = (postId: string) => {
+    router.push({
+      pathname: '/posts_browsing/postDetails',
+      params: { id: postId },
+    });
+  };
+
+  const sortedPosts = useMemo(() => {
+    return [...posts].sort((a, b) => {
       const dateA = parseDateTime(a.date, a.timestamp) || 0;
       const dateB = parseDateTime(b.date, b.timestamp) || 0;
       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
     });
-  }, [sortOrder]);
+  }, [posts, sortOrder]);
 
   return (
     <>
@@ -142,16 +127,17 @@ export default function Posts() {
           <View style={styles.contentContainer}>
             <SearchSettings />
             <SortButton value={sortOrder} onChange={setSortOrder} />
-            {posts.map((p) => (
+            {sortedPosts.map((p) => (
               <ReportCard
                 key={p.id}
                 tags={p.tags}
                 title={p.title}
                 location={p.location}
                 excerpt={p.excerpt}
-                onDetailsPress={onDetails}
+                onDetailsPress={() => onDetails(p.id)}
                 date={p.date}
                 timestamp={p.timestamp}
+                status={p.status}
               />
             ))}
           </View>

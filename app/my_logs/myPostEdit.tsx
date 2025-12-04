@@ -1,13 +1,19 @@
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { ArrowLeft } from 'lucide-react-native';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { ArrowLeft, CircleX } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
 import { Image, TextInput } from 'react-native';
 import { Button } from '@/components/ui/Button';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import React, { useState, useEffect, useMemo } from 'react';
+import MapOnHome from '@/components/ui/MapOnHome';
+import { Input } from '@/components/ui/Input';
+import { getReportById, reportDataToStoredReport, updateReport } from '@/lib/reports';
+import { ReportData } from '@/lib/reportData';
 
 export default function MyPostEdit() {
   const SCREEN_OPTIONS = {
@@ -19,6 +25,302 @@ export default function MyPostEdit() {
         <Icon as={ArrowLeft} size={16} />
       </TouchableOpacity>
     ),
+  };
+
+  const params = useLocalSearchParams<{
+    report?: string;
+    title?: string;
+    id?: string;
+    date?: string;
+    timestamp?: string;
+    month?: string;
+    day?: string;
+    year?: string;
+    time?: string;
+    location?: string;
+    tags?: string;
+    report_type?: string;
+    trades_field?: string;
+    status?: string;
+    description?: string;
+    witnesses?: string;
+    primaries_involved?: string;
+    actions_taken?: string;
+  }>();
+
+  const initialFormData = useMemo(() => {
+    const parseArrayParam = (param: string | undefined): string[] => {
+      if (!param) return [];
+      try {
+        const parsed = JSON.parse(param);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    };
+
+    return {
+      location: typeof params.location === 'string' ? params.location : '',
+      day: '',
+      month: '',
+      year: '',
+      dateTime: '',
+      tradesFieldInput: '',
+      tradesFieldArray: parseArrayParam(params.trades_field),
+      reportFieldInput: '',
+      reportFieldArray: parseArrayParam(params.report_type),
+      description:
+        (typeof params.description === 'string' && params.description) ||
+        (typeof params.report === 'string' ? params.report : ''),
+      witnessesInput: '',
+      witnessesArray: parseArrayParam(params.witnesses),
+      primariesInput: '',
+      primariesArray: parseArrayParam(params.primaries_involved),
+      actionsInput: '',
+      actionsArray: parseArrayParam(params.actions_taken),
+    };
+  }, [params]);
+
+  const [formData, setFormData] = useState(initialFormData);
+
+  const [formInitialized, setFormInitialized] = useState(false);
+  useEffect(() => {
+    if (formInitialized) return; // Only run once
+    setFormData(initialFormData);
+    setFormInitialized(true);
+  }, []);
+
+  // Initialize date from params or default to current date
+  const getInitialDate = () => {
+    // Try structured data first (from ReportData)
+    if (params.month && params.day && params.year && params.time) {
+      try {
+        const year = parseInt(params.year);
+        const day = parseInt(params.day);
+        const time = parseInt(params.time);
+        const monthNames = [
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
+        ];
+        const monthIndex = monthNames.indexOf(params.month);
+
+        if (monthIndex !== -1 && !isNaN(year) && !isNaN(day) && !isNaN(time)) {
+          const hours = Math.floor(time / 100);
+          const minutes = time % 100;
+          const parsedDate = new Date(year, monthIndex, day, hours, minutes);
+          if (!isNaN(parsedDate.getTime())) {
+            return parsedDate;
+          }
+        }
+      } catch (e) {
+        console.log('Error parsing structured date:', e);
+      }
+    }
+
+    // Fallback to formatted strings
+    const dateStr = typeof params.date === 'string' ? params.date : '';
+    const timeStr = typeof params.timestamp === 'string' ? params.timestamp : '';
+
+    if (dateStr && timeStr) {
+      try {
+        const dateTimeStr = `${dateStr} ${timeStr}`;
+        const parsedDate = new Date(dateTimeStr);
+        if (!isNaN(parsedDate.getTime())) {
+          return parsedDate;
+        }
+      } catch (e) {
+        console.log('Error parsing formatted date:', e);
+      }
+    }
+    return new Date();
+  };
+
+  const [date, setDate] = useState<Date>(getInitialDate());
+  const [mode, setMode] = useState<'date' | 'time'>('date');
+  const [show, setShow] = useState<boolean>(false);
+
+  const onChange = (event: any, selectedDate: Date | undefined) => {
+    if (selectedDate) {
+      setDate(selectedDate);
+    }
+    setShow(false);
+  };
+
+  const showMode = (currentMode: 'date' | 'time') => {
+    setShow(true);
+    setMode(currentMode);
+  };
+
+  const handleAddTradesField = () => {
+    const input = formData.tradesFieldInput.trim();
+    if (input === '') return;
+
+    setFormData({
+      ...formData,
+      tradesFieldArray: [...formData.tradesFieldArray, input],
+      tradesFieldInput: '',
+    });
+  };
+
+  const handleAddReportField = () => {
+    const input = formData.reportFieldInput.trim();
+    if (input === '') return;
+
+    setFormData({
+      ...formData,
+      reportFieldArray: [...formData.reportFieldArray, input],
+      reportFieldInput: '',
+    });
+  };
+
+  const handleRemoveTradesField = (indexToRemove: number) => {
+    const updatedArray = formData.tradesFieldArray.filter((_, index) => index !== indexToRemove);
+    setFormData({
+      ...formData,
+      tradesFieldArray: updatedArray,
+    });
+  };
+
+  const handleRemoveReportField = (indexToRemove: number) => {
+    const updatedArray = formData.reportFieldArray.filter((_, index) => index !== indexToRemove);
+    setFormData({
+      ...formData,
+      reportFieldArray: updatedArray,
+    });
+  };
+
+  const handleAddPrimary = () => {
+    const input = formData.primariesInput.trim();
+    if (input === '') return;
+    setFormData({
+      ...formData,
+      primariesArray: [...formData.primariesArray, input],
+      primariesInput: '',
+    });
+  };
+
+  const handleRemovePrimary = (indexToRemove: number) => {
+    setFormData({
+      ...formData,
+      primariesArray: formData.primariesArray.filter((_, index) => index !== indexToRemove),
+    });
+  };
+
+  const handleAddWitness = () => {
+    const input = formData.witnessesInput.trim();
+    if (input === '') return;
+    setFormData({
+      ...formData,
+      witnessesArray: [...formData.witnessesArray, input],
+      witnessesInput: '',
+    });
+  };
+
+  const handleRemoveWitness = (indexToRemove: number) => {
+    setFormData({
+      ...formData,
+      witnessesArray: formData.witnessesArray.filter((_, index) => index !== indexToRemove),
+    });
+  };
+
+  const handleAddAction = () => {
+    const input = formData.actionsInput.trim();
+    if (input === '') return;
+    setFormData({
+      ...formData,
+      actionsArray: [...formData.actionsArray, input],
+      actionsInput: '',
+    });
+  };
+
+  const handleRemoveAction = (indexToRemove: number) => {
+    setFormData({
+      ...formData,
+      actionsArray: formData.actionsArray.filter((_, index) => index !== indexToRemove),
+    });
+  };
+
+  const handleSave = async () => {
+    try {
+      const idParam = typeof params.id === 'string' ? params.id : null;
+
+      // Parse date and time
+      const dateObj = new Date(date);
+      const month = dateObj.toLocaleString('default', { month: 'long' });
+      const day = dateObj.getDate();
+      const year = dateObj.getFullYear();
+      const hour = dateObj.getHours();
+      const minute = dateObj.getMinutes();
+      const time = hour * 100 + minute; // Convert to HHMM format
+
+      // Build complete ReportData object
+      const reportData: ReportData = {
+        isPublic: false,
+        report_method: 'manual_form',
+        report_id: idParam || `${Date.now()}_report`,
+        report_title: typeof params.title === 'string' ? params.title : 'Incident Report',
+        month,
+        day,
+        year,
+        time,
+        audio_URI: '',
+        audio_duration: 0,
+        location_name: formData.location,
+        location_coords: [0, 0],
+        report_type: formData.reportFieldArray,
+        trades_field: formData.tradesFieldArray,
+        report_desc: formData.description,
+        report_transcript: '',
+        primaries_involved: formData.primariesArray,
+        witnesses: formData.witnessesArray,
+        actions_taken: formData.actionsArray,
+        recommended_actions: [],
+      };
+
+      // Convert to StoredReport and save
+      const payload = reportDataToStoredReport(reportData, reportData.report_id);
+
+      if (idParam) {
+        // Update existing report
+        await updateReport(idParam, payload);
+        Alert.alert('Success', 'Report saved successfully!', [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]);
+      } else {
+        // Editing before report is created - return data back to report screen
+        router.push({
+          pathname: '/create_report/report',
+          params: {
+            location: formData.location,
+            date: dateObj.toLocaleDateString(),
+            time: dateObj.toLocaleTimeString(),
+            reportType: JSON.stringify(formData.reportFieldArray),
+            tradesField: JSON.stringify(formData.tradesFieldArray),
+            description: formData.description,
+            witnesses: JSON.stringify(formData.witnessesArray),
+            individualsInvolved: JSON.stringify(formData.primariesArray),
+            actionsTaken: JSON.stringify(formData.actionsArray),
+            reportTitle: typeof params.title === 'string' ? params.title : 'Incident Report',
+          },
+        });
+      }
+    } catch (e) {
+      console.error('Failed to save report:', e);
+      Alert.alert('Error', 'Failed to save report. Please try again.');
+    }
   };
 
   return (
@@ -35,96 +337,190 @@ export default function MyPostEdit() {
               <AppText style={styles.sectionTitle} weight="medium">
                 Date
               </AppText>
-              <TextInput style={styles.textInput} placeholder="" placeholderTextColor="#8A8A8A" />
+              <View style={{ flexDirection: 'row', gap: 16 }}>
+                <DateTimePicker
+                  testID="datePicker"
+                  value={date}
+                  mode="date"
+                  onChange={onChange}
+                  accentColor="white"
+                />
+                <DateTimePicker
+                  testID="timePicker"
+                  value={date}
+                  mode="time"
+                  onChange={onChange}
+                  is24Hour={true}
+                  accentColor="white"
+                />
+              </View>
             </View>
             <View>
-              <AppText style={styles.sectionTitle} weight="medium">
-                Time
-              </AppText>
-              <TextInput style={styles.textInput} placeholder="" placeholderTextColor="#8A8A8A" />
-            </View>
-            <View>
-              <AppText style={styles.sectionTitle} weight="medium">
+              <AppText weight="medium" style={styles.label}>
                 Location
               </AppText>
-              <TextInput style={styles.textInput} placeholder="" placeholderTextColor="#8A8A8A" />
-              <Image
-                style={styles.mapImage}
-                source={require('@/assets/images/map-placeholder.png')}
+              <Input
+                placeholder="Search for a location..."
+                style={[styles.input, { marginBottom: 12 }]}
+                placeholderTextColor="#6B6B6B"
+                value={formData.location}
+                onChangeText={(value) => setFormData({ ...formData, location: value })}
               />
+              <MapOnHome />
             </View>
             <View>
               <AppText style={styles.sectionTitle} weight="medium">
                 Type of Report
               </AppText>
-              <TextInput
-                style={styles.textInput}
+              <Input
                 placeholder="Add a report type"
-                placeholderTextColor="#8A8A8A"
+                style={styles.input}
+                placeholderTextColor="#6B6B6B"
+                value={formData.reportFieldInput}
+                onChangeText={(value) => setFormData({ ...formData, reportFieldInput: value })}
+                onSubmitEditing={handleAddReportField}
+                returnKeyType="done"
               />
+              <View style={styles.badgeContainer}>
+                {formData.reportFieldArray.map((field, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleRemoveReportField(index)}
+                    style={styles.badgeWrapper}>
+                    <View style={styles.badge}>
+                      <AppText style={styles.badgeText}>{field}</AppText>
+                      <Icon as={CircleX} size={16} color="#808080" fill="white" />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
             <View>
               <AppText style={styles.sectionTitle} weight="medium">
                 Trades Field
               </AppText>
-              <TextInput
-                style={styles.textInput}
+              <Input
                 placeholder="Add a trades field"
-                placeholderTextColor="#8A8A8A"
+                style={styles.input}
+                placeholderTextColor="#6B6B6B"
+                value={formData.tradesFieldInput}
+                onChangeText={(value) => setFormData({ ...formData, tradesFieldInput: value })}
+                onSubmitEditing={handleAddTradesField}
+                returnKeyType="done"
               />
+
+              <View style={styles.badgeContainer}>
+                {formData.tradesFieldArray.map((field, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleRemoveTradesField(index)}
+                    style={styles.badgeWrapper}>
+                    <View style={styles.badge}>
+                      <AppText style={styles.badgeText}>{field}</AppText>
+                      <Icon as={CircleX} size={16} color="#808080" fill="white" />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
             <View>
               <AppText style={styles.sectionTitle} weight="medium">
                 Incident Description
               </AppText>
-              <TextInput
-                style={[styles.textInput, styles.multilineInput]}
-                placeholder="Edit here"
-                placeholderTextColor="#8A8A8A"
-                multiline={true}
-                numberOfLines={6}
+              <Input
+                placeholder="Describe what happened and provide any context needed."
+                style={[styles.input, { height: 120, paddingTop: 12 }]}
+                placeholderTextColor="#6B6B6B"
+                multiline
+                value={formData.description}
+                onChangeText={(value) => setFormData({ ...formData, description: value })}
               />
             </View>
             <View>
               <AppText style={styles.sectionTitle} weight="medium">
                 Primary Individuals Involved
               </AppText>
-              <TextInput
-                style={[styles.textInput, styles.shortMultilineInput]}
-                placeholder="Edit here"
-                placeholderTextColor="#8A8A8A"
-                multiline={true}
-                numberOfLines={3}
+              <Input
+                placeholder="Add a person involved"
+                style={styles.input}
+                placeholderTextColor="#6B6B6B"
+                value={formData.primariesInput}
+                onChangeText={(value) => setFormData({ ...formData, primariesInput: value })}
+                onSubmitEditing={handleAddPrimary}
+                returnKeyType="done"
               />
+              <View style={styles.badgeContainer}>
+                {formData.primariesArray.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleRemovePrimary(index)}
+                    style={styles.badgeWrapper}>
+                    <View style={styles.badge}>
+                      <AppText style={styles.badgeText}>{item}</AppText>
+                      <Icon as={CircleX} size={16} color="#808080" fill="white" />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
             <View>
               <AppText style={styles.sectionTitle} weight="medium">
                 Witnesses
               </AppText>
-              <TextInput
-                style={[styles.textInput, styles.shortMultilineInput]}
-                placeholder="Edit here"
-                placeholderTextColor="#8A8A8A"
-                multiline={true}
-                numberOfLines={3}
+              <Input
+                placeholder="Add a witness"
+                style={styles.input}
+                placeholderTextColor="#6B6B6B"
+                value={formData.witnessesInput}
+                onChangeText={(value) => setFormData({ ...formData, witnessesInput: value })}
+                onSubmitEditing={handleAddWitness}
+                returnKeyType="done"
               />
+              <View style={styles.badgeContainer}>
+                {formData.witnessesArray.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleRemoveWitness(index)}
+                    style={styles.badgeWrapper}>
+                    <View style={styles.badge}>
+                      <AppText style={styles.badgeText}>{item}</AppText>
+                      <Icon as={CircleX} size={16} color="#808080" fill="white" />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
             <View>
               <AppText style={styles.sectionTitle} weight="medium">
                 Actions Taken
               </AppText>
-              <TextInput
-                style={[styles.textInput, styles.multilineInput]}
-                placeholder="Edit here"
-                placeholderTextColor="#8A8A8A"
-                multiline={true}
-                numberOfLines={6}
+              <Input
+                placeholder="Add an action taken"
+                style={styles.input}
+                placeholderTextColor="#6B6B6B"
+                value={formData.actionsInput}
+                onChangeText={(value) => setFormData({ ...formData, actionsInput: value })}
+                onSubmitEditing={handleAddAction}
+                returnKeyType="done"
               />
+              <View style={styles.badgeContainer}>
+                {formData.actionsArray.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleRemoveAction(index)}
+                    style={styles.badgeWrapper}>
+                    <View style={styles.badge}>
+                      <AppText style={styles.badgeText}>{item}</AppText>
+                      <Icon as={CircleX} size={16} color="#808080" fill="white" />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </View>
-          <Button variant="purple" radius="full" style={styles.saveButton}>
+          <Button variant="purple" radius="full" style={styles.saveButton} onPress={handleSave}>
             <AppText weight="medium" style={styles.saveText}>
-              Save & Regenerate Report
+              {typeof params.id === 'string' ? 'Save Changes' : 'Save & Regenerate Report'}
             </AppText>
           </Button>
         </ScrollView>
@@ -204,6 +600,38 @@ const styles = StyleSheet.create({
     height: 52,
   },
   saveText: {
+    color: '#FFF',
+    fontSize: 16,
+  },
+  label: {
+    color: 'white',
+    fontSize: 20,
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#333',
+    borderColor: '#FFFFFF4D',
+    color: 'white',
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  badgeWrapper: {
+    flexDirection: 'row',
+  },
+  badge: {
+    backgroundColor: '#FFFFFF80',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  badgeText: {
     color: '#FFF',
     fontSize: 16,
   },

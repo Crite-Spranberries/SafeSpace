@@ -24,11 +24,13 @@ import {
   useAudioRecorderState,
 } from 'expo-audio';
 import { addRecording } from '@/lib/recordings';
-import { addReport } from '@/lib/reports';
+import { addReport, reportDataToStoredReport } from '@/lib/reports';
 import { transcribeAudio, generateReport } from '@/lib/ai';
+import { mergeReportData, createReportDataFromDate } from '@/lib/reportData';
 import WaveForm from '@/components/ui/WaveForm';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
+import * as Location from 'expo-location';
 
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
 
@@ -64,6 +66,10 @@ export default function Recording() {
   const recorderState = useAudioRecorderState(recorder);
   const [saving, setSaving] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordingLocation, setRecordingLocation] = useState<{
+    coords: [number, number];
+    name: string;
+  } | null>(null);
 
   // Animated values for ripple and pulse (breathing) effect
   const rippleAnim = useRef(new Animated.Value(0)).current;
@@ -130,6 +136,36 @@ export default function Recording() {
         return;
       }
 
+      // Capture location when recording starts
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const location = await Location.getCurrentPositionAsync({});
+          const { latitude, longitude } = location.coords;
+
+          // Reverse geocode to get address
+          let locationName = '';
+          try {
+            const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
+            locationName = geo.name
+              ? `${geo.name}, ${geo.city}, ${geo.region}`
+              : geo.city
+                ? `${geo.city}, ${geo.region}`
+                : '';
+          } catch (geoErr) {
+            console.warn('Failed to reverse geocode location', geoErr);
+          }
+
+          setRecordingLocation({
+            coords: [latitude, longitude],
+            name: locationName,
+          });
+        }
+      } catch (locErr) {
+        console.warn('Failed to capture location', locErr);
+        // Continue recording even if location capture fails
+      }
+
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
       setRecordingDuration(0);
       await recorder.prepareToRecordAsync();
@@ -167,7 +203,9 @@ export default function Recording() {
       const title = `Recording ${formatDate(createdAt)} ${formatTime(createdAt)}`; // Default title.
 
       let transcript: string | undefined;
-      let report: string | undefined;
+      let reportData: any = undefined;
+      let reportText: string | undefined;
+
       try {
         console.log('Starting transcription...');
         transcript = await transcribeAudio(recordingUri);
@@ -175,26 +213,56 @@ export default function Recording() {
 
         if (transcript) {
           console.log('Starting report generation...');
-          report = await generateReport(transcript);
-          console.log('Report generation result:', report ? 'Success' : 'Failed');
+          const reportResult = await generateReport(transcript, {
+            audioUri: recordingUri,
+            date: createdAt,
+          });
+          console.log('Report generation result:', reportResult ? 'Success' : 'Failed');
 
-          if (report) {
-            await addReport({
-              id: `${createdAt.getTime()}_report`,
-              title: title || 'Generated Report',
-              date: formatDate(createdAt),
-              timestamp: formatTime(createdAt),
-              status: 'Private',
-              content: report,
-              recordingId: `${createdAt.getTime()}`,
-              tags: ['Sexism'],
-              excerpt: report.substring(0, 100) + '...',
-            });
+          if (reportResult) {
+            reportText = reportResult.text;
+            // Merge generated data with base recording data
+            const baseDataPartial = createReportDataFromDate(createdAt, recordingUri);
+            // Ensure baseData is a full ReportData by merging with defaults
+            const baseData = mergeReportData(baseDataPartial);
+            reportData = mergeReportData(
+              {
+                ...reportResult.data,
+                audio_duration: durationMillis,
+                // Only override title if AI didn't generate one, otherwise use AI-generated title from transcript
+                report_title: reportResult.data.report_title || title || 'Generated Report',
+                // Store the transcript in report_transcript field
+                report_transcript: transcript || '',
+                // Use captured location coordinates and name
+                location_coords: recordingLocation?.coords ||
+                  reportResult.data.location_coords || [0, 0],
+                location_name: recordingLocation?.name || reportResult.data.location_name || '',
+              },
+              baseData
+            );
+
+            // Save structured report
+            const reportId = `${createdAt.getTime()}_report`;
+            const storedReport = reportDataToStoredReport(
+              reportData,
+              reportId,
+              `${createdAt.getTime()}`
+            );
+            await addReport(storedReport);
           }
         }
       } catch (e) {
         console.log('Processing failed', e);
       }
+
+      // Create base report data for the recording
+      const recordingReportData = reportData
+        ? { ...reportData }
+        : mergeReportData({
+            ...createReportDataFromDate(createdAt, recordingUri),
+            location_coords: recordingLocation?.coords || [0, 0],
+            location_name: recordingLocation?.name || '',
+          });
 
       const payload = {
         id: `${createdAt.getTime()}`,
@@ -205,10 +273,11 @@ export default function Recording() {
         durationMillis,
         durationLabel,
         createdAtISO: createdAt.toISOString(),
-        tags: ['Sexism'],
-        location: undefined,
+        tags: reportData?.report_type || [], // Use report_type from structured data
+        location: reportData?.location_name, // Use location_name from structured data
         transcript,
-        report,
+        report: reportText, // Legacy: keep raw text for backward compatibility
+        reportData: recordingReportData, // New: structured data
       };
 
       await addRecording(payload);

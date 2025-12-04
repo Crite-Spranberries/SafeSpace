@@ -19,62 +19,119 @@ const customMapStyle = [
 
 type MapOnDetailProps = {
   address?: string;
+  coordinates?: [number, number]; // [latitude, longitude] from location_coords
   style?: StyleProp<ViewStyle>;
 };
 
 export default function MapOnDetail({
   address = '3700 Willingdon Avenue, Burnaby',
+  coordinates,
   style,
 }: MapOnDetailProps) {
-  const [userAddress, setUserAddress] = useState(address);
+  const [displayAddress, setDisplayAddress] = useState(address);
   const [region, setRegion] = useState<Region | undefined>(undefined);
-  const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(
+  const [markerCoords, setMarkerCoords] = useState<{ latitude: number; longitude: number } | null>(
     null
   );
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
 
   useEffect(() => {
+    // Stop any existing location watcher first
+    if (locationSubscription.current) {
+      locationSubscription.current.remove();
+      locationSubscription.current = null;
+    }
+
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setUserAddress(address);
-        return;
+      console.log('MapOnDetail useEffect triggered', {
+        hasCoordinates: !!coordinates,
+        coordinates,
+        address,
+        coordinatesType: typeof coordinates,
+        isArray: Array.isArray(coordinates),
+      });
+
+      // If coordinates are provided, use them (for report location)
+      // Check if coordinates are valid (not null, array of 2, and not [0, 0])
+      const hasValidCoordinates =
+        coordinates !== undefined &&
+        coordinates !== null &&
+        Array.isArray(coordinates) &&
+        coordinates.length === 2 &&
+        typeof coordinates[0] === 'number' &&
+        typeof coordinates[1] === 'number' &&
+        !isNaN(coordinates[0]) &&
+        !isNaN(coordinates[1]) &&
+        !(coordinates[0] === 0 && coordinates[1] === 0) &&
+        Math.abs(coordinates[0]) <= 90 && // Valid latitude range
+        Math.abs(coordinates[1]) <= 180; // Valid longitude range
+
+      const coord0 = Array.isArray(coordinates) ? coordinates[0] : undefined;
+      const coord1 = Array.isArray(coordinates) ? coordinates[1] : undefined;
+      console.log('MapOnDetail coordinate validation:', {
+        hasValidCoordinates,
+        coordinates,
+        checks: {
+          notUndefined: coordinates !== undefined,
+          notNull: coordinates !== null,
+          isArray: Array.isArray(coordinates),
+          length2: Array.isArray(coordinates) && coordinates.length === 2,
+          bothNumbers: typeof coord0 === 'number' && typeof coord1 === 'number',
+          notNaN:
+            typeof coord0 === 'number' &&
+            typeof coord1 === 'number' &&
+            !isNaN(coord0) &&
+            !isNaN(coord1),
+          notZeroZero:
+            typeof coord0 === 'number' &&
+            typeof coord1 === 'number' &&
+            !(coord0 === 0 && coord1 === 0),
+          validLat: typeof coord0 === 'number' && Math.abs(coord0) <= 90,
+          validLng: typeof coord1 === 'number' && Math.abs(coord1) <= 180,
+        },
+      });
+
+      if (hasValidCoordinates) {
+        const [latitude, longitude] = coordinates;
+        console.log('MapOnDetail: Using provided coordinates', { latitude, longitude });
+
+        // Reverse geocode to get address from coordinates, but prefer the provided address if available
+        // The provided address (from location_name) is likely more accurate than reverse geocoding
+        if (address && address.trim().length > 0 && address !== 'Location not specified') {
+          setDisplayAddress(address);
+        } else {
+          // Only reverse geocode if no address was provided
+          try {
+            let [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
+            const addr = geo.name
+              ? `${geo.name}, ${geo.city}, ${geo.region}`
+              : geo.city
+                ? `${geo.city}, ${geo.region}`
+                : 'Location not specified';
+            setDisplayAddress(addr);
+          } catch (err) {
+            console.warn('Failed to reverse geocode', err);
+            setDisplayAddress('Location not specified');
+          }
+        }
+
+        const initialRegion = {
+          latitude,
+          longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        };
+        setRegion(initialRegion);
+        setMarkerCoords({ latitude, longitude });
+        console.log('MapOnDetail: Set region and marker to coordinates', initialRegion);
+        return; // Don't watch position if we have coordinates
       }
 
-      let location = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = location.coords;
-
-      let [geo] = await Location.reverseGeocodeAsync(location.coords);
-      const addr = geo.name
-        ? `${geo.name}, ${geo.city}, ${geo.region}`
-        : `${geo.city}, ${geo.region}`;
-      setUserAddress(addr);
-
-      const initialRegion = {
-        latitude,
-        longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      };
-      setRegion(initialRegion);
-      setUserCoords({ latitude, longitude });
-
-      locationSubscription.current = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.Highest,
-          distanceInterval: 1,
-          timeInterval: 1000,
-        },
-        (newLocation) => {
-          const { latitude, longitude } = newLocation.coords;
-          setUserCoords({ latitude, longitude });
-          setRegion((prevRegion) => ({
-            ...prevRegion!,
-            latitude,
-            longitude,
-          }));
-        }
-      );
+      // MapOnDetail should NEVER get current location - it only shows report coordinates
+      // If no valid coordinates, just show the address without a map
+      console.log('MapOnDetail: No valid coordinates provided - showing address only (no map)');
+      setDisplayAddress(address || 'Location not specified');
+      // Don't set region or marker - no map will be shown
     })();
 
     return () => {
@@ -83,14 +140,14 @@ export default function MapOnDetail({
         locationSubscription.current = null;
       }
     };
-  }, [address]);
+  }, [address, coordinates]);
 
   return (
     <View style={[styles.container, style]}>
       <AppText style={styles.locationTitle} weight="medium">
         Location
       </AppText>
-      <AppText style={styles.locationAddress}>{userAddress}</AppText>
+      <AppText style={styles.locationAddress}>{displayAddress}</AppText>
       {region && (
         <MapView
           style={styles.mapView}
@@ -102,11 +159,11 @@ export default function MapOnDetail({
           scrollEnabled={false}
           pitchEnabled={false}
           rotateEnabled={false}>
-          {userCoords && (
+          {markerCoords && (
             <Marker
-              coordinate={userCoords}
-              title="You are here"
-              description={userAddress}
+              coordinate={markerCoords}
+              title={coordinates ? 'Report Location' : 'You are here'}
+              description={displayAddress}
               anchor={{ x: 0.5, y: 1 }}>
               <MapPin size={40} fill="#8449DF" color="#8449DF" strokeWidth={0} />
             </Marker>

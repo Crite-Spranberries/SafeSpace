@@ -1,5 +1,5 @@
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Trash2, PenLine } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView, Alert } from 'react-native';
@@ -13,8 +13,40 @@ import Recommendation from '@/components/ui/Recommendation';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 import { useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
-import { deleteReport, updateReportStatus } from '@/lib/reports';
+import {
+  loadReports,
+  StoredReport,
+  reportToReportData,
+  deleteReport,
+  updateReportStatus,
+} from '@/lib/reports';
+import { ReportData } from '@/lib/reportData';
+import { getResourceLinksForActions } from '@/lib/worksafebcResources';
 import { lockState } from '@/lib/lockState';
+
+/**
+ * Formats date from ReportData structure
+ */
+const formatDateFromReportData = (reportData?: Partial<ReportData>): string => {
+  if (reportData?.month && reportData?.day && reportData?.year) {
+    return `${reportData.month} ${reportData.day}, ${reportData.year}`;
+  }
+  return '';
+};
+
+/**
+ * Formats time from ReportData structure (time is stored as HHMM, e.g., 1015 for 10:15)
+ */
+const formatTimeFromReportData = (reportData?: Partial<ReportData>): string => {
+  if (reportData?.time) {
+    const hours = Math.floor(reportData.time / 100);
+    const minutes = reportData.time % 100;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+    return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
+  }
+  return '';
+};
 
 export default function MyPostDetails() {
   const params = useLocalSearchParams<{
@@ -29,34 +61,129 @@ export default function MyPostDetails() {
     trades_field?: string;
     status?: string;
   }>();
-  const reportParam = typeof params.report === 'string' ? params.report : null;
-  const titleParam = typeof params.title === 'string' ? params.title : null;
   const idParam = typeof params.id === 'string' ? params.id : null;
-  const dateParam = typeof params.date === 'string' ? params.date : null;
-  const timestampParam = typeof params.timestamp === 'string' ? params.timestamp : null;
-  const locationParam = typeof params.location === 'string' ? params.location : null;
-  const tagsParam = typeof params.tags === 'string' ? JSON.parse(params.tags) : [];
-  const reportTypeParam =
-    typeof params.report_type === 'string' ? JSON.parse(params.report_type) : [];
-  const tradesFieldParam =
-    typeof params.trades_field === 'string' ? JSON.parse(params.trades_field) : [];
-  const statusParam = typeof params.status === 'string' ? params.status : 'Private';
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [isPublic, setIsPublic] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load report data on mount
+  useEffect(() => {
+    const loadReport = async () => {
+      if (idParam) {
+        try {
+          setIsLoading(true);
+          const reports = await loadReports();
+          const report = reports.find((r) => r.id === idParam);
+          if (report) {
+            // Convert StoredReport to full ReportData
+            const fullReportData = reportToReportData(report);
+            console.log('Loaded report data:', fullReportData);
+            setReportData(fullReportData);
+            setIsPublic(fullReportData.isPublic);
+          } else {
+            console.warn('Report not found:', idParam);
+          }
+        } catch (err) {
+          console.error('Failed to load report', err);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setIsLoading(false);
+      }
+    };
+    loadReport();
+  }, [idParam]);
+
+  // Extract display values from reportData or fall back to params
+  // Prioritize reportData fields since they come from AI analysis
+
+  const displayTitle = reportData?.report_title || params.title || 'Report Details';
+  const displayDate = reportData
+    ? formatDateFromReportData(reportData) || params.date || ''
+    : params.date || '';
+  const displayTime = reportData
+    ? formatTimeFromReportData(reportData) || params.timestamp || ''
+    : params.timestamp || '';
+  const displayLocation = reportData?.location_name || params.location || 'Location not specified';
+  // Extract coordinates - ensure they're valid before passing
+  const displayCoordinates: [number, number] | undefined =
+    reportData?.location_coords &&
+    Array.isArray(reportData.location_coords) &&
+    reportData.location_coords.length === 2 &&
+    typeof reportData.location_coords[0] === 'number' &&
+    typeof reportData.location_coords[1] === 'number' &&
+    !isNaN(reportData.location_coords[0]) &&
+    !isNaN(reportData.location_coords[1]) &&
+    !(reportData.location_coords[0] === 0 && reportData.location_coords[1] === 0)
+      ? (reportData.location_coords as [number, number])
+      : undefined;
+
+  // Debug logging for coordinates
+  useEffect(() => {
+    console.log('myPostDetails - Coordinates check:', {
+      hasReportData: !!reportData,
+      location_coords: reportData?.location_coords,
+      displayCoordinates,
+      location_name: reportData?.location_name,
+    });
+  }, [reportData, displayCoordinates]);
+
+  // Use reportData arrays directly - these come from AI analysis of the transcript
+  const reportTypes = reportData?.report_type || [];
+  const tradesFields = reportData?.trades_field || [];
+  const reportDescription = reportData?.report_desc || params.report || 'No report available.';
+  const recommendedActions = reportData?.recommended_actions || [];
+
+  // Handle witnesses/primaries/actions - could be string or array depending on source
+  const formatField = (field: string | string[] | undefined): string => {
+    if (!field) return '';
+    if (Array.isArray(field)) return field.join(', ');
+    return field;
+  };
+  const witnesses = formatField(reportData?.witnesses) || 'No witnesses provided.';
+  const individualsInvolved =
+    formatField(reportData?.primaries_involved) || 'No individuals provided.';
+  const actionsTaken = formatField(reportData?.actions_taken) || 'No actions taken provided.';
+
+  // Get resource links for recommended actions (only for serious reports)
+  const actionsWithLinks = getResourceLinksForActions(recommendedActions, reportTypes);
+
+  // Helper to convert field to array format for editing
+  const getArrayField = (field: string | string[] | undefined): string[] => {
+    if (!field) return [];
+    if (Array.isArray(field)) return field;
+    return [field];
+  };
+
+  // Debug logging
+  useEffect(() => {
+    if (reportData) {
+      console.log('myPostDetails - Report data loaded:', {
+        reportTypes,
+        recommendedActions,
+        actionsWithLinks,
+      });
+    }
+  }, [reportData, reportTypes, recommendedActions, actionsWithLinks]);
 
   const SCREEN_OPTIONS = {
     title: '',
     headerBackTitle: 'Back',
     headerTransparent: true,
     headerLeft: () => (
-      <TouchableOpacity style={styles.backButton} onPress={() => {
-        lockState.shouldUnlockMyLogs = true;
-        router.push('/(tabs)/myLogs')}}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => {
+          lockState.shouldUnlockMyLogs = true;
+          router.push('/(tabs)/myLogs');
+        }}>
         <Icon as={ArrowLeft} size={16} />
       </TouchableOpacity>
     ),
   };
 
   const { showConfirmation } = useConfirmation();
-  const [isPublic, setIsPublic] = useState(statusParam === 'Posted');
 
   return (
     <>
@@ -66,18 +193,15 @@ export default function MyPostDetails() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
             <AppText weight="bold" style={styles.title}>
-              {idParam === 'default-report-1' || idParam === 'default-report-2'
-                ? titleParam || 'Report Details'
-                : titleParam
-                  ? `${titleParam}`
-                  : 'Title generated based on summary'}
+              {displayTitle}
             </AppText>
             <View style={styles.subtitleContainer}>
-              <AppText style={styles.subtitleText}>{dateParam}</AppText>
-              <AppText style={styles.subtitleText}>{timestampParam}</AppText>
+              <AppText style={styles.subtitleText}>{displayDate}</AppText>
+              <AppText style={styles.subtitleText}>{displayTime}</AppText>
             </View>
             <MapOnDetail
-              address={locationParam || '3700 Willingdon Avenue, Burnaby'}
+              address={displayLocation}
+              coordinates={displayCoordinates}
               style={styles.mapOnDetail}
             />
 
@@ -86,8 +210,8 @@ export default function MyPostDetails() {
                 Report Type
               </AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {reportTypeParam.length > 0 ? (
-                  reportTypeParam.map((tag: string, index: number) => (
+                {reportTypes.length > 0 ? (
+                  reportTypes.map((tag: string, index: number) => (
                     <Badge key={index} variant="darkGrey" className="mr-2 px-4">
                       <AppText style={styles.badgeText} weight="medium">
                         {tag}
@@ -95,7 +219,7 @@ export default function MyPostDetails() {
                     </Badge>
                   ))
                 ) : (
-                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>None</AppText>
+                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>Not Specified</AppText>
                 )}
               </ScrollView>
             </View>
@@ -105,8 +229,8 @@ export default function MyPostDetails() {
                 Trades Field
               </AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {tradesFieldParam.length > 0 ? (
-                  tradesFieldParam.map((tag: string, index: number) => (
+                {tradesFields.length > 0 ? (
+                  tradesFields.map((tag: string, index: number) => (
                     <Badge key={index} variant="darkGrey" className="mr-2 px-4">
                       <AppText style={styles.badgeText} weight="medium">
                         {tag}
@@ -114,7 +238,7 @@ export default function MyPostDetails() {
                     </Badge>
                   ))
                 ) : (
-                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>None</AppText>
+                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>Not Specified</AppText>
                 )}
               </ScrollView>
             </View>
@@ -126,18 +250,20 @@ export default function MyPostDetails() {
                 </AppText>
                 <AppText style={styles.transcriptModel}>GPT-4o</AppText>
               </View>
-              <AppText style={styles.transcriptText}>
-                {reportParam ?? 'No report available.'}
-              </AppText>
+              <AppText style={styles.transcriptText}>{reportDescription}</AppText>
             </View>
 
             <View style={styles.recommendationsSection}>
               <AppText weight="medium" style={styles.recommendTitle}>
                 Recommended Actions
               </AppText>
-              <Recommendation text="Provide Bystander Intervention and Respect Training" />
-              <Recommendation text="Require Pre-Task Safety and Inclusion Briefings" />
-              <Recommendation text="Implement a Zero-Tolerance Harassment Policy" />
+              {recommendedActions.length > 0 ? (
+                actionsWithLinks.map(({ action, link }, index: number) => (
+                  <Recommendation key={index} text={action} resourceLink={link} />
+                ))
+              ) : (
+                <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>No recommended actions</AppText>
+              )}
             </View>
 
             <View style={styles.buttonContainer}>
@@ -167,7 +293,7 @@ export default function MyPostDetails() {
                       ]);
                     } else {
                       Alert.alert('Error', 'Could not delete report: ID missing.');
-                    } 
+                    }
                   }
                 }}>
                 <Icon as={Trash2} color="#FFFFFF" size={24} />
@@ -175,7 +301,32 @@ export default function MyPostDetails() {
               <TouchableOpacity
                 style={styles.editIcon}
                 onPress={() => {
-                  router.push('/my_logs/myPostEdit');
+                  const witnessesArr = getArrayField(reportData?.witnesses);
+                  const primariesArr = getArrayField(reportData?.primaries_involved);
+                  const actionsArr = getArrayField(reportData?.actions_taken);
+                  const cleanDesc =
+                    reportDescription === 'No report available.' ? '' : reportDescription;
+
+                  router.push({
+                    pathname: '/my_logs/myPostEdit',
+                    params: {
+                      id: idParam,
+                      title: displayTitle,
+                      date: displayDate,
+                      timestamp: displayTime,
+                      month: reportData?.month || '',
+                      day: reportData?.day?.toString() || '',
+                      year: reportData?.year?.toString() || '',
+                      time: reportData?.time?.toString() || '',
+                      location: displayLocation,
+                      report_type: JSON.stringify(reportTypes),
+                      trades_field: JSON.stringify(tradesFields),
+                      description: cleanDesc,
+                      witnesses: JSON.stringify(witnessesArr),
+                      primaries_involved: JSON.stringify(primariesArr),
+                      actions_taken: JSON.stringify(actionsArr),
+                    },
+                  });
                 }}>
                 <Icon as={PenLine} color="#5E349E" size={24} />
               </TouchableOpacity>

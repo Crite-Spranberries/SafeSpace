@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Asset } from 'expo-asset';
+import { ReportData, createEmptyReportData } from './reportData';
 
 const STORAGE_KEY = '@SafeSpace:recordings';
 const DEFAULT_AUDIO_MODULE = require('@/assets/audio/test_audio.mp3');
@@ -9,15 +10,16 @@ export type StoredRecording = {
   id: string;
   uri: string;
   title: string;
-  date: string;
-  timestamp: string;
+  date: string; // Formatted date string for display
+  timestamp: string; // Formatted time string for display
   durationMillis: number;
   durationLabel: string;
   createdAtISO: string;
-  tags?: string[];
-  location?: string;
+  tags?: string[]; // Legacy field, maps to report_type
+  location?: string; // Legacy field, maps to location_name
   transcript?: string;
-  report?: string;
+  report?: string; // Legacy: raw report text
+  reportData?: Partial<ReportData>; // New: structured report data
   isImmutable?: boolean;
 };
 
@@ -32,9 +34,37 @@ const DEFAULT_RECORDING_TEMPLATES: DefaultRecordingTemplate[] = [
     durationMillis: 612000,
     durationLabel: '10:12',
     createdAtISO: '2025-03-20T09:30:00.000Z',
-    tags: ['Misgendering', 'Equality'],
+    tags: ['Anti-LGBTQ+ Discrimination', 'Verbal Harassment'],
     location: '6200 Kingsway, Burnaby, BC',
     isImmutable: true,
+    reportData: {
+      isPublic: false,
+      report_method: 'voice_recording',
+      report_id: 'default-recording-1',
+      report_title: 'My Supervisor Keeps Misgendering Me',
+      month: 'March',
+      day: 20,
+      year: 2025,
+      time: 930,
+      audio_URI: '',
+      audio_duration: 612000,
+      location_name: '6200 Kingsway, Burnaby, BC',
+      location_coords: [49.2258, -123.003], // Approximate coordinates for 6200 Kingsway, Burnaby
+      report_type: ['Anti-LGBTQ+ Discrimination', 'Verbal Harassment'],
+      trades_field: ['Carpentry'],
+      report_desc:
+        "The recording captured a workplace interaction where a supervisor repeatedly misgendered an employee despite multiple corrections. The conversation demonstrated a pattern of disrespect for gender identity, with the supervisor maintaining a dismissive tone throughout. The emotional context showed clear frustration and distress from the employee, while the supervisor appeared unwilling to acknowledge or correct their behavior. This created a hostile work environment that undermined the employee's sense of safety and belonging.",
+      report_transcript:
+        "My supervisor keeps using the wrong pronouns for me. I've corrected them multiple times, but they just ignore it or make excuses. It makes me feel disrespected and uncomfortable at work.",
+      primaries_involved: ['Supervisor'],
+      witnesses: [],
+      actions_taken: ['Corrected supervisor multiple times'],
+      recommended_actions: [
+        'Provide LGBTQ+ inclusion and pronoun training',
+        'Establish clear policies on respectful communication',
+        'Implement accountability measures',
+      ],
+    },
   },
   {
     id: 'default-recording-2',
@@ -44,9 +74,37 @@ const DEFAULT_RECORDING_TEMPLATES: DefaultRecordingTemplate[] = [
     durationMillis: 132000,
     durationLabel: '2:12',
     createdAtISO: '2025-05-07T05:30:00.000Z',
-    tags: ['Harassment', 'Equality'],
+    tags: ['Sexism', 'Verbal Harassment'],
     location: '8200 Kingsway, Burnaby, BC',
     isImmutable: true,
+    reportData: {
+      isPublic: false,
+      report_method: 'voice_recording',
+      report_id: 'default-recording-2',
+      report_title: 'Uncomfortable Comments at Work',
+      month: 'May',
+      day: 7,
+      year: 2025,
+      time: 530,
+      audio_URI: '',
+      audio_duration: 132000,
+      location_name: '8200 Kingsway, Burnaby, BC',
+      location_coords: [49.218, -123.004], // Approximate coordinates for 8200 Kingsway, Burnaby
+      report_type: ['Sexism', 'Verbal Harassment'],
+      trades_field: ['Welding'],
+      report_desc:
+        "The recording documented inappropriate and sexist comments made by a coworker during a work shift. The conversation contained language that stereotyped and demeaned women in the workplace. The speaker's tone was dismissive and the comments created an uncomfortable and unprofessional environment. The emotional context showed clear discomfort and frustration from those present, while the speaker appeared unaware or unconcerned about the impact of their words.",
+      report_transcript:
+        'A coworker made several inappropriate comments about women in the workplace. The comments were sexist and made me and others feel uncomfortable. When I tried to address it, they just laughed it off.',
+      primaries_involved: ['Coworker'],
+      witnesses: ['Other Workers'],
+      actions_taken: ['Attempted to address the comments'],
+      recommended_actions: [
+        'Provide bystander intervention training',
+        'Implement zero-tolerance harassment policy',
+        'Conduct workplace respect training',
+      ],
+    },
   },
 ];
 

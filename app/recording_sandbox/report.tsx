@@ -15,6 +15,48 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { Icon } from '@/components/ui/Icon';
+import * as FileSystem from 'expo-file-system/legacy';
+import { Asset } from 'expo-asset';
+
+/**
+ * Reads the report format template from assets
+ * Tries multiple methods to load the template file
+ */
+const loadReportTemplate = async (): Promise<string> => {
+  try {
+    // Method 1: Try using Asset.fromModule (works if Metro is configured for .txt files)
+    try {
+      const asset = Asset.fromModule(require('@/assets/data/report_format.txt'));
+      await asset.downloadAsync();
+
+      if (asset.localUri) {
+        const templateContent = await FileSystem.readAsStringAsync(asset.localUri);
+        if (templateContent.trim()) {
+          return templateContent.trim();
+        }
+      }
+    } catch (assetErr) {
+      // Method 2: Try direct require (if Metro handles .txt files)
+      try {
+        const templateModule = require('@/assets/data/report_format.txt');
+        if (typeof templateModule === 'string') {
+          return templateModule.trim();
+        }
+        if (templateModule?.default && typeof templateModule.default === 'string') {
+          return templateModule.default.trim();
+        }
+      } catch (requireErr) {
+        console.warn('Could not load template via require:', requireErr);
+      }
+    }
+
+    console.warn('Report template could not be loaded, using empty template');
+    return '';
+  } catch (err) {
+    console.warn('Failed to load report template:', err);
+    return '';
+  }
+};
 
 export default function Report() {
   const path = usePathname();
@@ -27,25 +69,25 @@ export default function Report() {
         const value = await AsyncStorage.getItem('transcribe');
         console.log('value', typeof window);
         if (value !== null) {
-          // value previously stored
-          // this.window = null
+          // Load the local report template
+          const templateContent = await loadReportTemplate();
 
-          // const _url = await PromptModel({
-          //   prompt: `Using "report_template.txt" as a template, create a report for the following transcript:
-          //   ${value}`,
-          //   api_key: process.env.EXPO_PUBLIC_ROUGHLYAI_API_KEY,
-          //   dir: "2025Projects/safespace",
-          //   model: "gpt-4.1-mini"
-          // });
+          // Build the prompt with the template content
+          const templateSection = templateContent
+            ? `Use the following template format:\n\n${templateContent}\n\n`
+            : 'Using the standard report format, ';
+
+          const prompt = `${templateSection}create a report for the following transcript:
+              ${value}
+              
+              For information missing, respond with "Not Provided". Make an educated guess for "Trades field", "Type of Report", "Type of Discrimination", and "Incident Details" based on the transcript.`;
+
           const _resp = await fetch(
             'https://m3rcwp4vofeta3kqelrykbgosi0rswzn.lambda-url.ca-central-1.on.aws/',
             {
               method: 'POST',
               body: JSON.stringify({
-                prompt: `Using "report_template.txt" as a template, create a report for the following transcript:
-              ${value}
-              
-              For information missing, respond with "Not Provided". Make an educated guess for "Trades field", "Type of Report", "Type of Discrimination", and "Incident Details" based on the transcript.`,
+                prompt,
                 project_name: 'safespace',
               }),
             }
