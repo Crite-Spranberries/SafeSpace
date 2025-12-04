@@ -383,7 +383,7 @@ export default function MyRecordingDetails() {
                     </Badge>
                   ))
                 ) : (
-                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>None</AppText>
+                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>Not Specified</AppText>
                 )}
               </ScrollView>
             </View>

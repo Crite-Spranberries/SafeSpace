@@ -205,7 +205,25 @@ ${transcript}
 INSTRUCTIONS:
 1. Read the transcript carefully and extract ALL relevant information
 2. The report_title should be SHORT and CONCISE (maximum 6-8 words). It should be a brief, general description of the situation (e.g., "Workplace Harassment Incident", "Safety Violation on Site", "Discrimination During Training"). Keep it simple and descriptive, not a full sentence.
-3. For report_type: Identify which violation type(s) from the VALID REPORT TYPES list above best match the incident described. You MUST ONLY use values from that list. If multiple apply, include all that are relevant.
+3. For report_type: You MUST select 1-2 MOST SPECIFIC violation types from the VALID REPORT TYPES list that best match the incident. Be precise and specific:
+   - Analyze the transcript carefully to identify the EXACT type of violation
+   - Choose the most specific violation type(s) that accurately describe the situation
+   - PAY SPECIAL ATTENTION to discrimination-based incidents:
+     * Anti-LGBTQ+ Discrimination: Comments, slurs, or behavior targeting LGBTQ+ individuals, their identity, orientation, or expression
+     * Racism: Comments, slurs, or behavior targeting someone's race, ethnicity, or cultural background
+     * Sexism: Comments or behavior that discriminates against or stereotypes based on gender
+     * Religious Discrimination: Comments or behavior targeting someone's religious beliefs or practices
+     * Age Discrimination: Comments or behavior targeting someone based on their age
+   - If the incident involves harassment, determine if it's "Verbal Harassment", "Physical Harassment", "Sexual Harassment", or just "Harassment" based on the specific nature described
+   - If multiple types could apply, select the 1-2 that are MOST RELEVANT and SPECIFIC to what actually happened
+   - Avoid generic selections - be precise about the type of incident
+   - Examples:
+     * Sexist comments angrily about women → ["Sexism", "Verbal Harassment"]
+     * Anti-LGBTQ+ slurs or discriminatory comments → ["Anti-LGBTQ+ Discrimination", "Verbal Harassment"]
+     * Racist comments or behavior → ["Racism", "Discrimination"]
+     * Physical contact or threat of physical harm → ["Physical Harassment", "Workplace Violence"]
+     * Intimidation or threats → ["Threats", "Intimidation"]
+   - You MUST ONLY use values from the VALID REPORT TYPES list - do not create new types
 4. For trades_field: Identify which trade field(s) from the VALID TRADE FIELDS list above are mentioned or relevant. You MUST ONLY use values from that list. If none are mentioned, use an empty array [].
 5. The report_desc should be a comprehensive, professional description that includes:
    - A factual account of what happened based on the transcript

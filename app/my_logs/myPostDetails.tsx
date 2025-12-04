@@ -166,7 +166,7 @@ export default function MyPostDetails() {
                     </Badge>
                   ))
                 ) : (
-                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>None</AppText>
+                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>Not Specified</AppText>
                 )}
               </ScrollView>
             </View>
@@ -185,7 +185,7 @@ export default function MyPostDetails() {
                     </Badge>
                   ))
                 ) : (
-                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>None</AppText>
+                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>Not Specified</AppText>
                 )}
               </ScrollView>
             </View>

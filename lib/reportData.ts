@@ -105,6 +105,11 @@ export const WORKSAFEBC_VIOLATION_TYPES = [
   'Discrimination',
   'Intimidation',
   'Lockout',
+  'Anti-LGBTQ+ Discrimination',
+  'Racism',
+  'Sexism',
+  'Religious Discrimination',
+  'Age Discrimination',
 ];
 
 export const TRADE_FIELDS = [

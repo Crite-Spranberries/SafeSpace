@@ -39,7 +39,7 @@ export default function Recommendation({ text, resourceLink }: RecommendationPro
         <AppText style={styles.text}>{text}</AppText>
         {resourceLink && (
           <TouchableOpacity style={styles.linkButton} onPress={handleLinkPress} activeOpacity={0.7}>
-            <Icon as={ExternalLink} size={16} color="#8449DF" />
+            <Icon as={ExternalLink} size={16} color="#A66BE8" />
             <AppText style={styles.linkText}>WorksafeBC Resource</AppText>
           </TouchableOpacity>
         )}
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   linkText: {
-    color: '#8449DF',
+    color: '#A66BE8',
     fontSize: 14,
     fontWeight: '500',
   },

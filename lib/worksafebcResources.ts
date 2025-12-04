@@ -9,6 +9,11 @@ export const SERIOUS_REPORT_TYPES = [
   'Threats',
   'Intimidation',
   'Discrimination',
+  'Anti-LGBTQ+ Discrimination',
+  'Racism',
+  'Sexism',
+  'Religious Discrimination',
+  'Age Discrimination',
 ];
 
 /**
