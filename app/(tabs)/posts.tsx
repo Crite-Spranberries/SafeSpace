@@ -79,6 +79,7 @@ export default function Posts() {
   const router = useRouter();
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Load posts from JSON file on mount
   useEffect(() => {
@@ -93,13 +94,38 @@ export default function Posts() {
     });
   };
 
+  // Filter posts based on search query
+  const filteredPosts = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return posts;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    return posts.filter((post) => {
+      // Search in title
+      if (post.title.toLowerCase().includes(query)) return true;
+
+      // Search in excerpt
+      if (post.excerpt?.toLowerCase().includes(query)) return true;
+
+      // Search in location
+      if (post.location?.toLowerCase().includes(query)) return true;
+
+      // Search in tags (report_type)
+      if (post.report_type?.some((tag) => tag.toLowerCase().includes(query))) return true;
+      if (post.tags?.some((tag) => tag.toLowerCase().includes(query))) return true;
+
+      return false;
+    });
+  }, [posts, searchQuery]);
+
   const sortedPosts = useMemo(() => {
-    return [...posts].sort((a, b) => {
+    return [...filteredPosts].sort((a, b) => {
       const dateA = parseDateTime(a.date, a.timestamp) || 0;
       const dateB = parseDateTime(b.date, b.timestamp) || 0;
       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
     });
-  }, [posts, sortOrder]);
+  }, [filteredPosts, sortOrder]);
 
   return (
     <>
@@ -125,7 +151,7 @@ export default function Posts() {
         </View>
         <ScrollView contentContainerStyle={{ paddingBottom: 76 }}>
           <View style={styles.contentContainer}>
-            <SearchSettings />
+            <SearchSettings value={searchQuery} onChangeText={setSearchQuery} />
             <SortButton value={sortOrder} onChange={setSortOrder} />
             {sortedPosts.map((p) => (
               <ReportCard

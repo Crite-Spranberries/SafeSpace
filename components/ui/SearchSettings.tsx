@@ -5,16 +5,26 @@ import { Search } from 'lucide-react-native';
 
 type SearchSettingsProps = {
   style?: StyleProp<ViewStyle>;
+  value?: string;
+  onChangeText?: (text: string) => void;
+  placeholder?: string;
 };
 
-export default function SearchSettings({ style }: SearchSettingsProps) {
+export default function SearchSettings({
+  style,
+  value,
+  onChangeText,
+  placeholder = 'Search by keyword or tags...',
+}: SearchSettingsProps) {
   return (
     <View style={[styles.searchBar, style]}>
       <Icon as={Search} color="#7842CB" size={24} />
       <Input
-        placeholder="Search by keyword or tags..."
+        placeholder={placeholder}
         style={styles.input}
         placeholderTextColor="#6B6B6B"
+        value={value}
+        onChangeText={onChangeText}
       />
     </View>
   );
