@@ -256,14 +256,30 @@ export default function MyPostEdit() {
       if (idParam) {
         // Update existing report
         await updateReport(idParam, payload);
+        Alert.alert('Success', 'Report saved successfully!', [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]);
+      } else {
+        // Editing before report is created - return data back to report screen
+        router.push({
+          pathname: '/create_report/report',
+          params: {
+            location: formData.location,
+            date: dateObj.toLocaleDateString(),
+            time: dateObj.toLocaleTimeString(),
+            reportType: JSON.stringify(formData.reportFieldArray),
+            tradesField: JSON.stringify(formData.tradesFieldArray),
+            description: formData.description,
+            witnesses: JSON.stringify(formData.witnessesArray),
+            individualsInvolved: JSON.stringify(formData.primariesArray),
+            actionsTaken: JSON.stringify(formData.actionsArray),
+            reportTitle: typeof params.title === 'string' ? params.title : 'Incident Report',
+          },
+        });
       }
-
-      Alert.alert('Success', 'Report saved successfully!', [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
     } catch (e) {
       console.error('Failed to save report:', e);
       Alert.alert('Error', 'Failed to save report. Please try again.');
@@ -467,7 +483,7 @@ export default function MyPostEdit() {
           </View>
           <Button variant="purple" radius="full" style={styles.saveButton} onPress={handleSave}>
             <AppText weight="medium" style={styles.saveText}>
-              Save & Regenerate Report
+              {typeof params.id === 'string' ? 'Save Changes' : 'Save & Regenerate Report'}
             </AppText>
           </Button>
         </ScrollView>
