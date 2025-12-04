@@ -185,7 +185,7 @@ Create a structured incident report in JSON format matching this structure:
   "report_title": "Short, concise title (max 6-8 words) - brief general description of the situation",
   "report_type": ["array of incident types - MUST be from the valid list below"],
   "trades_field": ["array of trade fields - MUST be from the valid list below"],
-  "report_desc": "Detailed description of the incident based EXACTLY on what is described in the transcript",
+  "report_desc": "Professional, comprehensive description including: factual account of events, unbiased description of emotional tone/context/atmosphere observed, and how these factors may have impacted the situation",
   "primaries_involved": ["array of people involved as mentioned in the transcript"],
   "witnesses": ["array of witness names if mentioned in the transcript"],
   "actions_taken": ["array of actions already taken as described in the transcript"],
@@ -207,7 +207,12 @@ INSTRUCTIONS:
 2. The report_title should be SHORT and CONCISE (maximum 6-8 words). It should be a brief, general description of the situation (e.g., "Workplace Harassment Incident", "Safety Violation on Site", "Discrimination During Training"). Keep it simple and descriptive, not a full sentence.
 3. For report_type: Identify which violation type(s) from the VALID REPORT TYPES list above best match the incident described. You MUST ONLY use values from that list. If multiple apply, include all that are relevant.
 4. For trades_field: Identify which trade field(s) from the VALID TRADE FIELDS list above are mentioned or relevant. You MUST ONLY use values from that list. If none are mentioned, use an empty array [].
-5. The report_desc should be a comprehensive description of what happened based on the transcript
+5. The report_desc should be a comprehensive, professional description that includes:
+   - A factual account of what happened based on the transcript
+   - An unbiased description of the emotional tone, context, and atmosphere observed (e.g., "The speaker's tone was raised and agitated", "The conversation contained language that could be perceived as discriminatory", "The interaction demonstrated frustration and hostility")
+   - Professional language that objectively describes emotional context without making judgmental statements
+   - Consideration of how the emotional tone and context may have impacted the situation
+   Example: If the transcript contains angry, sexist comments, describe it as "The recorded conversation contained language that expressed frustration and made discriminatory remarks regarding gender in the workplace. The speaker's tone was elevated and the content of the discussion included statements that could be considered inappropriate and potentially harmful."
 6. List any people mentioned (primaries_involved, witnesses)
 7. Note any actions already taken if mentioned
 8. Suggest recommended_actions based on the type of incident
