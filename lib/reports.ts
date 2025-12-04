@@ -243,6 +243,45 @@ export const getReportByRecordingId = async (recordingId: string) => {
   return existing.find((item) => item.recordingId === recordingId);
 };
 
+/**
+ * Loads all public reports from both default posts and user's posted reports
+ */
+export const loadAllPublicReports = async (): Promise<StoredReport[]> => {
+  const allReports = await loadReports();
+  const defaultPosts = require('@/assets/data/default_posts.json') as any[];
+
+  // Convert default posts to StoredReport format
+  const defaultPostReports: StoredReport[] = defaultPosts
+    .filter((post) => post.status === 'Posted' || post.reportData?.isPublic === true)
+    .map((post) => ({
+      id: post.id,
+      title: post.title,
+      date: post.date,
+      timestamp: post.timestamp,
+      location: post.location,
+      tags: post.report_type || post.tags || [],
+      report_type: post.report_type || post.tags || [],
+      trades_field: post.trades_field || [],
+      status: post.status || 'Posted',
+      excerpt: post.excerpt,
+      content: post.content || post.excerpt,
+      reportData: post.reportData,
+    }));
+
+  // Filter user reports to only public ones
+  const publicUserReports = allReports.filter(
+    (report) => report.status === 'Posted' || report.reportData?.isPublic === true
+  );
+
+  // Combine and deduplicate by id
+  const combined = [...defaultPostReports, ...publicUserReports];
+  const uniqueReports = combined.filter(
+    (report, index, self) => index === self.findIndex((r) => r.id === report.id)
+  );
+
+  return uniqueReports;
+};
+
 export const updateReportStatus = async (id: string, status: 'Posted' | 'Private') => {
   const existing = await loadReports();
   const report = existing.find((item) => item.id === id);

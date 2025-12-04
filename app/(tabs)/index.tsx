@@ -13,15 +13,68 @@ import { AppText } from '@/components/ui/AppText';
 import { Text } from '@/components/ui/Text';
 import HomeTopBar from '@/components/ui/HomeTopBar';
 import { useRouter } from 'expo-router';
+import { loadAllPublicReports, StoredReport } from '@/lib/reports';
+import ReportCard from '@/components/ui/ReportCard';
+import { useFocusEffect } from 'expo-router';
 
 export default function Home() {
   const { colorScheme } = useColorScheme();
   const router = useRouter();
   const [address, setAddress] = React.useState<string | null>(null);
+  const [publicReports, setPublicReports] = React.useState<StoredReport[]>([]);
+  const [selectedReport, setSelectedReport] = React.useState<StoredReport | null>(null);
   const insets = useSafeAreaInsets();
 
   // Ref for map actions
   const mapRef = React.useRef<any>(null);
+
+  // Load public reports when page is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+      (async () => {
+        try {
+          const reports = await loadAllPublicReports();
+          if (isActive) {
+            setPublicReports(reports);
+          }
+        } catch (err) {
+          console.warn('Failed to load public reports', err);
+        }
+      })();
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
+
+  // Convert StoredReport to PublicReport format for map
+  const publicReportsForMap = React.useMemo(() => {
+    return publicReports
+      .map((report) => {
+        const coordinates =
+          report.reportData?.location_coords &&
+          Array.isArray(report.reportData.location_coords) &&
+          report.reportData.location_coords.length === 2 &&
+          typeof report.reportData.location_coords[0] === 'number' &&
+          typeof report.reportData.location_coords[1] === 'number' &&
+          !isNaN(report.reportData.location_coords[0]) &&
+          !isNaN(report.reportData.location_coords[1]) &&
+          !(
+            report.reportData.location_coords[0] === 0 && report.reportData.location_coords[1] === 0
+          )
+            ? (report.reportData.location_coords as [number, number])
+            : undefined;
+
+        return {
+          id: report.id,
+          title: report.title,
+          location: report.location,
+          coordinates,
+        };
+      })
+      .filter((report) => report.coordinates !== undefined);
+  }, [publicReports]);
 
   const onDetails = () => {
     router.push('/create_report');
@@ -31,9 +84,45 @@ export default function Home() {
     mapRef.current?.centerOnUser();
   };
 
+  const handleReportMarkerPress = (reportId: string) => {
+    const report = publicReports.find((r) => r.id === reportId);
+    if (report) {
+      setSelectedReport(report);
+      // Center map on the report location
+      const coordinates = publicReportsForMap.find((r) => r.id === reportId)?.coordinates;
+      if (coordinates) {
+        mapRef.current?.centerOnReport(coordinates[0], coordinates[1]);
+      }
+    }
+  };
+
+  const handleReportCardPress = () => {
+    if (selectedReport) {
+      // Check if it's from default posts or user reports
+      const isDefaultPost = selectedReport.id.startsWith('post-');
+      if (isDefaultPost) {
+        router.push({
+          pathname: '/posts_browsing/postDetails',
+          params: { id: selectedReport.id },
+        });
+      } else {
+        router.push({
+          pathname: '/my_logs/myPostDetails',
+          params: { id: selectedReport.id },
+        });
+      }
+    }
+  };
+
   return (
     <View style={{ flex: 1 }}>
-      <MapOnHome ref={mapRef} style={StyleSheet.absoluteFill} onAddressChange={setAddress} />
+      <MapOnHome
+        ref={mapRef}
+        style={StyleSheet.absoluteFill}
+        onAddressChange={setAddress}
+        publicReports={publicReportsForMap}
+        onReportMarkerPress={handleReportMarkerPress}
+      />
       <SafeAreaView
         style={{ flex: 1, position: 'absolute', width: '100%', height: '100%' }}
         pointerEvents="box-none">
@@ -66,37 +155,51 @@ export default function Home() {
             width: '100%',
           }}
           pointerEvents="auto">
-          {/* Horizontal row above the button for card and location button */}
+          {/* Container for location button and report card */}
           <View
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
               width: '90%',
               alignSelf: 'center',
               marginBottom: 16,
-              minHeight: 56, // matches button height
             }}>
-            {/* Placeholder for future card */}
-            {/* <View style={{ flex: 1, marginRight: 12 }}>{middleCard}</View> */}
-
-            {/* Center map button at end/right */}
-            <Pressable
-              onPress={onCenterLocation}
+            {/* Center map button - always on the right */}
+            <View
               style={{
-                marginLeft: 'auto', // pushes to right edge
-                backgroundColor: '#fff',
-                padding: 14,
-                borderRadius: 14,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 7,
-                elevation: 6,
-                alignItems: 'center',
-                justifyContent: 'center',
+                flexDirection: 'row',
+                justifyContent: 'flex-end',
+                marginBottom: selectedReport ? 12 : 0,
               }}>
-              <Locate color="#8449DF" size={28} />
-            </Pressable>
+              <Pressable
+                onPress={onCenterLocation}
+                style={{
+                  backgroundColor: '#fff',
+                  padding: 14,
+                  borderRadius: 14,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 7,
+                  elevation: 6,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <Locate color="#8449DF" size={28} />
+              </Pressable>
+            </View>
+
+            {/* Selected report card - full width below button */}
+            {selectedReport && (
+              <ReportCard
+                tags={selectedReport.report_type || selectedReport.tags || []}
+                title={selectedReport.title}
+                location={selectedReport.location}
+                excerpt={selectedReport.excerpt}
+                date={selectedReport.date}
+                timestamp={selectedReport.timestamp}
+                status={selectedReport.status}
+                onDetailsPress={handleReportCardPress}
+              />
+            )}
           </View>
 
           {/* Create Report button (remains centered at bottom) */}
