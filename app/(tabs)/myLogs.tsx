@@ -1,4 +1,4 @@
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet, ScrollView } from 'react-native';
@@ -8,14 +8,11 @@ import ReportCard from '@/components/ui/ReportCard';
 import SearchSettings from '@/components/ui/SearchSettings';
 import Tabs from '@/components/ui/Tabs';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Modal } from '@/components/ui/Modal';
-import { Text } from '@/components/ui/Text';
-import { Input } from '@/components/ui/Input';
-import * as Haptics from 'expo-haptics';
 import { AppText } from '@/components/ui/AppText';
 import { loadRecordings, StoredRecording } from '@/lib/recordings';
 import { loadReports, StoredReport } from '@/lib/reports';
 import PassCodeScreen from '@/components/ui/PassCodeScreen';
+import { lockState } from '@/lib/lockState';
 
 export default function MylogsPage() {
   const [isLocked, setIsLocked] = useState(true);
@@ -27,7 +24,14 @@ export default function MylogsPage() {
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
-      setIsLocked(true);
+      
+      if (lockState.shouldUnlockMyLogs) {
+        setIsLocked(false);
+        lockState.shouldUnlockMyLogs = false; // Reset immediately
+      } else {
+        setIsLocked(true);
+      }
+
       (async () => {
         try {
           const savedRecordings = await loadRecordings();
