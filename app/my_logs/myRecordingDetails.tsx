@@ -484,6 +484,10 @@ export default function MyRecordingDetails() {
                       title: titleParam ?? '',
                       date: dateParam ?? '',
                       timestamp: timestampParam ?? '',
+                      month: reportData?.month || '',
+                      day: reportData?.day?.toString() || '',
+                      year: reportData?.year?.toString() || '',
+                      time: reportData?.time?.toString() || '',
                       duration: durationParam ?? '',
                       location: reportData?.location_name || recordingData?.location || '',
                       report_type: JSON.stringify(

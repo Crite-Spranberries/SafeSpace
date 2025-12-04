@@ -32,6 +32,10 @@ export default function MyRecordingEdit() {
     title?: string;
     date?: string;
     timestamp?: string;
+    month?: string;
+    day?: string;
+    year?: string;
+    time?: string;
     duration?: string;
     location?: string;
     report_type?: string;
@@ -67,10 +71,51 @@ export default function MyRecordingEdit() {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  const [dateInitialized, setDateInitialized] = useState(false);
+  const [formInitialized, setFormInitialized] = useState(false);
   useEffect(() => {
-    if (dateInitialized) return;
+    if (formInitialized) return;
+    setFormData(initialFormData);
+    setFormInitialized(true);
+  }, []);
 
+  // Initialize date from params or default to current date
+  const getInitialDate = () => {
+    // Try structured data first (from ReportData)
+    if (params.month && params.day && params.year && params.time) {
+      try {
+        const year = parseInt(params.year);
+        const day = parseInt(params.day);
+        const time = parseInt(params.time);
+        const monthNames = [
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
+        ];
+        const monthIndex = monthNames.indexOf(params.month);
+
+        if (monthIndex !== -1 && !isNaN(year) && !isNaN(day) && !isNaN(time)) {
+          const hours = Math.floor(time / 100);
+          const minutes = time % 100;
+          const parsedDate = new Date(year, monthIndex, day, hours, minutes);
+          if (!isNaN(parsedDate.getTime())) {
+            return parsedDate;
+          }
+        }
+      } catch (e) {
+        console.log('Error parsing structured date:', e);
+      }
+    }
+
+    // Fallback to formatted strings
     const dateStr = typeof params.date === 'string' ? params.date : '';
     const timeStr = typeof params.timestamp === 'string' ? params.timestamp : '';
 
@@ -79,23 +124,16 @@ export default function MyRecordingEdit() {
         const dateTimeStr = `${dateStr} ${timeStr}`;
         const parsedDate = new Date(dateTimeStr);
         if (!isNaN(parsedDate.getTime())) {
-          setDate(parsedDate);
+          return parsedDate;
         }
       } catch (e) {
-        console.log('Error parsing date:', e);
+        console.log('Error parsing formatted date:', e);
       }
     }
-    setDateInitialized(true);
-  }, []);
+    return new Date();
+  };
 
-  const [formInitialized, setFormInitialized] = useState(false);
-  useEffect(() => {
-    if (formInitialized) return;
-    setFormData(initialFormData);
-    setFormInitialized(true);
-  }, []);
-
-  const [date, setDate] = useState<Date>(new Date());
+  const [date, setDate] = useState<Date>(getInitialDate());
   const [mode, setMode] = useState<'date' | 'time'>('date');
   const [show, setShow] = useState<boolean>(false);
 
