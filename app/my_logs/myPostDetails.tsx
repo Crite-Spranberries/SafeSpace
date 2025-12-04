@@ -98,6 +98,28 @@ export default function MyPostDetails() {
     ? formatTimeFromReportData(reportData) || params.timestamp || ''
     : params.timestamp || '';
   const displayLocation = reportData?.location_name || params.location || 'Location not specified';
+  // Extract coordinates - ensure they're valid before passing
+  const displayCoordinates: [number, number] | undefined =
+    reportData?.location_coords &&
+    Array.isArray(reportData.location_coords) &&
+    reportData.location_coords.length === 2 &&
+    typeof reportData.location_coords[0] === 'number' &&
+    typeof reportData.location_coords[1] === 'number' &&
+    !isNaN(reportData.location_coords[0]) &&
+    !isNaN(reportData.location_coords[1]) &&
+    !(reportData.location_coords[0] === 0 && reportData.location_coords[1] === 0)
+      ? (reportData.location_coords as [number, number])
+      : undefined;
+
+  // Debug logging for coordinates
+  useEffect(() => {
+    console.log('myPostDetails - Coordinates check:', {
+      hasReportData: !!reportData,
+      location_coords: reportData?.location_coords,
+      displayCoordinates,
+      location_name: reportData?.location_name,
+    });
+  }, [reportData, displayCoordinates]);
 
   // Use reportData arrays directly - these come from AI analysis of the transcript
   const reportTypes = reportData?.report_type || [];
@@ -148,7 +170,7 @@ export default function MyPostDetails() {
             </View>
             <MapOnDetail
               address={displayLocation}
-              coordinates={reportData?.location_coords}
+              coordinates={displayCoordinates}
               style={styles.mapOnDetail}
             />
 

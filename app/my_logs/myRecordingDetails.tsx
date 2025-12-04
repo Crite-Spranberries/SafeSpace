@@ -331,6 +331,28 @@ export default function MyRecordingDetails() {
 
   const displayLocation =
     reportData?.location_name || recordingData?.location || 'Location not specified';
+  // Extract coordinates - ensure they're valid before passing
+  const displayCoordinates: [number, number] | undefined =
+    reportData?.location_coords &&
+    Array.isArray(reportData.location_coords) &&
+    reportData.location_coords.length === 2 &&
+    typeof reportData.location_coords[0] === 'number' &&
+    typeof reportData.location_coords[1] === 'number' &&
+    !isNaN(reportData.location_coords[0]) &&
+    !isNaN(reportData.location_coords[1]) &&
+    !(reportData.location_coords[0] === 0 && reportData.location_coords[1] === 0)
+      ? (reportData.location_coords as [number, number])
+      : undefined;
+
+  // Debug logging for coordinates
+  useEffect(() => {
+    console.log('myRecordingDetails - Coordinates check:', {
+      hasReportData: !!reportData,
+      location_coords: reportData?.location_coords,
+      displayCoordinates,
+      location_name: reportData?.location_name,
+    });
+  }, [reportData, displayCoordinates]);
 
   // Report types: Show from reportData (AI-generated from transcript analysis), otherwise from tags
   const reportTypes = reportData?.report_type || recordingData?.tags || [];
@@ -364,7 +386,7 @@ export default function MyRecordingDetails() {
             />
             <MapOnDetail
               address={displayLocation}
-              coordinates={reportData?.location_coords}
+              coordinates={displayCoordinates}
               style={styles.mapOnDetail}
             />
 

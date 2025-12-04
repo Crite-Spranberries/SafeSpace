@@ -76,10 +76,19 @@ export const mergeReportData = (
   partial: Partial<ReportData>,
   defaults: ReportData = createEmptyReportData()
 ): ReportData => {
+  // For location_coords, use partial if it exists and is valid (not [0, 0])
+  const hasValidCoords =
+    partial.location_coords &&
+    Array.isArray(partial.location_coords) &&
+    partial.location_coords.length === 2 &&
+    !(partial.location_coords[0] === 0 && partial.location_coords[1] === 0);
+
   return {
     ...defaults,
     ...partial,
-    location_coords: partial.location_coords || defaults.location_coords,
+    location_coords: hasValidCoords
+      ? (partial.location_coords as [number, number])
+      : defaults.location_coords,
     report_type: partial.report_type || defaults.report_type,
     trades_field: partial.trades_field || defaults.trades_field,
     primaries_involved: partial.primaries_involved || defaults.primaries_involved,
