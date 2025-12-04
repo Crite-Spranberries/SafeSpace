@@ -120,8 +120,10 @@ const parseReportResponse = (
           ? parsed.actions_taken
           : baseData.actions_taken || [],
         recommended_actions: Array.isArray(parsed.recommended_actions)
-          ? parsed.recommended_actions
-          : baseData.recommended_actions || [],
+          ? parsed.recommended_actions.slice(0, 7) // Hard cap at 7
+          : Array.isArray(baseData.recommended_actions)
+            ? baseData.recommended_actions.slice(0, 7)
+            : [],
         location_name: parsed.location_name || parsed.location || baseData.location_name || '',
       };
     }

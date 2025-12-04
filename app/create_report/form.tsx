@@ -111,11 +111,29 @@ export default function Form() {
   const [mode, setMode] = useState<'date' | 'time'>('date');
   const [show, setShow] = useState<boolean>(false);
 
-  const onChange = (event: any, selectedDate: Date | undefined) => {
-    if (selectedDate) {
-      setDate(selectedDate);
+  // Handler for date picker
+  const onDateChange = (event: any, selectedDate: Date | undefined) => {
+    if (selectedDate && !isNaN(selectedDate.getTime())) {
+      const currentDate = date && !isNaN(date.getTime()) ? new Date(date) : new Date();
+      // Update date parts but preserve time
+      currentDate.setFullYear(selectedDate.getFullYear());
+      currentDate.setMonth(selectedDate.getMonth());
+      currentDate.setDate(selectedDate.getDate());
+      setDate(currentDate);
     }
-    setShow(false);
+  };
+
+  // Handler for time picker
+  const onTimeChange = (event: any, selectedDate: Date | undefined) => {
+    if (selectedDate && !isNaN(selectedDate.getTime())) {
+      const currentDate = date && !isNaN(date.getTime()) ? new Date(date) : new Date();
+      // Update time parts but preserve date
+      currentDate.setHours(selectedDate.getHours());
+      currentDate.setMinutes(selectedDate.getMinutes());
+      currentDate.setSeconds(0);
+      currentDate.setMilliseconds(0);
+      setDate(currentDate);
+    }
   };
 
   const showMode = (currentMode: 'date' | 'time') => {
@@ -304,7 +322,6 @@ export default function Form() {
 
   // Handle location selection
   const handleLocationSelect = async (selectedLocation: string) => {
-    setFormData({ ...formData, location: selectedLocation });
     setShowSuggestions(false);
     setIsGeocoding(true);
 
@@ -313,14 +330,34 @@ export default function Form() {
       if (results && results.length > 0) {
         const result = results[0];
         const coords: [number, number] = [result.latitude, result.longitude];
+
+        // Build full address from geocoded result
+        const parts = [];
+        if ((result as any).name) parts.push((result as any).name);
+        if ((result as any).street) parts.push((result as any).street);
+        if ((result as any).city) parts.push((result as any).city);
+        if ((result as any).region) parts.push((result as any).region);
+        const fullAddress = parts.length > 0 ? parts.join(', ') : selectedLocation;
+
+        setFormData({
+          ...formData,
+          location: fullAddress, // Use the full geocoded address
+          locationCoords: coords,
+        });
+      } else {
+        // If geocoding fails, still set the location text
         setFormData({
           ...formData,
           location: selectedLocation,
-          locationCoords: coords,
         });
       }
     } catch (err) {
       console.warn('Failed to geocode selected location', err);
+      // On error, still set the location text
+      setFormData({
+        ...formData,
+        location: selectedLocation,
+      });
     } finally {
       setIsGeocoding(false);
     }
@@ -357,16 +394,16 @@ export default function Form() {
               <View style={{ flexDirection: 'row', gap: 16 }}>
                 <DateTimePicker
                   testID="datePicker"
-                  value={date}
+                  value={date && !isNaN(date.getTime()) ? date : new Date()}
                   mode="date"
-                  onChange={onChange}
+                  onChange={onDateChange}
                   accentColor="white"
                 />
                 <DateTimePicker
                   testID="timePicker"
-                  value={date}
+                  value={date && !isNaN(date.getTime()) ? date : new Date()}
                   mode="time"
-                  onChange={onChange}
+                  onChange={onTimeChange}
                   is24Hour={true}
                   accentColor="white"
                 />
@@ -581,9 +618,27 @@ export default function Form() {
           radius="full"
           style={styles.buttonContainer}
           onPress={() => {
+            // Ensure date is valid - use current date if invalid
+            let validDate: Date;
+            if (date && !isNaN(date.getTime()) && date instanceof Date) {
+              validDate = date;
+            } else {
+              validDate = new Date();
+              setDate(validDate); // Update state to valid date
+            }
+
             // Create structured ReportData from the form data
             // This will be used as initial data, AI will generate the full report on the next page
-            const baseReportData = createReportDataFromDate(date);
+            const baseReportData = createReportDataFromDate(validDate);
+
+            // Format time properly - ensure no NaN
+            const hours = validDate.getHours();
+            const minutes = validDate.getMinutes();
+            // Ensure hours and minutes are valid numbers
+            const validHours = isNaN(hours) ? new Date().getHours() : hours;
+            const validMinutes = isNaN(minutes) ? new Date().getMinutes() : minutes;
+            const timeValue = validHours * 100 + validMinutes; // Format: HHMM (e.g., 1430 for 2:30 PM)
+
             const reportData = {
               ...baseReportData,
               report_title: formData.title || 'Incident Report',
@@ -597,6 +652,7 @@ export default function Form() {
               witnesses: formData.witnessesArray,
               actions_taken: formData.actionsArray,
               recommended_actions: [], // Will be generated by AI
+              time: timeValue, // Ensure time is properly formatted
             };
 
             router.push({
@@ -605,9 +661,25 @@ export default function Form() {
                 reportData: JSON.stringify(reportData),
                 // Keep legacy params for backward compatibility
                 reportTitle: formData.title || 'Incident Report',
-                location: formData.location,
-                date: date.toLocaleDateString(),
-                time: date.toLocaleTimeString(),
+                location: formData.location || '',
+                date: (() => {
+                  // Format date safely - ensure it's valid
+                  try {
+                    const dateStr = validDate.toLocaleDateString();
+                    if (dateStr && dateStr !== 'Invalid Date') {
+                      return dateStr;
+                    }
+                  } catch (e) {
+                    console.warn('Date formatting error:', e);
+                  }
+                  // Fallback to today's date
+                  return new Date().toLocaleDateString();
+                })(),
+                time: (() => {
+                  const hours12 = validHours % 12 || 12;
+                  const ampm = validHours >= 12 ? 'PM' : 'AM';
+                  return `${hours12}:${String(validMinutes).padStart(2, '0')} ${ampm}`;
+                })(),
                 reportType: JSON.stringify(formData.reportFieldArray),
                 tradesField: JSON.stringify(formData.tradesFieldArray),
                 description: formData.description,

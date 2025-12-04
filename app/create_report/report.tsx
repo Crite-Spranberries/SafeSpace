@@ -1,5 +1,4 @@
-import { TouchableOpacity, View } from 'react-native';
-import { StyleSheet } from 'react-native';
+import { TouchableOpacity, View, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,7 +8,6 @@ import { Icon } from '@/components/ui/Icon';
 import { useNavigation } from 'expo-router';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/Badge';
-import { ScrollView } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import Recommendation from '@/components/ui/Recommendation';
 import { addReport, reportDataToStoredReport } from '@/lib/reports';
@@ -61,6 +59,17 @@ export default function Report() {
   if (params.reportData) {
     try {
       const parsed = JSON.parse(params.reportData as string);
+      // Ensure location_coords is properly formatted as [number, number]
+      if (parsed.location_coords && Array.isArray(parsed.location_coords)) {
+        parsed.location_coords = [
+          typeof parsed.location_coords[0] === 'number'
+            ? parsed.location_coords[0]
+            : parseFloat(parsed.location_coords[0]) || 0,
+          typeof parsed.location_coords[1] === 'number'
+            ? parsed.location_coords[1]
+            : parseFloat(parsed.location_coords[1]) || 0,
+        ] as [number, number];
+      }
       // Merge with defaults to ensure all fields are present
       const baseData = createReportDataFromDate(
         new Date(parsed.year, getMonthIndex(parsed.month), parsed.day)
@@ -75,8 +84,17 @@ export default function Report() {
   const date = reportData
     ? `${reportData.month} ${reportData.day}, ${reportData.year}`
     : (params.date as string) || 'No date provided';
+  // Format time in 12-hour format with AM/PM
+  const formatTime = (timeValue: number): string => {
+    const hours24 = Math.floor(timeValue / 100);
+    const minutes = timeValue % 100;
+    const hours12 = hours24 % 12 || 12; // Convert to 12-hour format (0 becomes 12)
+    const ampm = hours24 >= 12 ? 'PM' : 'AM';
+    return `${hours12}:${String(minutes).padStart(2, '0')} ${ampm}`;
+  };
+
   const time = reportData
-    ? `${Math.floor(reportData.time / 100)}:${String(reportData.time % 100).padStart(2, '0')}`
+    ? formatTime(reportData.time)
     : (params.time as string) || 'No time provided';
   const location =
     reportData?.location_name || (params.location as string) || 'No location provided';
@@ -160,15 +178,38 @@ export default function Report() {
             });
           };
 
+          // Preserve location coordinates from original reportData first (before AI generation)
+          // This ensures coordinates from the form/edit page are not lost
+          const originalCoords = reportData?.location_coords;
+          const hasOriginalCoords =
+            originalCoords &&
+            Array.isArray(originalCoords) &&
+            originalCoords.length === 2 &&
+            typeof originalCoords[0] === 'number' &&
+            typeof originalCoords[1] === 'number' &&
+            originalCoords[0] !== 0 &&
+            originalCoords[1] !== 0 &&
+            !isNaN(originalCoords[0]) &&
+            !isNaN(originalCoords[1]) &&
+            Math.abs(originalCoords[0]) <= 90 &&
+            Math.abs(originalCoords[1]) <= 180;
+
           const mergedReportData = mergeReportData(
             {
               ...generated.data,
               report_title: generated.data.report_title || reportTitle,
               location_name: generated.data.location_name || location || '',
-              location_coords:
-                locationCoords[0] !== 0 && locationCoords[1] !== 0
+              location_coords: hasOriginalCoords
+                ? (originalCoords as [number, number])
+                : locationCoords[0] !== 0 && locationCoords[1] !== 0
                   ? locationCoords
-                  : generated.data.location_coords || [0, 0],
+                  : generated.data.location_coords &&
+                      Array.isArray(generated.data.location_coords) &&
+                      generated.data.location_coords.length === 2 &&
+                      generated.data.location_coords[0] !== 0 &&
+                      generated.data.location_coords[1] !== 0
+                    ? (generated.data.location_coords as [number, number])
+                    : [0, 0],
               report_type: capitalizeTags(
                 generated.data.report_type && generated.data.report_type.length > 0
                   ? generated.data.report_type
@@ -213,23 +254,81 @@ export default function Report() {
   const displayReportType = displayReportData?.report_type || reportType;
   const displayTradesField = displayReportData?.trades_field || tradesField;
   const displayRecommendedActions = displayReportData?.recommended_actions || [];
-  const displayLocationCoords = displayReportData?.location_coords || locationCoords;
-  const displayLocation = displayReportData?.location_name || location;
+
+  // Get location coordinates - prioritize from displayReportData, then reportData, then locationCoords
+  const getValidCoords = (
+    coords: [number, number] | number[] | undefined
+  ): [number, number] | undefined => {
+    if (!coords || !Array.isArray(coords) || coords.length !== 2) return undefined;
+    const lat = typeof coords[0] === 'number' ? coords[0] : parseFloat(String(coords[0])) || 0;
+    const lng = typeof coords[1] === 'number' ? coords[1] : parseFloat(String(coords[1])) || 0;
+    if (lat === 0 && lng === 0) return undefined;
+    if (isNaN(lat) || isNaN(lng)) return undefined;
+    // Validate latitude/longitude ranges
+    if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return undefined;
+    return [lat, lng] as [number, number];
+  };
+
+  const displayLocationCoords: [number, number] | undefined =
+    getValidCoords(displayReportData?.location_coords) ||
+    getValidCoords(reportData?.location_coords) ||
+    getValidCoords(locationCoords);
+
+  const displayLocation = displayReportData?.location_name || reportData?.location_name || location;
+
+  // Debug logging for coordinates
+  useEffect(() => {
+    console.log('Report page - Coordinate check:', {
+      hasDisplayReportData: !!displayReportData,
+      displayReportDataCoords: displayReportData?.location_coords,
+      hasReportData: !!reportData,
+      reportDataCoords: reportData?.location_coords,
+      locationCoords,
+      finalDisplayCoords: displayLocationCoords,
+      displayLocation,
+    });
+  }, [displayReportData, reportData, locationCoords, displayLocationCoords, displayLocation]);
 
   // Get resource links for recommended actions
   const actionsWithLinks = getResourceLinksForActions(displayRecommendedActions, displayReportType);
 
+  // Show full-screen loading overlay while generating
+  if (isGenerating) {
+    return (
+      <>
+        <LinearGradient
+          colors={['#371F5E', '#000']}
+          locations={[0, 0.3]}
+          style={styles.background}
+        />
+        <Stack.Screen options={SCREEN_OPTIONS} />
+        <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#FF5656" />
+          <AppText style={{ color: '#FFFFFF', marginTop: 16, fontSize: 18 }}>
+            Generating Report...
+          </AppText>
+        </SafeAreaView>
+      </>
+    );
+  }
+
   function onEdit() {
     const cleanDesc = report_desc === 'No description provided.' ? '' : report_desc;
+
+    // Pass the full reportData if available, including coordinates
+    const reportDataToPass = displayReportData || reportData;
 
     router.push({
       pathname: '/my_logs/myPostEdit',
       params: {
+        // Pass structured reportData if available (includes coordinates)
+        ...(reportDataToPass ? { reportData: JSON.stringify(reportDataToPass) } : {}),
+        // Legacy params for backward compatibility
         date,
         timestamp: time,
-        location,
-        report_type: JSON.stringify(reportType),
-        trades_field: JSON.stringify(tradesField),
+        location: displayLocation,
+        report_type: JSON.stringify(displayReportType),
+        trades_field: JSON.stringify(displayTradesField),
         description: cleanDesc,
         witnesses: JSON.stringify(witnesses),
         primaries_involved: JSON.stringify(individualsInvolved),
@@ -246,8 +345,33 @@ export default function Report() {
 
       // Use generated report data if available, otherwise use form data
       let finalReportData: ReportData;
+
+      // Determine the best coordinates to use - prioritize displayLocationCoords, then generatedReportData, then reportData
+      const coordsToSave: [number, number] =
+        displayLocationCoords && displayLocationCoords[0] !== 0 && displayLocationCoords[1] !== 0
+          ? displayLocationCoords
+          : generatedReportData?.location_coords &&
+              generatedReportData.location_coords[0] !== 0 &&
+              generatedReportData.location_coords[1] !== 0
+            ? generatedReportData.location_coords
+            : reportData?.location_coords &&
+                reportData.location_coords[0] !== 0 &&
+                reportData.location_coords[1] !== 0
+              ? reportData.location_coords
+              : locationCoords[0] !== 0 && locationCoords[1] !== 0
+                ? locationCoords
+                : [0, 0];
+
+      console.log('Saving report - Coordinates:', {
+        displayLocationCoords,
+        generatedReportDataCoords: generatedReportData?.location_coords,
+        reportDataCoords: reportData?.location_coords,
+        locationCoords,
+        coordsToSave,
+      });
+
       if (generatedReportData) {
-        // Use AI-generated report data
+        // Use AI-generated report data, but ensure coordinates are preserved
         finalReportData = mergeReportData(
           {
             ...generatedReportData,
@@ -256,6 +380,8 @@ export default function Report() {
             isPublic: false,
             audio_URI: '',
             audio_duration: 0,
+            // Preserve coordinates from the best available source
+            location_coords: coordsToSave,
           },
           mergeReportData(createReportDataFromDate(createdAt))
         );
@@ -283,7 +409,8 @@ export default function Report() {
             audio_URI: '',
             audio_duration: 0,
             location_name: location && location !== 'No location provided' ? location : '',
-            location_coords: [0, 0],
+            // Use actual coordinates from the best available source
+            location_coords: coordsToSave,
             report_type: Array.isArray(reportType) ? reportType : [],
             trades_field: Array.isArray(tradesField) ? tradesField : [],
             report_desc: report_desc || '',
@@ -395,25 +522,19 @@ export default function Report() {
                 )}
               </ScrollView>
             </View>
-            {isGenerating ? (
-              <View>
-                <AppText style={styles.descriptionWhite}>Generating AI report...</AppText>
-              </View>
-            ) : (
-              <View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <AppText weight="medium" style={styles.subHeader}>
-                    AI Summary
-                  </AppText>
-                  <AppText style={{ color: '#B0B0B0' }}>GPT-4o</AppText>
-                </View>
-                <AppText style={styles.descriptionWhite}>
-                  {displayReportDesc ?? 'No description provided.'}
+            <View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <AppText weight="medium" style={styles.subHeader}>
+                  AI Summary
                 </AppText>
+                <AppText style={{ color: '#B0B0B0' }}>GPT-4o</AppText>
               </View>
-            )}
+              <AppText style={styles.descriptionWhite}>
+                {displayReportDesc ?? 'No description provided.'}
+              </AppText>
+            </View>
 
-            {!isGenerating && displayRecommendedActions.length > 0 && (
+            {displayRecommendedActions.length > 0 && (
               <View style={styles.recommendationsSection}>
                 <AppText weight="medium" style={styles.subHeader}>
                   Recommended Actions
@@ -437,8 +558,15 @@ export default function Report() {
               Edit
             </AppText>
           </Button>
-          <Button variant="purple" size="lg" radius="full" style={{ flex: 1 }} onPress={onSave}>
-            <AppText weight="medium" style={{ color: '#FFFFFF', fontSize: 16 }}>
+          <Button
+            variant="purple"
+            size="lg"
+            radius="full"
+            style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+            onPress={onSave}>
+            <AppText
+              weight="medium"
+              style={{ color: '#FFFFFF', fontSize: 16, textAlign: 'center' }}>
               Save Report
             </AppText>
           </Button>

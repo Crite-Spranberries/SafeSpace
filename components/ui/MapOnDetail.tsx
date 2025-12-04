@@ -16,7 +16,7 @@ const ReportMarker = ({ size = 38 }: { size?: number }) => (
         height: size * 0.35,
         borderRadius: (size * 0.35) / 2,
         backgroundColor: '#8449DF',
-        top: size * 0.15,
+        top: size * 0.25,
       }}
     />
   </View>

@@ -1,19 +1,27 @@
-import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Keyboard,
+  Pressable,
+  Platform,
+} from 'react-native';
 import { ArrowLeft, CircleX } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
-import { Image, TextInput } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useState, useEffect, useMemo } from 'react';
-import MapOnHome from '@/components/ui/MapOnHome';
+import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Input } from '@/components/ui/Input';
 import { getReportById, reportDataToStoredReport, updateReport } from '@/lib/reports';
-import { ReportData } from '@/lib/reportData';
+import { ReportData, mergeReportData, createReportDataFromDate } from '@/lib/reportData';
+import * as Location from 'expo-location';
 
 export default function MyPostEdit() {
   const SCREEN_OPTIONS = {
@@ -46,108 +54,242 @@ export default function MyPostEdit() {
     witnesses?: string;
     primaries_involved?: string;
     actions_taken?: string;
+    reportData?: string; // Structured report data JSON
   }>();
 
-  const initialFormData = useMemo(() => {
-    const parseArrayParam = (param: string | undefined): string[] => {
-      if (!param) return [];
-      try {
-        const parsed = JSON.parse(param);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return [];
-      }
-    };
+  const [formData, setFormData] = useState({
+    title: '',
+    location: '',
+    locationCoords: [0, 0] as [number, number],
+    tradesFieldInput: '',
+    tradesFieldArray: [] as string[],
+    reportFieldInput: '',
+    reportFieldArray: [] as string[],
+    description: '',
+    witnessesInput: '',
+    witnessesArray: [] as string[],
+    primariesInput: '',
+    primariesArray: [] as string[],
+    actionsInput: '',
+    actionsArray: [] as string[],
+  });
 
-    return {
-      location: typeof params.location === 'string' ? params.location : '',
-      day: '',
-      month: '',
-      year: '',
-      dateTime: '',
-      tradesFieldInput: '',
-      tradesFieldArray: parseArrayParam(params.trades_field),
-      reportFieldInput: '',
-      reportFieldArray: parseArrayParam(params.report_type),
-      description:
-        (typeof params.description === 'string' && params.description) ||
-        (typeof params.report === 'string' ? params.report : ''),
-      witnessesInput: '',
-      witnessesArray: parseArrayParam(params.witnesses),
-      primariesInput: '',
-      primariesArray: parseArrayParam(params.primaries_involved),
-      actionsInput: '',
-      actionsArray: parseArrayParam(params.actions_taken),
-    };
-  }, [params]);
-
-  const [formData, setFormData] = useState(initialFormData);
-
-  const [formInitialized, setFormInitialized] = useState(false);
-  useEffect(() => {
-    if (formInitialized) return; // Only run once
-    setFormData(initialFormData);
-    setFormInitialized(true);
-  }, []);
-
-  // Initialize date from params or default to current date
-  const getInitialDate = () => {
-    // Try structured data first (from ReportData)
-    if (params.month && params.day && params.year && params.time) {
-      try {
-        const year = parseInt(params.year);
-        const day = parseInt(params.day);
-        const time = parseInt(params.time);
-        const monthNames = [
-          'January',
-          'February',
-          'March',
-          'April',
-          'May',
-          'June',
-          'July',
-          'August',
-          'September',
-          'October',
-          'November',
-          'December',
-        ];
-        const monthIndex = monthNames.indexOf(params.month);
-
-        if (monthIndex !== -1 && !isNaN(year) && !isNaN(day) && !isNaN(time)) {
-          const hours = Math.floor(time / 100);
-          const minutes = time % 100;
-          const parsedDate = new Date(year, monthIndex, day, hours, minutes);
-          if (!isNaN(parsedDate.getTime())) {
-            return parsedDate;
-          }
-        }
-      } catch (e) {
-        console.log('Error parsing structured date:', e);
-      }
-    }
-
-    // Fallback to formatted strings
-    const dateStr = typeof params.date === 'string' ? params.date : '';
-    const timeStr = typeof params.timestamp === 'string' ? params.timestamp : '';
-
-    if (dateStr && timeStr) {
-      try {
-        const dateTimeStr = `${dateStr} ${timeStr}`;
-        const parsedDate = new Date(dateTimeStr);
-        if (!isNaN(parsedDate.getTime())) {
-          return parsedDate;
-        }
-      } catch (e) {
-        console.log('Error parsing formatted date:', e);
-      }
-    }
-    return new Date();
-  };
-
-  const [date, setDate] = useState<Date>(getInitialDate());
+  const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [userLocation, setUserLocation] = useState<{
+    name: string;
+    coords: [number, number];
+  } | null>(null);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [date, setDate] = useState<Date>(new Date());
   const [mode, setMode] = useState<'date' | 'time'>('date');
   const [show, setShow] = useState<boolean>(false);
+
+  // Load report data from storage if id is provided
+  useEffect(() => {
+    const loadReportData = async () => {
+      const idParam = typeof params.id === 'string' ? params.id : null;
+      if (idParam) {
+        try {
+          const report = await getReportById(idParam);
+          if (report && report.reportData) {
+            // Merge with defaults to ensure full ReportData
+            const fullReportData = mergeReportData(report.reportData);
+            setReportData(fullReportData);
+
+            // Initialize form with report data
+            const rd = fullReportData;
+            const monthNames = [
+              'January',
+              'February',
+              'March',
+              'April',
+              'May',
+              'June',
+              'July',
+              'August',
+              'September',
+              'October',
+              'November',
+              'December',
+            ];
+            const monthIndex = monthNames.indexOf(rd.month || 'January');
+            const timeValue = rd.time || 0;
+            const hours = Math.floor(timeValue / 100);
+            const minutes = timeValue % 100;
+            const reportDate = new Date(
+              rd.year || new Date().getFullYear(),
+              monthIndex,
+              rd.day || 1,
+              hours,
+              minutes
+            );
+
+            setDate(reportDate && !isNaN(reportDate.getTime()) ? reportDate : new Date());
+            setFormData({
+              title: rd.report_title || '',
+              location: rd.location_name || '',
+              locationCoords: rd.location_coords || [0, 0],
+              tradesFieldInput: '',
+              tradesFieldArray: rd.trades_field || [],
+              reportFieldInput: '',
+              reportFieldArray: rd.report_type || [],
+              description: rd.report_desc || '',
+              witnessesInput: '',
+              witnessesArray: rd.witnesses || [],
+              primariesInput: '',
+              primariesArray: rd.primaries_involved || [],
+              actionsInput: '',
+              actionsArray: rd.actions_taken || [],
+            });
+          }
+        } catch (err) {
+          console.error('Failed to load report:', err);
+        }
+      } else {
+        // Fallback to params if no id
+        const parseArrayParam = (param: string | undefined): string[] => {
+          if (!param) return [];
+          try {
+            const parsed = JSON.parse(param);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        };
+
+        // Initialize date from params
+        let initialDate = new Date();
+        if (params.month && params.day && params.year && params.time) {
+          try {
+            const year = parseInt(params.year);
+            const day = parseInt(params.day);
+            const time = parseInt(params.time);
+            const monthNames = [
+              'January',
+              'February',
+              'March',
+              'April',
+              'May',
+              'June',
+              'July',
+              'August',
+              'September',
+              'October',
+              'November',
+              'December',
+            ];
+            const monthIndex = monthNames.indexOf(params.month);
+            if (monthIndex !== -1 && !isNaN(year) && !isNaN(day) && !isNaN(time)) {
+              const hours = Math.floor(time / 100);
+              const minutes = time % 100;
+              initialDate = new Date(year, monthIndex, day, hours, minutes);
+            }
+          } catch (e) {
+            console.log('Error parsing date:', e);
+          }
+        }
+
+        // Parse coordinates from reportData if available
+        let initialCoords: [number, number] = [0, 0];
+        if (params.reportData) {
+          try {
+            const parsed = JSON.parse(params.reportData as string);
+            if (
+              parsed.location_coords &&
+              Array.isArray(parsed.location_coords) &&
+              parsed.location_coords.length === 2
+            ) {
+              const lat =
+                typeof parsed.location_coords[0] === 'number'
+                  ? parsed.location_coords[0]
+                  : parseFloat(parsed.location_coords[0]) || 0;
+              const lng =
+                typeof parsed.location_coords[1] === 'number'
+                  ? parsed.location_coords[1]
+                  : parseFloat(parsed.location_coords[1]) || 0;
+              if (lat !== 0 || lng !== 0) {
+                initialCoords = [lat, lng];
+              }
+            }
+          } catch (e) {
+            console.log('Error parsing coordinates from reportData:', e);
+          }
+        }
+
+        setDate(initialDate);
+        setFormData({
+          title: typeof params.title === 'string' ? params.title : '',
+          location: typeof params.location === 'string' ? params.location : '',
+          locationCoords: initialCoords,
+          tradesFieldInput: '',
+          tradesFieldArray: parseArrayParam(params.trades_field),
+          reportFieldInput: '',
+          reportFieldArray: parseArrayParam(params.report_type),
+          description:
+            (typeof params.description === 'string' && params.description) ||
+            (typeof params.report === 'string' ? params.report : ''),
+          witnessesInput: '',
+          witnessesArray: parseArrayParam(params.witnesses),
+          primariesInput: '',
+          primariesArray: parseArrayParam(params.primaries_involved),
+          actionsInput: '',
+          actionsArray: parseArrayParam(params.actions_taken),
+        });
+      }
+      setIsLoading(false);
+    };
+
+    loadReportData();
+  }, [params.id]);
+
+  // Get user's current location on mount (as fallback)
+  useEffect(() => {
+    const getCurrentLocation = async () => {
+      // Check if we already have a valid location
+      if (
+        formData.location &&
+        formData.locationCoords[0] !== 0 &&
+        formData.locationCoords[1] !== 0
+      ) {
+        return; // Already have location
+      }
+
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const location = await Location.getCurrentPositionAsync({});
+          const { latitude, longitude } = location.coords;
+
+          let locationName = '';
+          try {
+            const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
+            locationName = (geo as any).name
+              ? `${(geo as any).name}, ${(geo as any).city}, ${(geo as any).region}`
+              : (geo as any).city
+                ? `${(geo as any).city}, ${(geo as any).region}`
+                : '';
+          } catch (geoErr) {
+            console.warn('Failed to reverse geocode location', geoErr);
+          }
+
+          const userLoc = {
+            name: locationName || 'Current Location',
+            coords: [latitude, longitude] as [number, number],
+          };
+          setUserLocation(userLoc);
+        }
+      } catch (err) {
+        console.warn('Failed to get current location', err);
+      }
+    };
+
+    if (!isLoading) {
+      getCurrentLocation();
+    }
+  }, [isLoading, formData.location, formData.locationCoords]);
 
   const onChange = (event: any, selectedDate: Date | undefined) => {
     if (selectedDate) {
@@ -161,13 +303,123 @@ export default function MyPostEdit() {
     setMode(currentMode);
   };
 
+  // Helper function to capitalize first letter of each word
+  const capitalizeFirstLetter = (str: string): string => {
+    if (!str || str.length === 0) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
+  const capitalizeTag = (tag: string): string => {
+    // Handle multi-word tags (e.g., "Anti-LGBTQ+ Discrimination")
+    return tag
+      .split(/[\s-]+/)
+      .map((word) => capitalizeFirstLetter(word))
+      .join(tag.includes('-') ? '-' : ' ');
+  };
+
+  // Debounce timer for location autocomplete
+  const locationDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Handle location input with autocomplete
+  const handleLocationChange = async (value: string) => {
+    setFormData({ ...formData, location: value });
+    setShowSuggestions(false);
+
+    // Clear existing debounce
+    if (locationDebounceRef.current) {
+      clearTimeout(locationDebounceRef.current);
+    }
+
+    if (value.trim().length > 2) {
+      // Debounce geocoding requests
+      locationDebounceRef.current = setTimeout(async () => {
+        try {
+          const results = await Location.geocodeAsync(value);
+          if (results && results.length > 0) {
+            const suggestions = results.slice(0, 5).map((result: any) => {
+              const parts = [];
+              if (result.name) parts.push(result.name);
+              if (result.street) parts.push(result.street);
+              if (result.city) parts.push(result.city);
+              if (result.region) parts.push(result.region);
+              return parts.join(', ') || value;
+            });
+            setLocationSuggestions(suggestions);
+            setShowSuggestions(true);
+          } else {
+            setLocationSuggestions([]);
+            setShowSuggestions(false);
+          }
+        } catch (err) {
+          console.warn('Geocoding error:', err);
+          setLocationSuggestions([]);
+          setShowSuggestions(false);
+        }
+      }, 300);
+    } else {
+      setLocationSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  // Handle pressing enter on location input
+  const handleLocationSubmit = () => {
+    if (locationSuggestions.length > 0) {
+      handleLocationSelect(locationSuggestions[0]);
+    } else if (formData.location.trim().length > 0) {
+      handleLocationSelect(formData.location);
+    }
+  };
+
+  // Handle location selection
+  const handleLocationSelect = async (selectedLocation: string) => {
+    setShowSuggestions(false);
+    setIsGeocoding(true);
+
+    try {
+      const results = await Location.geocodeAsync(selectedLocation);
+      if (results && results.length > 0) {
+        const result = results[0];
+        const coords: [number, number] = [result.latitude, result.longitude];
+
+        // Build full address from geocoded result
+        const parts = [];
+        if ((result as any).name) parts.push((result as any).name);
+        if ((result as any).street) parts.push((result as any).street);
+        if ((result as any).city) parts.push((result as any).city);
+        if ((result as any).region) parts.push((result as any).region);
+        const fullAddress = parts.length > 0 ? parts.join(', ') : selectedLocation;
+
+        setFormData({
+          ...formData,
+          location: fullAddress,
+          locationCoords: coords,
+        });
+      } else {
+        setFormData({
+          ...formData,
+          location: selectedLocation,
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to geocode selected location', err);
+      setFormData({
+        ...formData,
+        location: selectedLocation,
+      });
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
   const handleAddTradesField = () => {
     const input = formData.tradesFieldInput.trim();
     if (input === '') return;
 
+    const capitalized = capitalizeTag(input);
     setFormData({
       ...formData,
-      tradesFieldArray: [...formData.tradesFieldArray, input],
+      tradesFieldArray: [...formData.tradesFieldArray, capitalized],
       tradesFieldInput: '',
     });
   };
@@ -176,9 +428,10 @@ export default function MyPostEdit() {
     const input = formData.reportFieldInput.trim();
     if (input === '') return;
 
+    const capitalized = capitalizeTag(input);
     setFormData({
       ...formData,
-      reportFieldArray: [...formData.reportFieldArray, input],
+      reportFieldArray: [...formData.reportFieldArray, capitalized],
       reportFieldInput: '',
     });
   };
@@ -254,41 +507,54 @@ export default function MyPostEdit() {
     try {
       const idParam = typeof params.id === 'string' ? params.id : null;
 
+      // Ensure date is valid
+      const validDate = date && !isNaN(date.getTime()) ? date : new Date();
+
       // Parse date and time
-      const dateObj = new Date(date);
-      const month = dateObj.toLocaleString('default', { month: 'long' });
-      const day = dateObj.getDate();
-      const year = dateObj.getFullYear();
-      const hour = dateObj.getHours();
-      const minute = dateObj.getMinutes();
-      const time = hour * 100 + minute; // Convert to HHMM format
+      const month = validDate.toLocaleString('default', { month: 'long' });
+      const day = validDate.getDate();
+      const year = validDate.getFullYear();
+      const hours = validDate.getHours();
+      const minutes = validDate.getMinutes();
+      const timeValue = hours * 100 + minutes;
+
+      // Merge with existing reportData if available
+      const baseData = reportData
+        ? mergeReportData(reportData)
+        : mergeReportData(createReportDataFromDate(validDate));
 
       // Build complete ReportData object
-      const reportData: ReportData = {
-        isPublic: false,
-        report_method: 'manual_form',
-        report_id: idParam || `${Date.now()}_report`,
-        report_title: typeof params.title === 'string' ? params.title : 'Incident Report',
-        month,
-        day,
-        year,
-        time,
-        audio_URI: '',
-        audio_duration: 0,
-        location_name: formData.location,
-        location_coords: [0, 0],
-        report_type: formData.reportFieldArray,
-        trades_field: formData.tradesFieldArray,
-        report_desc: formData.description,
-        report_transcript: '',
-        primaries_involved: formData.primariesArray,
-        witnesses: formData.witnessesArray,
-        actions_taken: formData.actionsArray,
-        recommended_actions: [],
-      };
+      const updatedReportData = mergeReportData(
+        {
+          report_title: formData.title || baseData.report_title || 'Incident Report',
+          month,
+          day,
+          year,
+          time: timeValue,
+          location_name: formData.location || '',
+          location_coords:
+            formData.locationCoords[0] !== 0 && formData.locationCoords[1] !== 0
+              ? formData.locationCoords
+              : baseData.location_coords,
+          report_type: formData.reportFieldArray,
+          trades_field: formData.tradesFieldArray,
+          report_desc: formData.description,
+          primaries_involved: formData.primariesArray,
+          witnesses: formData.witnessesArray,
+          actions_taken: formData.actionsArray,
+          report_method: 'manual_form',
+          isPublic: baseData.isPublic || false,
+        },
+        baseData
+      );
+
+      // Preserve report_id if updating
+      if (idParam) {
+        updatedReportData.report_id = idParam;
+      }
 
       // Convert to StoredReport and save
-      const payload = reportDataToStoredReport(reportData, reportData.report_id);
+      const payload = reportDataToStoredReport(updatedReportData, updatedReportData.report_id);
 
       if (idParam) {
         // Update existing report
@@ -301,19 +567,25 @@ export default function MyPostEdit() {
         ]);
       } else {
         // Editing before report is created - return data back to report screen
+        // Format time in 12-hour format with AM/PM
+        const formattedHours = hours % 12 || 12; // Convert to 12-hour format (0 becomes 12)
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const formattedTime = `${formattedHours}:${String(minutes).padStart(2, '0')} ${ampm}`;
+
         router.push({
           pathname: '/create_report/report',
           params: {
-            location: formData.location,
-            date: dateObj.toLocaleDateString(),
-            time: dateObj.toLocaleTimeString(),
+            reportData: JSON.stringify(updatedReportData),
+            reportTitle: formData.title || 'Incident Report',
+            location: formData.location || '',
+            date: validDate.toLocaleDateString(),
+            time: formattedTime,
             reportType: JSON.stringify(formData.reportFieldArray),
             tradesField: JSON.stringify(formData.tradesFieldArray),
             description: formData.description,
             witnesses: JSON.stringify(formData.witnessesArray),
             individualsInvolved: JSON.stringify(formData.primariesArray),
             actionsTaken: JSON.stringify(formData.actionsArray),
-            reportTitle: typeof params.title === 'string' ? params.title : 'Incident Report',
           },
         });
       }
@@ -323,19 +595,76 @@ export default function MyPostEdit() {
     }
   };
 
+  // All hooks must be called before any conditional returns
+  const insets = useSafeAreaInsets();
+  const contentInsets = {
+    top: insets.top,
+    bottom: Platform.select({ ios: insets.bottom, android: insets.bottom + 24 }),
+    left: 12,
+    right: 12,
+  };
+
+  if (isLoading) {
+    return (
+      <>
+        <LinearGradient
+          colors={['#371F5E', '#000']}
+          locations={[0, 0.3]}
+          style={styles.background}
+        />
+        <Stack.Screen options={SCREEN_OPTIONS} />
+        <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <AppText style={{ color: '#FFFFFF' }}>Loading...</AppText>
+        </SafeAreaView>
+      </>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <>
+        <LinearGradient
+          colors={['#371F5E', '#000']}
+          locations={[0, 0.3]}
+          style={styles.background}
+        />
+        <Stack.Screen options={SCREEN_OPTIONS} />
+        <SafeAreaView style={styles.pageContainer}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <AppText style={{ color: '#FFFFFF' }}>Loading...</AppText>
+          </View>
+        </SafeAreaView>
+      </>
+    );
+  }
+
   return (
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
-      <AppText weight="bold" style={styles.title}>
-        Edit Information
-      </AppText>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <Stack.Screen options={SCREEN_OPTIONS} />
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.contentContainer}>
+      <Stack.Screen options={SCREEN_OPTIONS} />
+      <SafeAreaView style={styles.pageContainer}>
+        <ScrollView>
+          <Pressable onPress={Keyboard.dismiss} style={styles.formContainer}>
+            <AppText
+              weight="bold"
+              style={{ fontSize: 24, color: 'white', marginBottom: 20, textAlign: 'center' }}>
+              Edit Report
+            </AppText>
             <View>
-              <AppText style={styles.sectionTitle} weight="medium">
-                Date
+              <AppText weight="medium" style={styles.label}>
+                Report Title
+              </AppText>
+              <Input
+                placeholder="Enter a title for this report..."
+                style={styles.input}
+                placeholderTextColor="#6B6B6B"
+                value={formData.title}
+                onChangeText={(value) => setFormData({ ...formData, title: value })}
+              />
+            </View>
+            <View>
+              <AppText weight="medium" style={styles.label}>
+                Date and Time
               </AppText>
               <View style={{ flexDirection: 'row', gap: 16 }}>
                 <DateTimePicker
@@ -359,17 +688,53 @@ export default function MyPostEdit() {
               <AppText weight="medium" style={styles.label}>
                 Location
               </AppText>
-              <Input
-                placeholder="Search for a location..."
-                style={[styles.input, { marginBottom: 12 }]}
-                placeholderTextColor="#6B6B6B"
-                value={formData.location}
-                onChangeText={(value) => setFormData({ ...formData, location: value })}
-              />
-              <MapOnHome />
+              <View style={{ position: 'relative', marginBottom: 12 }}>
+                <Input
+                  placeholder="Search for a location..."
+                  style={styles.input}
+                  placeholderTextColor="#6B6B6B"
+                  value={formData.location}
+                  onChangeText={handleLocationChange}
+                  onSubmitEditing={handleLocationSubmit}
+                  returnKeyType="search"
+                  onFocus={() => {
+                    if (locationSuggestions.length > 0) {
+                      setShowSuggestions(true);
+                    }
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => setShowSuggestions(false), 200);
+                  }}
+                />
+                {showSuggestions && locationSuggestions.length > 0 && (
+                  <View style={styles.suggestionsContainer}>
+                    {locationSuggestions.map((suggestion, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={styles.suggestionItem}
+                        onPress={() => handleLocationSelect(suggestion)}>
+                        <AppText style={styles.suggestionText}>{suggestion}</AppText>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+              {/* Show map if we have coordinates */}
+              {((formData.locationCoords[0] !== 0 && formData.locationCoords[1] !== 0) ||
+                (userLocation && (!formData.location || formData.locationCoords[0] === 0))) && (
+                <MapOnDetail
+                  coordinates={
+                    formData.locationCoords[0] !== 0 && formData.locationCoords[1] !== 0
+                      ? formData.locationCoords
+                      : userLocation?.coords || [0, 0]
+                  }
+                  address={formData.location || userLocation?.name || 'Current Location'}
+                  style={{ marginBottom: 16, marginTop: 12 }}
+                />
+              )}
             </View>
             <View>
-              <AppText style={styles.sectionTitle} weight="medium">
+              <AppText weight="medium" style={styles.label}>
                 Type of Report
               </AppText>
               <Input
@@ -396,7 +761,7 @@ export default function MyPostEdit() {
               </View>
             </View>
             <View>
-              <AppText style={styles.sectionTitle} weight="medium">
+              <AppText weight="medium" style={styles.label}>
                 Trades Field
               </AppText>
               <Input
@@ -424,7 +789,7 @@ export default function MyPostEdit() {
               </View>
             </View>
             <View>
-              <AppText style={styles.sectionTitle} weight="medium">
+              <AppText weight="medium" style={styles.label}>
                 Incident Description
               </AppText>
               <Input
@@ -437,7 +802,7 @@ export default function MyPostEdit() {
               />
             </View>
             <View>
-              <AppText style={styles.sectionTitle} weight="medium">
+              <AppText weight="medium" style={styles.label}>
                 Primary Individuals Involved
               </AppText>
               <Input
@@ -464,7 +829,7 @@ export default function MyPostEdit() {
               </View>
             </View>
             <View>
-              <AppText style={styles.sectionTitle} weight="medium">
+              <AppText weight="medium" style={styles.label}>
                 Witnesses
               </AppText>
               <Input
@@ -491,7 +856,7 @@ export default function MyPostEdit() {
               </View>
             </View>
             <View>
-              <AppText style={styles.sectionTitle} weight="medium">
+              <AppText weight="medium" style={styles.label}>
                 Actions Taken
               </AppText>
               <Input
@@ -517,13 +882,13 @@ export default function MyPostEdit() {
                 ))}
               </View>
             </View>
-          </View>
-          <Button variant="purple" radius="full" style={styles.saveButton} onPress={handleSave}>
-            <AppText weight="medium" style={styles.saveText}>
-              {typeof params.id === 'string' ? 'Save Changes' : 'Save & Regenerate Report'}
-            </AppText>
-          </Button>
+          </Pressable>
         </ScrollView>
+        <Button variant="purple" radius="full" style={styles.buttonContainer} onPress={handleSave}>
+          <AppText weight="medium" style={styles.buttonText}>
+            {typeof params.id === 'string' ? 'Save Changes' : 'Save & Regenerate Report'}
+          </AppText>
+        </Button>
       </SafeAreaView>
     </>
   );
@@ -545,67 +910,18 @@ const styles = StyleSheet.create({
     right: 0,
     height: '100%',
   },
-  title: {
-    fontSize: 24,
-    marginTop: 70,
-    color: '#FFF',
-    textAlign: 'center',
-  },
-  safeArea: {
+  pageContainer: {
     flex: 1,
-    paddingHorizontal: 15,
   },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 36,
-  },
-  contentContainer: {
-    justifyContent: 'center',
+  formContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
     gap: 24,
-    marginBottom: 30,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    marginBottom: 12,
-    color: '#FFF',
-  },
-  textInput: {
-    height: 48,
-    borderColor: 'rgba(255, 255, 255, 0.30)',
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    backgroundColor: '#333333',
-    color: '#FFF',
-    fontSize: 16,
-    lineHeight: 20,
-    fontFamily: 'Satoshi-Regular',
-  },
-  mapImage: {
-    width: '100%',
-    height: 148,
-    borderRadius: 12,
-    marginTop: 12,
-  },
-  multilineInput: {
-    height: 150,
-    textAlignVertical: 'top',
-  },
-  shortMultilineInput: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  saveButton: {
-    height: 52,
-  },
-  saveText: {
-    color: '#FFF',
-    fontSize: 16,
   },
   label: {
     color: 'white',
-    fontSize: 20,
+    fontSize: 16,
     marginBottom: 8,
   },
   input: {
@@ -632,6 +948,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   badgeText: {
+    color: '#FFF',
+    fontSize: 16,
+  },
+  buttonContainer: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    height: 52,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontSize: 16,
+  },
+  suggestionsContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#333',
+    borderRadius: 8,
+    marginTop: 4,
+    maxHeight: 200,
+    zIndex: 1000,
+    borderWidth: 1,
+    borderColor: '#FFFFFF4D',
+  },
+  suggestionItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#FFFFFF1A',
+  },
+  suggestionText: {
     color: '#FFF',
     fontSize: 16,
   },
