@@ -1,16 +1,75 @@
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
 import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/Badge';
 import Recommendation from '@/components/ui/Recommendation';
+import defaultPostsData from '@/assets/data/default_posts.json';
+import { ReportData, mergeReportData } from '@/lib/reportData';
+import { getResourceLinksForActions } from '@/lib/worksafebcResources';
+
+/**
+ * Formats date from ReportData structure
+ */
+const formatDateFromReportData = (reportData?: Partial<ReportData>): string => {
+  if (reportData?.month && reportData?.day && reportData?.year) {
+    return `${reportData.month} ${reportData.day}, ${reportData.year}`;
+  }
+  return '';
+};
+
+/**
+ * Formats time from ReportData structure (time is stored as HHMM, e.g., 1015 for 10:15)
+ */
+const formatTimeFromReportData = (reportData?: Partial<ReportData>): string => {
+  if (reportData?.time) {
+    const hours = Math.floor(reportData.time / 100);
+    const minutes = reportData.time % 100;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+    return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
+  }
+  return '';
+};
 
 export default function Details() {
+  const params = useLocalSearchParams<{ id?: string }>();
+  const idParam = typeof params.id === 'string' ? params.id : null;
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load post data from JSON file on mount
+  useEffect(() => {
+    const loadPost = () => {
+      if (idParam) {
+        try {
+          setIsLoading(true);
+          const post = (defaultPostsData as any[]).find((p) => p.id === idParam);
+          if (post && post.reportData) {
+            // Convert to full ReportData
+            const fullReportData = mergeReportData(post.reportData);
+            setReportData(fullReportData);
+          } else {
+            console.warn('Post not found:', idParam);
+          }
+        } catch (err) {
+          console.error('Failed to load post', err);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setIsLoading(false);
+      }
+    };
+    loadPost();
+  }, [idParam]);
+
   const SCREEN_OPTIONS = {
     title: '',
     headerBackTitle: 'Back',
@@ -22,6 +81,51 @@ export default function Details() {
     ),
   };
 
+  // Extract display values from reportData
+  const displayTitle = reportData?.report_title || 'Post Details';
+  const displayDate = reportData ? formatDateFromReportData(reportData) : '';
+  const displayTime = reportData ? formatTimeFromReportData(reportData) : '';
+  const displayLocation = reportData?.location_name || 'Location not specified';
+  // Extract coordinates - ensure they're valid before passing
+  const displayCoordinates: [number, number] | undefined =
+    reportData?.location_coords &&
+    Array.isArray(reportData.location_coords) &&
+    reportData.location_coords.length === 2 &&
+    typeof reportData.location_coords[0] === 'number' &&
+    typeof reportData.location_coords[1] === 'number' &&
+    !isNaN(reportData.location_coords[0]) &&
+    !isNaN(reportData.location_coords[1]) &&
+    !(reportData.location_coords[0] === 0 && reportData.location_coords[1] === 0)
+      ? (reportData.location_coords as [number, number])
+      : undefined;
+
+  // Use reportData arrays directly
+  const reportTypes = reportData?.report_type || [];
+  const tradesFields = reportData?.trades_field || [];
+  const reportDescription = reportData?.report_desc || 'No report available.';
+  const recommendedActions = reportData?.recommended_actions || [];
+
+  // Get resource links for recommended actions
+  const actionsWithLinks = getResourceLinksForActions(recommendedActions, reportTypes);
+
+  if (isLoading) {
+    return (
+      <>
+        <LinearGradient
+          colors={['#371F5E', '#000']}
+          locations={[0, 0.3]}
+          style={styles.background}
+        />
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <Stack.Screen options={SCREEN_OPTIONS} />
+          <View style={styles.container}>
+            <AppText style={{ color: '#fff' }}>Loading...</AppText>
+          </View>
+        </SafeAreaView>
+      </>
+    );
+  }
+
   return (
     <>
       <LinearGradient colors={['#371F5E', '#000']} locations={[0, 0.3]} style={styles.background} />
@@ -30,34 +134,34 @@ export default function Details() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
             <AppText weight="bold" style={styles.title}>
-              Title generated based on summary
+              {displayTitle}
             </AppText>
             <View style={styles.subtitleContainer}>
-              <AppText style={styles.subtitleText}>November 4, 2025</AppText>
-              <AppText style={styles.subtitleText}>10:15 AM</AppText>
+              <AppText style={styles.subtitleText}>{displayDate}</AppText>
+              <AppText style={styles.subtitleText}>{displayTime}</AppText>
             </View>
-            <MapOnDetail address="3700 Willingdon Avenue, Burnaby" style={styles.mapOnDetail} />
+            <MapOnDetail
+              address={displayLocation}
+              coordinates={displayCoordinates}
+              style={styles.mapOnDetail}
+            />
 
             <View style={styles.badgeSection}>
               <AppText style={styles.badgeTitle} weight="medium">
-                Type of Report
+                Report Type
               </AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Harassment
-                  </AppText>
-                </Badge>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Electrical
-                  </AppText>
-                </Badge>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Warning
-                  </AppText>
-                </Badge>
+                {reportTypes.length > 0 ? (
+                  reportTypes.map((tag: string, index: number) => (
+                    <Badge key={index} variant="darkGrey" className="mr-2 px-4">
+                      <AppText style={styles.badgeText} weight="medium">
+                        {tag}
+                      </AppText>
+                    </Badge>
+                  ))
+                ) : (
+                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>Not Specified</AppText>
+                )}
               </ScrollView>
             </View>
 
@@ -66,11 +170,17 @@ export default function Details() {
                 Trades Field
               </AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <Badge variant="darkGrey" className="mr-2 px-4">
-                  <AppText style={styles.badgeText} weight="medium">
-                    Electrical
-                  </AppText>
-                </Badge>
+                {tradesFields.length > 0 ? (
+                  tradesFields.map((tag: string, index: number) => (
+                    <Badge key={index} variant="darkGrey" className="mr-2 px-4">
+                      <AppText style={styles.badgeText} weight="medium">
+                        {tag}
+                      </AppText>
+                    </Badge>
+                  ))
+                ) : (
+                  <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>Not Specified</AppText>
+                )}
               </ScrollView>
             </View>
 
@@ -81,27 +191,20 @@ export default function Details() {
                 </AppText>
                 <AppText style={styles.transcriptModel}>GPT-4o</AppText>
               </View>
-              <AppText style={styles.transcriptText}>
-                Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet
-                pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis
-                pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
-                Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet
-                pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis
-                pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
-                Lorem ipsum dolor sit amet consectetur. Neque turpis id vulputate malesuada amet
-                pellentesque leo vel. Sapien eget cras ac neque feugiat porta elementum felis
-                pharetra. Ut consequat dui malesuada odio posuere tristique habitasse gravida in.
-              </AppText>
+              <AppText style={styles.transcriptText}>{reportDescription}</AppText>
             </View>
 
             <View style={styles.recommendationsSection}>
               <AppText weight="medium" style={styles.recommendTitle}>
                 Recommended Actions
               </AppText>
-              <Recommendation text="Provide Bystander Intervention and Respect Training" />
-              <Recommendation text="Require Pre-Task Safety and Inclusion Briefings" />
-              <Recommendation text="Implement a Zero-Tolerance Harassment Policy" />
-              <Recommendation text="Enforce Proper PPE Usage at All Times" />
+              {recommendedActions.length > 0 ? (
+                actionsWithLinks.map(({ action, link }, index: number) => (
+                  <Recommendation key={index} text={action} resourceLink={link} />
+                ))
+              ) : (
+                <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>No recommended actions</AppText>
+              )}
             </View>
           </View>
         </ScrollView>
