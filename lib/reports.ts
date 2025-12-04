@@ -78,7 +78,7 @@ export const reportDataToStoredReport = (
     excerpt:
       reportData.report_desc.substring(0, 100) + (reportData.report_desc.length > 100 ? '...' : ''),
     content: reportData.report_desc, // Legacy support
-    reportData: reportData,
+    reportData: reportData, // Include report_desc_filtered if it was already set
     recordingId,
   };
 };
@@ -283,12 +283,37 @@ export const loadAllPublicReports = async (): Promise<StoredReport[]> => {
 };
 
 export const updateReportStatus = async (id: string, status: 'Posted' | 'Private') => {
+  const { filterReportForPublic, filterRecommendedActionsForPublic } = await import(
+    '@/lib/privacyFilter'
+  );
   const existing = await loadReports();
   const report = existing.find((item) => item.id === id);
   if (report) {
     report.status = status;
     if (report.reportData) {
       report.reportData.isPublic = status === 'Posted';
+      // Generate filtered description and actions when making public
+      if (status === 'Posted') {
+        if (report.reportData.report_desc) {
+          report.reportData.report_desc_filtered = filterReportForPublic(
+            report.reportData.report_desc,
+            report.reportData.primaries_involved
+          );
+        }
+        if (
+          report.reportData.recommended_actions &&
+          report.reportData.recommended_actions.length > 0
+        ) {
+          report.reportData.recommended_actions_filtered = filterRecommendedActionsForPublic(
+            report.reportData.recommended_actions,
+            report.reportData.primaries_involved
+          );
+        }
+      } else if (status === 'Private') {
+        // Clear filtered versions when making private (user should see full details)
+        report.reportData.report_desc_filtered = undefined;
+        report.reportData.recommended_actions_filtered = undefined;
+      }
     }
     await serializeReports(existing);
   }

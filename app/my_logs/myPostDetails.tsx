@@ -132,6 +132,9 @@ export default function MyPostDetails() {
   // Use reportData arrays directly - these come from AI analysis of the transcript
   const reportTypes = reportData?.report_type || [];
   const tradesFields = reportData?.trades_field || [];
+  // For user's own reports (accessed from myLogs), always show full description
+  // For public reports accessed from posts/home, show filtered description
+  // Since myPostDetails is accessed from myLogs, we show the full description
   const reportDescription = reportData?.report_desc || params.report || 'No report available.';
   const recommendedActions = reportData?.recommended_actions || [];
 

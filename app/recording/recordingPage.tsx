@@ -387,7 +387,7 @@ export default function Recording() {
                   />
                   <View style={styles.recordingDot} />
                 </View>
-                <AppText weight="medium" style={styles.recordingTimer}>
+                <AppText weight="medium" style={styles.recordingTimer} numberOfLines={1}>
                   {formatElapsed(recordingDuration)}
                 </AppText>
               </View>
@@ -463,21 +463,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    width: 226,
+    width: '100%',
+    maxWidth: 300,
     height: 48,
     justifyContent: 'center',
+    paddingHorizontal: 16,
+    alignSelf: 'center',
   },
   recordingDot: {
     width: 10,
     height: 10,
     borderRadius: 7,
     backgroundColor: '#FF5656',
+    flexShrink: 0,
   },
   recordingTimer: {
-    fontSize: 40,
-    lineHeight: 48,
+    fontSize: 32,
+    lineHeight: 40,
     color: '#FFFFFF',
-    width: 190,
+    textAlign: 'center',
+    flexShrink: 1,
+    minWidth: 160,
   },
   waveContainer: {
     alignItems: 'center',

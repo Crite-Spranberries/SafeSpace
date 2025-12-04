@@ -15,6 +15,7 @@ import HomeTopBar from '@/components/ui/HomeTopBar';
 import { useRouter } from 'expo-router';
 import { loadAllPublicReports, StoredReport } from '@/lib/reports';
 import ReportCard from '@/components/ui/ReportCard';
+import { filterReportForPublic } from '@/lib/privacyFilter';
 import { useFocusEffect } from 'expo-router';
 
 export default function Home() {
@@ -98,19 +99,14 @@ export default function Home() {
 
   const handleReportCardPress = () => {
     if (selectedReport) {
-      // Check if it's from default posts or user reports
-      const isDefaultPost = selectedReport.id.startsWith('post-');
-      if (isDefaultPost) {
-        router.push({
-          pathname: '/posts_browsing/postDetails',
-          params: { id: selectedReport.id },
-        });
-      } else {
-        router.push({
-          pathname: '/my_logs/myPostDetails',
-          params: { id: selectedReport.id },
-        });
-      }
+      // All public reports go to postDetails to show filtered version
+      router.push({
+        pathname: '/posts_browsing/postDetails',
+        params: {
+          id: selectedReport.id,
+          isUserReport: selectedReport.id.startsWith('post-') ? 'false' : 'true',
+        },
+      });
     }
   };
 
@@ -193,7 +189,14 @@ export default function Home() {
                 tags={selectedReport.report_type || selectedReport.tags || []}
                 title={selectedReport.title}
                 location={selectedReport.location}
-                excerpt={selectedReport.excerpt}
+                excerpt={
+                  selectedReport.excerpt
+                    ? filterReportForPublic(
+                        selectedReport.excerpt,
+                        selectedReport.reportData?.primaries_involved
+                      )
+                    : undefined
+                }
                 date={selectedReport.date}
                 timestamp={selectedReport.timestamp}
                 onDetailsPress={handleReportCardPress}

@@ -14,11 +14,13 @@
   "report_type": [],
   "trades_field": [],
   "report_desc": "",
+  "report_desc_filtered": "",
   "report_transcript": "",
   "primaries_involved": [],
   "witnesses": [],
   "actions_taken": [],
   "recommended_actions": [],
+  "recommended_actions_filtered": [],
   "worksafebcViolationTypes": [
     "Verbal Harassment",
     "Physical Harassment",

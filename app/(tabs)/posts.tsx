@@ -13,6 +13,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { AppText } from '@/components/ui/AppText';
 import defaultPostsData from '@/assets/data/default_posts.json';
 import { loadAllPublicReports, StoredReport } from '@/lib/reports';
+import { filterReportForPublic } from '@/lib/privacyFilter';
 
 type PostItem = {
   id: string;
@@ -29,28 +30,50 @@ type PostItem = {
 
 // Load posts from JSON file
 const loadDefaultPosts = (): PostItem[] => {
-  return defaultPostsData.map((post: any) => ({
-    id: post.id,
-    tags: post.report_type || post.tags || [],
-    title: post.title,
-    location: post.location,
-    excerpt: post.excerpt,
-    date: post.date,
-    timestamp: post.timestamp,
-    status: post.status || 'Posted',
-    report_type: post.report_type || post.tags || [],
-    isUserReport: false,
-  }));
+  return defaultPostsData.map((post: any) => {
+    // Use report_desc if available (more complete), otherwise use excerpt
+    const rawText = post.reportData?.report_desc || post.excerpt || post.content || '';
+    // Filter for public display (remove names)
+    const filteredText = filterReportForPublic(rawText, post.reportData?.primaries_involved);
+    // Truncate to excerpt length if it's from report_desc
+    const filteredExcerpt =
+      post.reportData?.report_desc && filteredText.length > 150
+        ? filteredText.substring(0, 150) + '...'
+        : filteredText;
+
+    return {
+      id: post.id,
+      tags: post.report_type || post.tags || [],
+      title: post.title,
+      location: post.location,
+      excerpt: filteredExcerpt,
+      date: post.date,
+      timestamp: post.timestamp,
+      status: post.status || 'Posted',
+      report_type: post.report_type || post.tags || [],
+      isUserReport: false,
+    };
+  });
 };
 
 // Convert StoredReport to PostItem format
 const convertReportToPostItem = (report: StoredReport): PostItem => {
+  // Use report_desc if available (more complete), otherwise use excerpt/content
+  const rawText = report.reportData?.report_desc || report.excerpt || report.content || '';
+  // Filter for public display (remove names)
+  const filteredText = filterReportForPublic(rawText, report.reportData?.primaries_involved);
+  // Truncate to excerpt length if it's from report_desc
+  const filteredExcerpt =
+    report.reportData?.report_desc && filteredText.length > 150
+      ? filteredText.substring(0, 150) + '...'
+      : filteredText;
+
   return {
     id: report.id,
     tags: report.report_type || report.tags || [],
     title: report.title,
     location: report.location || '',
-    excerpt: report.excerpt || report.content || '',
+    excerpt: filteredExcerpt,
     date: report.date,
     timestamp: report.timestamp,
     status: report.status,
@@ -137,10 +160,11 @@ export default function Posts() {
 
   const onDetails = (post: PostItem) => {
     // Navigate to appropriate detail page based on whether it's a user report
+    // For public reports, always use postDetails to show filtered version
     if (post.isUserReport) {
       router.push({
-        pathname: '/my_logs/myPostDetails',
-        params: { id: post.id },
+        pathname: '/posts_browsing/postDetails',
+        params: { id: post.id, isUserReport: 'true' },
       });
     } else {
       router.push({
