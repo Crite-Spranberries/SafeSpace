@@ -19,25 +19,57 @@ const customMapStyle = [
 
 type MapOnDetailProps = {
   address?: string;
+  coordinates?: [number, number]; // [latitude, longitude] from location_coords
   style?: StyleProp<ViewStyle>;
 };
 
 export default function MapOnDetail({
   address = '3700 Willingdon Avenue, Burnaby',
+  coordinates,
   style,
 }: MapOnDetailProps) {
-  const [userAddress, setUserAddress] = useState(address);
+  const [displayAddress, setDisplayAddress] = useState(address);
   const [region, setRegion] = useState<Region | undefined>(undefined);
-  const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(
+  const [markerCoords, setMarkerCoords] = useState<{ latitude: number; longitude: number } | null>(
     null
   );
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
 
   useEffect(() => {
     (async () => {
+      // If coordinates are provided, use them (for report location)
+      if (coordinates && coordinates.length === 2 && coordinates[0] !== 0 && coordinates[1] !== 0) {
+        const [latitude, longitude] = coordinates;
+
+        // Reverse geocode to get address from coordinates
+        try {
+          let [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
+          const addr = geo.name
+            ? `${geo.name}, ${geo.city}, ${geo.region}`
+            : geo.city
+              ? `${geo.city}, ${geo.region}`
+              : address; // Fallback to provided address
+          setDisplayAddress(addr);
+        } catch (err) {
+          console.warn('Failed to reverse geocode', err);
+          setDisplayAddress(address);
+        }
+
+        const initialRegion = {
+          latitude,
+          longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        };
+        setRegion(initialRegion);
+        setMarkerCoords({ latitude, longitude });
+        return; // Don't watch position if we have coordinates
+      }
+
+      // Otherwise, get current location (for home page or when no coordinates provided)
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setUserAddress(address);
+        setDisplayAddress(address);
         return;
       }
 
@@ -48,7 +80,7 @@ export default function MapOnDetail({
       const addr = geo.name
         ? `${geo.name}, ${geo.city}, ${geo.region}`
         : `${geo.city}, ${geo.region}`;
-      setUserAddress(addr);
+      setDisplayAddress(addr);
 
       const initialRegion = {
         latitude,
@@ -57,7 +89,7 @@ export default function MapOnDetail({
         longitudeDelta: 0.01,
       };
       setRegion(initialRegion);
-      setUserCoords({ latitude, longitude });
+      setMarkerCoords({ latitude, longitude });
 
       locationSubscription.current = await Location.watchPositionAsync(
         {
@@ -67,7 +99,7 @@ export default function MapOnDetail({
         },
         (newLocation) => {
           const { latitude, longitude } = newLocation.coords;
-          setUserCoords({ latitude, longitude });
+          setMarkerCoords({ latitude, longitude });
           setRegion((prevRegion) => ({
             ...prevRegion!,
             latitude,
@@ -83,14 +115,14 @@ export default function MapOnDetail({
         locationSubscription.current = null;
       }
     };
-  }, [address]);
+  }, [address, coordinates]);
 
   return (
     <View style={[styles.container, style]}>
       <AppText style={styles.locationTitle} weight="medium">
         Location
       </AppText>
-      <AppText style={styles.locationAddress}>{userAddress}</AppText>
+      <AppText style={styles.locationAddress}>{displayAddress}</AppText>
       {region && (
         <MapView
           style={styles.mapView}
@@ -102,11 +134,11 @@ export default function MapOnDetail({
           scrollEnabled={false}
           pitchEnabled={false}
           rotateEnabled={false}>
-          {userCoords && (
+          {markerCoords && (
             <Marker
-              coordinate={userCoords}
-              title="You are here"
-              description={userAddress}
+              coordinate={markerCoords}
+              title={coordinates ? 'Report Location' : 'You are here'}
+              description={displayAddress}
               anchor={{ x: 0.5, y: 1 }}>
               <MapPin size={40} fill="#8449DF" color="#8449DF" strokeWidth={0} />
             </Marker>

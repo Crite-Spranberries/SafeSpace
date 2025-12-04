@@ -23,18 +23,24 @@ export type StoredReport = {
  * Converts StoredReport to full ReportData
  */
 export const reportToReportData = (report: StoredReport): ReportData => {
-  const baseData = report.reportData || {};
+  // If reportData exists, use it directly (it's already a full ReportData structure)
+  if (report.reportData) {
+    return mergeReportData(report.reportData);
+  }
+
+  // Otherwise, reconstruct from legacy fields
+  const baseData: Partial<ReportData> = {};
 
   // Map legacy fields to new format
   return mergeReportData({
     ...baseData,
     report_id: report.id,
-    report_title: report.title || baseData.report_title || '',
+    report_title: report.title || '',
     isPublic: report.status === 'Posted',
-    location_name: report.location || baseData.location_name || '',
-    report_type: report.report_type || report.tags || baseData.report_type || [],
-    trades_field: report.trades_field || baseData.trades_field || [],
-    report_desc: report.content || baseData.report_desc || '',
+    location_name: report.location || '',
+    report_type: report.report_type || report.tags || [],
+    trades_field: report.trades_field || [],
+    report_desc: report.content || '',
   });
 };
 
@@ -158,4 +164,14 @@ export const deleteReport = async (id: string) => {
   const next = existing.filter((item) => item.id !== id);
   await serializeReports(next);
   return next;
+};
+
+export const getReportById = async (id: string) => {
+  const existing = await loadReports();
+  return existing.find((item) => item.id === id);
+};
+
+export const getReportByRecordingId = async (recordingId: string) => {
+  const existing = await loadReports();
+  return existing.find((item) => item.recordingId === recordingId);
 };

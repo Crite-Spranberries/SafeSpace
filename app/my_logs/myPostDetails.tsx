@@ -1,5 +1,5 @@
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Trash2, PenLine } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView, Alert } from 'react-native';
@@ -13,6 +13,33 @@ import Recommendation from '@/components/ui/Recommendation';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
+import { loadReports, StoredReport, reportToReportData } from '@/lib/reports';
+import { ReportData } from '@/lib/reportData';
+import { getResourceLinksForActions } from '@/lib/worksafebcResources';
+
+/**
+ * Formats date from ReportData structure
+ */
+const formatDateFromReportData = (reportData?: Partial<ReportData>): string => {
+  if (reportData?.month && reportData?.day && reportData?.year) {
+    return `${reportData.month} ${reportData.day}, ${reportData.year}`;
+  }
+  return '';
+};
+
+/**
+ * Formats time from ReportData structure (time is stored as HHMM, e.g., 1015 for 10:15)
+ */
+const formatTimeFromReportData = (reportData?: Partial<ReportData>): string => {
+  if (reportData?.time) {
+    const hours = Math.floor(reportData.time / 100);
+    const minutes = reportData.time % 100;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+    return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
+  }
+  return '';
+};
 
 export default function MyPostDetails() {
   const params = useLocalSearchParams<{
@@ -27,18 +54,70 @@ export default function MyPostDetails() {
     trades_field?: string;
     status?: string;
   }>();
-  const reportParam = typeof params.report === 'string' ? params.report : null;
-  const titleParam = typeof params.title === 'string' ? params.title : null;
   const idParam = typeof params.id === 'string' ? params.id : null;
-  const dateParam = typeof params.date === 'string' ? params.date : null;
-  const timestampParam = typeof params.timestamp === 'string' ? params.timestamp : null;
-  const locationParam = typeof params.location === 'string' ? params.location : null;
-  const tagsParam = typeof params.tags === 'string' ? JSON.parse(params.tags) : [];
-  const reportTypeParam =
-    typeof params.report_type === 'string' ? JSON.parse(params.report_type) : [];
-  const tradesFieldParam =
-    typeof params.trades_field === 'string' ? JSON.parse(params.trades_field) : [];
-  const statusParam = typeof params.status === 'string' ? params.status : 'Private';
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [isPublic, setIsPublic] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load report data on mount
+  useEffect(() => {
+    const loadReport = async () => {
+      if (idParam) {
+        try {
+          setIsLoading(true);
+          const reports = await loadReports();
+          const report = reports.find((r) => r.id === idParam);
+          if (report) {
+            // Convert StoredReport to full ReportData
+            const fullReportData = reportToReportData(report);
+            console.log('Loaded report data:', fullReportData);
+            setReportData(fullReportData);
+            setIsPublic(fullReportData.isPublic);
+          } else {
+            console.warn('Report not found:', idParam);
+          }
+        } catch (err) {
+          console.error('Failed to load report', err);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setIsLoading(false);
+      }
+    };
+    loadReport();
+  }, [idParam]);
+
+  // Extract display values from reportData or fall back to params
+  // Prioritize reportData fields since they come from AI analysis
+  const displayTitle = reportData?.report_title || params.title || 'Report Details';
+  const displayDate = reportData
+    ? formatDateFromReportData(reportData) || params.date || ''
+    : params.date || '';
+  const displayTime = reportData
+    ? formatTimeFromReportData(reportData) || params.timestamp || ''
+    : params.timestamp || '';
+  const displayLocation = reportData?.location_name || params.location || 'Location not specified';
+
+  // Use reportData arrays directly - these come from AI analysis of the transcript
+  const reportTypes = reportData?.report_type || [];
+  const tradesFields = reportData?.trades_field || [];
+  const reportDescription = reportData?.report_desc || params.report || 'No report available.';
+  const recommendedActions = reportData?.recommended_actions || [];
+
+  // Get resource links for recommended actions (only for serious reports)
+  const actionsWithLinks = getResourceLinksForActions(recommendedActions, reportTypes);
+
+  // Debug logging
+  useEffect(() => {
+    if (reportData) {
+      console.log('myPostDetails - Report data loaded:', {
+        reportTypes,
+        recommendedActions,
+        actionsWithLinks,
+      });
+    }
+  }, [reportData, reportTypes, recommendedActions, actionsWithLinks]);
 
   const SCREEN_OPTIONS = {
     title: '',
@@ -52,7 +131,6 @@ export default function MyPostDetails() {
   };
 
   const { showConfirmation } = useConfirmation();
-  const [isPublic, setIsPublic] = useState(statusParam === 'Posted');
 
   return (
     <>
@@ -62,18 +140,15 @@ export default function MyPostDetails() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
             <AppText weight="bold" style={styles.title}>
-              {idParam === 'default-report-1' || idParam === 'default-report-2'
-                ? titleParam || 'Report Details'
-                : titleParam
-                  ? `${titleParam}`
-                  : 'Title generated based on summary'}
+              {displayTitle}
             </AppText>
             <View style={styles.subtitleContainer}>
-              <AppText style={styles.subtitleText}>{dateParam}</AppText>
-              <AppText style={styles.subtitleText}>{timestampParam}</AppText>
+              <AppText style={styles.subtitleText}>{displayDate}</AppText>
+              <AppText style={styles.subtitleText}>{displayTime}</AppText>
             </View>
             <MapOnDetail
-              address={locationParam || '3700 Willingdon Avenue, Burnaby'}
+              address={displayLocation}
+              coordinates={reportData?.location_coords}
               style={styles.mapOnDetail}
             />
 
@@ -82,8 +157,8 @@ export default function MyPostDetails() {
                 Report Type
               </AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {reportTypeParam.length > 0 ? (
-                  reportTypeParam.map((tag: string, index: number) => (
+                {reportTypes.length > 0 ? (
+                  reportTypes.map((tag: string, index: number) => (
                     <Badge key={index} variant="darkGrey" className="mr-2 px-4">
                       <AppText style={styles.badgeText} weight="medium">
                         {tag}
@@ -101,8 +176,8 @@ export default function MyPostDetails() {
                 Trades Field
               </AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {tradesFieldParam.length > 0 ? (
-                  tradesFieldParam.map((tag: string, index: number) => (
+                {tradesFields.length > 0 ? (
+                  tradesFields.map((tag: string, index: number) => (
                     <Badge key={index} variant="darkGrey" className="mr-2 px-4">
                       <AppText style={styles.badgeText} weight="medium">
                         {tag}
@@ -122,18 +197,20 @@ export default function MyPostDetails() {
                 </AppText>
                 <AppText style={styles.transcriptModel}>GPT-4o</AppText>
               </View>
-              <AppText style={styles.transcriptText}>
-                {reportParam ?? 'No report available.'}
-              </AppText>
+              <AppText style={styles.transcriptText}>{reportDescription}</AppText>
             </View>
 
             <View style={styles.recommendationsSection}>
               <AppText weight="medium" style={styles.recommendTitle}>
                 Recommended Actions
               </AppText>
-              <Recommendation text="Provide Bystander Intervention and Respect Training" />
-              <Recommendation text="Require Pre-Task Safety and Inclusion Briefings" />
-              <Recommendation text="Implement a Zero-Tolerance Harassment Policy" />
+              {recommendedActions.length > 0 ? (
+                actionsWithLinks.map(({ action, link }, index: number) => (
+                  <Recommendation key={index} text={action} resourceLink={link} />
+                ))
+              ) : (
+                <AppText style={{ color: '#B0B0B0', fontSize: 16 }}>No recommended actions</AppText>
+              )}
             </View>
 
             <View style={styles.buttonContainer}>

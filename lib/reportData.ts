@@ -91,10 +91,12 @@ export const mergeReportData = (
 
 /**
  * Reference data from report_data_format.JSON
+ * These are the ONLY valid values for report_type and trades_field
  */
 export const WORKSAFEBC_VIOLATION_TYPES = [
   'Verbal Harassment',
   'Physical Harassment',
+  'Harassment',
   'Bullying',
   'Sexual Harassment',
   'Threats',
@@ -117,3 +119,17 @@ export const TRADE_FIELDS = [
   'Pipefitting',
   'Construction Laborer',
 ];
+
+/**
+ * Validates and filters report_type values to only include valid violation types
+ */
+export const validateReportTypes = (types: string[]): string[] => {
+  return types.filter((type) => WORKSAFEBC_VIOLATION_TYPES.includes(type));
+};
+
+/**
+ * Validates and filters trades_field values to only include valid trade fields
+ */
+export const validateTradeFields = (fields: string[]): string[] => {
+  return fields.filter((field) => TRADE_FIELDS.includes(field));
+};

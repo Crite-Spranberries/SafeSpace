@@ -23,7 +23,7 @@ import {
   getRecordingById,
 } from '@/lib/recordings';
 import { generateReport } from '@/lib/ai';
-import { addReport, reportDataToStoredReport } from '@/lib/reports';
+import { addReport, reportDataToStoredReport, getReportByRecordingId } from '@/lib/reports';
 import { mergeReportData, createReportDataFromDate, ReportData } from '@/lib/reportData';
 
 // ✅ securely load your API key from .env file.
@@ -219,7 +219,14 @@ export default function MyRecordingDetails() {
       const generated = await generateReport(transcriptToUse, {
         audioUri: audioUriParam || undefined,
         date: reportDate,
-        location: existingRecording?.location ? { name: existingRecording.location } : undefined,
+        location: existingRecording?.reportData?.location_coords
+          ? {
+              name: existingRecording.reportData.location_name || existingRecording.location || '',
+              coords: existingRecording.reportData.location_coords,
+            }
+          : existingRecording?.location
+            ? { name: existingRecording.location }
+            : undefined,
       });
 
       if (generated) {
@@ -240,9 +247,14 @@ export default function MyRecordingDetails() {
             // Prefer AI-extracted location, fall back to existing
             location_name:
               generated.data.location_name ||
+              existingRecording?.reportData?.location_name ||
               existingRecording?.location ||
               baseData.location_name ||
               '',
+            // Use coordinates from existing recording or generated data
+            location_coords: existingRecording?.reportData?.location_coords ||
+              generated.data.location_coords ||
+              baseData.location_coords || [0, 0],
             // Store the transcript in report_transcript field
             report_transcript: transcriptToUse,
           },
@@ -350,7 +362,11 @@ export default function MyRecordingDetails() {
               duration={durationParam ?? undefined}
               source={activeUri ?? undefined}
             />
-            <MapOnDetail address={displayLocation} style={styles.mapOnDetail} />
+            <MapOnDetail
+              address={displayLocation}
+              coordinates={reportData?.location_coords}
+              style={styles.mapOnDetail}
+            />
 
             {/* Report Type Section - Shows AI-generated violation tags from transcript analysis */}
             <View style={styles.badgeSection}>
@@ -448,21 +464,48 @@ export default function MyRecordingDetails() {
                 <Icon as={PenLine} color="#5E349E" size={24} />
               </TouchableOpacity>
               {reportParam ? (
-                <Link
-                  href={{
-                    pathname: './myPostDetails',
-                    params: {
-                      report: reportParam,
-                      title: titleParam || 'Generated Report',
-                    },
-                  }}
-                  asChild>
-                  <Button variant="purple" radius="full" style={styles.generateButton}>
-                    <AppText weight="medium" style={styles.reportGenText}>
-                      View Report
-                    </AppText>
-                  </Button>
-                </Link>
+                <Button
+                  variant="purple"
+                  radius="full"
+                  style={styles.generateButton}
+                  onPress={async () => {
+                    // Find the report ID from the recording
+                    let reportId: string | null = null;
+
+                    if (recordingIdParam) {
+                      const report = await getReportByRecordingId(recordingIdParam);
+                      if (report) {
+                        reportId = report.id;
+                      }
+                    }
+
+                    // Fallback: use report_id from reportData if available
+                    if (!reportId && reportData?.report_id) {
+                      reportId = reportData.report_id;
+                    }
+
+                    if (reportId) {
+                      router.push({
+                        pathname: '/my_logs/myPostDetails',
+                        params: {
+                          id: reportId,
+                        },
+                      });
+                    } else {
+                      // Fallback to old navigation if report ID not found
+                      router.push({
+                        pathname: '/my_logs/myPostDetails',
+                        params: {
+                          report: reportParam,
+                          title: titleParam || 'Generated Report',
+                        },
+                      });
+                    }
+                  }}>
+                  <AppText weight="medium" style={styles.reportGenText}>
+                    View Report
+                  </AppText>
+                </Button>
               ) : (
                 <Button
                   variant="purple"

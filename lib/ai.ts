@@ -6,6 +6,10 @@ import {
   createEmptyReportData,
   mergeReportData,
   createReportDataFromDate,
+  WORKSAFEBC_VIOLATION_TYPES,
+  TRADE_FIELDS,
+  validateReportTypes,
+  validateTradeFields,
 } from './reportData';
 
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
@@ -94,15 +98,18 @@ const parseReportResponse = (
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       // Validate and merge with base data
+      const parsedReportTypes = Array.isArray(parsed.report_type)
+        ? parsed.report_type
+        : baseData.report_type || [];
+      const parsedTradeFields = Array.isArray(parsed.trades_field)
+        ? parsed.trades_field
+        : baseData.trades_field || [];
+
       return {
         ...baseData,
         report_title: parsed.report_title || baseData.report_title || '',
-        report_type: Array.isArray(parsed.report_type)
-          ? parsed.report_type
-          : baseData.report_type || [],
-        trades_field: Array.isArray(parsed.trades_field)
-          ? parsed.trades_field
-          : baseData.trades_field || [],
+        report_type: validateReportTypes(parsedReportTypes),
+        trades_field: validateTradeFields(parsedTradeFields),
         report_desc:
           parsed.report_desc || parsed.report_description || parsed.description || responseText,
         primaries_involved: Array.isArray(parsed.primaries_involved)
@@ -175,9 +182,9 @@ CRITICAL: You MUST extract information directly from the transcript provided bel
 
 Create a structured incident report in JSON format matching this structure:
 {
-  "report_title": "Brief descriptive title based on what happened in the transcript",
-  "report_type": ["array of incident types mentioned or implied in the transcript (e.g., Harassment, Discrimination, Bullying, etc.)"],
-  "trades_field": ["array of relevant trade fields mentioned in the transcript (e.g., Electrical, Plumbing, Carpentry, etc.)"],
+  "report_title": "Short, concise title (max 6-8 words) - brief general description of the situation",
+  "report_type": ["array of incident types - MUST be from the valid list below"],
+  "trades_field": ["array of trade fields - MUST be from the valid list below"],
   "report_desc": "Detailed description of the incident based EXACTLY on what is described in the transcript",
   "primaries_involved": ["array of people involved as mentioned in the transcript"],
   "witnesses": ["array of witness names if mentioned in the transcript"],
@@ -186,19 +193,27 @@ Create a structured incident report in JSON format matching this structure:
   "location_name": "location if mentioned in the transcript"
 }
 
+VALID REPORT TYPES (worksafebcViolationTypes) - You MUST ONLY use values from this list:
+${WORKSAFEBC_VIOLATION_TYPES.map((type) => `- ${type}`).join('\n')}
+
+VALID TRADE FIELDS (tradeFields) - You MUST ONLY use values from this list:
+${TRADE_FIELDS.map((field) => `- ${field}`).join('\n')}
+
 TRANSCRIPT TO ANALYZE:
 ${transcript}
 
 INSTRUCTIONS:
 1. Read the transcript carefully and extract ALL relevant information
-2. The report_title should summarize the main incident described in the transcript
-3. Identify report_type(s) based on what type of incident is described (harassment, discrimination, safety violation, etc.)
-4. Identify trades_field(s) if any trade or profession is mentioned
+2. The report_title should be SHORT and CONCISE (maximum 6-8 words). It should be a brief, general description of the situation (e.g., "Workplace Harassment Incident", "Safety Violation on Site", "Discrimination During Training"). Keep it simple and descriptive, not a full sentence.
+3. For report_type: Identify which violation type(s) from the VALID REPORT TYPES list above best match the incident described. You MUST ONLY use values from that list. If multiple apply, include all that are relevant.
+4. For trades_field: Identify which trade field(s) from the VALID TRADE FIELDS list above are mentioned or relevant. You MUST ONLY use values from that list. If none are mentioned, use an empty array [].
 5. The report_desc should be a comprehensive description of what happened based on the transcript
 6. List any people mentioned (primaries_involved, witnesses)
 7. Note any actions already taken if mentioned
 8. Suggest recommended_actions based on the type of incident
 9. Extract location if mentioned
+
+CRITICAL: For report_type and trades_field, you MUST ONLY use the exact values from the lists provided above. Do NOT create new values or use variations.
 
 For information NOT in the transcript, use empty arrays [] or empty strings "". Do NOT invent information that is not present in the transcript.
 
@@ -231,6 +246,14 @@ Respond with ONLY valid JSON, no additional text before or after.`;
 
     // Parse the response into structured data
     const structuredData = parseReportResponse(rawText, baseData);
+
+    // Validate and filter report_type and trades_field to only include valid values
+    if (structuredData.report_type) {
+      structuredData.report_type = validateReportTypes(structuredData.report_type);
+    }
+    if (structuredData.trades_field) {
+      structuredData.trades_field = validateTradeFields(structuredData.trades_field);
+    }
 
     return {
       text: rawText,

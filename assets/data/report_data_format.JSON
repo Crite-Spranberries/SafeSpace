@@ -14,6 +14,7 @@
   "report_type": [],
   "trades_field": [],
   "report_desc": "",
+  "report_transcript": "",
   "primaries_involved": [],
   "witnesses": [],
   "actions_taken": [],
@@ -21,6 +22,7 @@
   "worksafebcViolationTypes": [
     "Verbal Harassment",
     "Physical Harassment",
+    "Harassment",
     "Bullying",
     "Sexual Harassment",
     "Threats",

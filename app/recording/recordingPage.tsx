@@ -30,6 +30,7 @@ import { mergeReportData, createReportDataFromDate } from '@/lib/reportData';
 import WaveForm from '@/components/ui/WaveForm';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
+import * as Location from 'expo-location';
 
 const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
 
@@ -65,6 +66,10 @@ export default function Recording() {
   const recorderState = useAudioRecorderState(recorder);
   const [saving, setSaving] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordingLocation, setRecordingLocation] = useState<{
+    coords: [number, number];
+    name: string;
+  } | null>(null);
 
   // Animated values for ripple and pulse (breathing) effect
   const rippleAnim = useRef(new Animated.Value(0)).current;
@@ -129,6 +134,36 @@ export default function Recording() {
       if (!granted) {
         Alert.alert('Permission Needed', 'Microphone access is required to record audio.');
         return;
+      }
+
+      // Capture location when recording starts
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const location = await Location.getCurrentPositionAsync({});
+          const { latitude, longitude } = location.coords;
+
+          // Reverse geocode to get address
+          let locationName = '';
+          try {
+            const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
+            locationName = geo.name
+              ? `${geo.name}, ${geo.city}, ${geo.region}`
+              : geo.city
+                ? `${geo.city}, ${geo.region}`
+                : '';
+          } catch (geoErr) {
+            console.warn('Failed to reverse geocode location', geoErr);
+          }
+
+          setRecordingLocation({
+            coords: [latitude, longitude],
+            name: locationName,
+          });
+        }
+      } catch (locErr) {
+        console.warn('Failed to capture location', locErr);
+        // Continue recording even if location capture fails
       }
 
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
@@ -198,6 +233,10 @@ export default function Recording() {
                 report_title: reportResult.data.report_title || title || 'Generated Report',
                 // Store the transcript in report_transcript field
                 report_transcript: transcript || '',
+                // Use captured location coordinates and name
+                location_coords: recordingLocation?.coords ||
+                  reportResult.data.location_coords || [0, 0],
+                location_name: recordingLocation?.name || reportResult.data.location_name || '',
               },
               baseData
             );
@@ -219,7 +258,11 @@ export default function Recording() {
       // Create base report data for the recording
       const recordingReportData = reportData
         ? { ...reportData }
-        : createReportDataFromDate(createdAt, recordingUri);
+        : mergeReportData({
+            ...createReportDataFromDate(createdAt, recordingUri),
+            location_coords: recordingLocation?.coords || [0, 0],
+            location_name: recordingLocation?.name || '',
+          });
 
       const payload = {
         id: `${createdAt.getTime()}`,
