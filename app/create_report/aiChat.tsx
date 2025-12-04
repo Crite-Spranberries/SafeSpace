@@ -258,9 +258,25 @@ export default function aiChat() {
         }
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      let errorMessage = 'Unknown error occurred';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+        // Check if it's a JSON parse error
+        if (err.message.includes('JSON') || err.message.includes('parse')) {
+          errorMessage = 'Sorry, I had trouble understanding the response. Please try again.';
+        }
+      }
       setError(errorMessage);
       console.error('Error sending message:', err);
+
+      // Add a user-friendly error message to the chat
+      const errorMessageObj: Message = {
+        id: (Date.now() + 2).toString(),
+        text: "I'm sorry, I encountered an error. Could you please try rephrasing your message?",
+        sender: 'safi',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessageObj]);
     } finally {
       setIsLoading(false);
     }

@@ -16,6 +16,7 @@ import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
 import { generateReport } from '@/lib/ai';
 import { useState, useEffect } from 'react';
 import { getResourceLinksForActions } from '@/lib/worksafebcResources';
+import * as Location from 'expo-location';
 
 const SCREEN_OPTIONS = {
   title: '',
@@ -99,23 +100,144 @@ export default function Report() {
   const location =
     reportData?.location_name || (params.location as string) || 'No location provided';
   const reportType =
-    reportData?.report_type || (params.reportType ? JSON.parse(params.reportType as string) : []);
+    reportData?.report_type ||
+    (params.reportType
+      ? (() => {
+          try {
+            return JSON.parse(params.reportType as string);
+          } catch {
+            return [];
+          }
+        })()
+      : []);
   const tradesField =
     reportData?.trades_field ||
-    (params.tradesField ? JSON.parse(params.tradesField as string) : []);
+    (params.tradesField
+      ? (() => {
+          try {
+            return JSON.parse(params.tradesField as string);
+          } catch {
+            return [];
+          }
+        })()
+      : []);
   const report_desc =
     reportData?.report_desc || (params.description as string) || 'No description provided.';
   const witnesses =
-    reportData?.witnesses || (params.witnesses ? JSON.parse(params.witnesses as string) : []);
+    reportData?.witnesses ||
+    (params.witnesses
+      ? (() => {
+          try {
+            const parsed = JSON.parse(params.witnesses as string);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            // If it's not JSON, treat it as a comma-separated string or single value
+            const value = params.witnesses as string;
+            if (value && value !== 'No witnesses provided.' && value.trim()) {
+              return value.includes(',') ? value.split(',').map((s) => s.trim()) : [value.trim()];
+            }
+            return [];
+          }
+        })()
+      : []);
   const individualsInvolved =
     reportData?.primaries_involved ||
-    (params.individualsInvolved ? JSON.parse(params.individualsInvolved as string) : []);
+    (params.individualsInvolved
+      ? (() => {
+          try {
+            const parsed = JSON.parse(params.individualsInvolved as string);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            // If it's not JSON, treat it as a comma-separated string or single value
+            const value = params.individualsInvolved as string;
+            if (value && value !== 'No individuals involved provided.' && value.trim()) {
+              return value.includes(',') ? value.split(',').map((s) => s.trim()) : [value.trim()];
+            }
+            return [];
+          }
+        })()
+      : []);
   const actionsTaken =
     reportData?.actions_taken ||
-    (params.actionsTaken ? JSON.parse(params.actionsTaken as string) : []);
+    (params.actionsTaken
+      ? (() => {
+          try {
+            const parsed = JSON.parse(params.actionsTaken as string);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            // If it's not JSON, treat it as a comma-separated string or single value
+            const value = params.actionsTaken as string;
+            if (value && value !== 'No actions taken provided.' && value.trim()) {
+              return value.includes(',') ? value.split(',').map((s) => s.trim()) : [value.trim()];
+            }
+            return [];
+          }
+        })()
+      : []);
   const reportTitle =
     reportData?.report_title || (params.reportTitle as string) || 'Incident Report';
-  const locationCoords = reportData?.location_coords || [0, 0];
+  const [userLocation, setUserLocation] = useState<{
+    name: string;
+    coords: [number, number];
+  } | null>(null);
+  const [defaultLocationCoords, setDefaultLocationCoords] = useState<[number, number]>([0, 0]);
+  const [defaultLocationName, setDefaultLocationName] = useState<string>('');
+
+  // Get user's current location on mount if no location is provided
+  useEffect(() => {
+    const getCurrentLocation = async () => {
+      // Only fetch if we don't have valid coordinates
+      const hasValidCoords =
+        (reportData?.location_coords &&
+          reportData.location_coords[0] !== 0 &&
+          reportData.location_coords[1] !== 0) ||
+        false;
+
+      if (!hasValidCoords) {
+        try {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status === 'granted') {
+            const location = await Location.getCurrentPositionAsync({});
+            const { latitude, longitude } = location.coords;
+
+            // Reverse geocode to get address
+            let locationName = '';
+            try {
+              const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
+              locationName = (geo as any).name
+                ? `${(geo as any).name}, ${(geo as any).city}, ${(geo as any).region}`
+                : (geo as any).city
+                  ? `${(geo as any).city}, ${(geo as any).region}`
+                  : '';
+            } catch (geoErr) {
+              console.warn('Failed to reverse geocode location', geoErr);
+            }
+
+            const userLoc = {
+              name: locationName || 'Current Location',
+              coords: [latitude, longitude] as [number, number],
+            };
+            setUserLocation(userLoc);
+            setDefaultLocationCoords(userLoc.coords);
+            setDefaultLocationName(userLoc.name);
+          }
+        } catch (err) {
+          console.warn('Failed to get current location', err);
+        }
+      }
+    };
+
+    getCurrentLocation();
+  }, []);
+
+  const locationCoords =
+    reportData?.location_coords &&
+    reportData.location_coords[0] !== 0 &&
+    reportData.location_coords[1] !== 0
+      ? reportData.location_coords
+      : defaultLocationCoords[0] !== 0 && defaultLocationCoords[1] !== 0
+        ? defaultLocationCoords
+        : [0, 0];
 
   // Generate report when component mounts if we have description
   useEffect(() => {
@@ -148,7 +270,7 @@ export default function Report() {
             locationCoords[0] !== 0 && locationCoords[1] !== 0
               ? {
                   name: location,
-                  coords: locationCoords,
+                  coords: locationCoords as [number, number],
                 }
               : location && location !== 'No location provided'
                 ? { name: location }
@@ -202,14 +324,16 @@ export default function Report() {
               location_coords: hasOriginalCoords
                 ? (originalCoords as [number, number])
                 : locationCoords[0] !== 0 && locationCoords[1] !== 0
-                  ? locationCoords
+                  ? (locationCoords as [number, number])
                   : generated.data.location_coords &&
                       Array.isArray(generated.data.location_coords) &&
                       generated.data.location_coords.length === 2 &&
                       generated.data.location_coords[0] !== 0 &&
                       generated.data.location_coords[1] !== 0
                     ? (generated.data.location_coords as [number, number])
-                    : [0, 0],
+                    : defaultLocationCoords[0] !== 0 && defaultLocationCoords[1] !== 0
+                      ? defaultLocationCoords
+                      : [0, 0],
               report_type: capitalizeTags(
                 generated.data.report_type && generated.data.report_type.length > 0
                   ? generated.data.report_type
@@ -272,9 +396,16 @@ export default function Report() {
   const displayLocationCoords: [number, number] | undefined =
     getValidCoords(displayReportData?.location_coords) ||
     getValidCoords(reportData?.location_coords) ||
-    getValidCoords(locationCoords);
+    getValidCoords(locationCoords) ||
+    (defaultLocationCoords[0] !== 0 && defaultLocationCoords[1] !== 0
+      ? defaultLocationCoords
+      : undefined);
 
-  const displayLocation = displayReportData?.location_name || reportData?.location_name || location;
+  const displayLocation =
+    displayReportData?.location_name ||
+    reportData?.location_name ||
+    (location && location !== 'No location provided' ? location : defaultLocationName) ||
+    'No location provided';
 
   // Debug logging for coordinates
   useEffect(() => {
@@ -346,21 +477,23 @@ export default function Report() {
       // Use generated report data if available, otherwise use form data
       let finalReportData: ReportData;
 
-      // Determine the best coordinates to use - prioritize displayLocationCoords, then generatedReportData, then reportData
+      // Determine the best coordinates to use - prioritize displayLocationCoords, then generatedReportData, then reportData, then defaultLocationCoords
       const coordsToSave: [number, number] =
         displayLocationCoords && displayLocationCoords[0] !== 0 && displayLocationCoords[1] !== 0
-          ? displayLocationCoords
+          ? (displayLocationCoords as [number, number])
           : generatedReportData?.location_coords &&
               generatedReportData.location_coords[0] !== 0 &&
               generatedReportData.location_coords[1] !== 0
-            ? generatedReportData.location_coords
+            ? (generatedReportData.location_coords as [number, number])
             : reportData?.location_coords &&
                 reportData.location_coords[0] !== 0 &&
                 reportData.location_coords[1] !== 0
-              ? reportData.location_coords
+              ? (reportData.location_coords as [number, number])
               : locationCoords[0] !== 0 && locationCoords[1] !== 0
-                ? locationCoords
-                : [0, 0];
+                ? (locationCoords as [number, number])
+                : defaultLocationCoords[0] !== 0 && defaultLocationCoords[1] !== 0
+                  ? defaultLocationCoords
+                  : [0, 0];
 
       console.log('Saving report - Coordinates:', {
         displayLocationCoords,
@@ -471,20 +604,27 @@ export default function Report() {
               <AppText style={styles.descriptionWhite}>{time}</AppText>
             </View>
             <View className="w-full max-w-md">
-              <MapOnDetail
-                coordinates={
-                  displayLocationCoords &&
-                  displayLocationCoords[0] !== 0 &&
-                  displayLocationCoords[1] !== 0
-                    ? displayLocationCoords
-                    : undefined
-                }
-                address={
-                  displayLocation && displayLocation !== 'No location provided'
-                    ? displayLocation
-                    : undefined
-                }
-              />
+              {((displayLocationCoords &&
+                displayLocationCoords[0] !== 0 &&
+                displayLocationCoords[1] !== 0) ||
+                (defaultLocationCoords[0] !== 0 && defaultLocationCoords[1] !== 0)) && (
+                <MapOnDetail
+                  coordinates={
+                    displayLocationCoords &&
+                    displayLocationCoords[0] !== 0 &&
+                    displayLocationCoords[1] !== 0
+                      ? displayLocationCoords
+                      : defaultLocationCoords[0] !== 0 && defaultLocationCoords[1] !== 0
+                        ? defaultLocationCoords
+                        : undefined
+                  }
+                  address={
+                    displayLocation && displayLocation !== 'No location provided'
+                      ? displayLocation
+                      : defaultLocationName || 'Current Location'
+                  }
+                />
+              )}
             </View>
             <View>
               <AppText weight="medium" style={styles.subHeader}>
@@ -562,11 +702,17 @@ export default function Report() {
             variant="purple"
             size="lg"
             radius="full"
-            style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+            style={{ flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 44 }}
             onPress={onSave}>
             <AppText
               weight="medium"
-              style={{ color: '#FFFFFF', fontSize: 16, textAlign: 'center' }}>
+              style={{
+                color: '#FFFFFF',
+                fontSize: 16,
+                textAlign: 'center',
+                lineHeight: 20,
+                includeFontPadding: false,
+              }}>
               Save Report
             </AppText>
           </Button>

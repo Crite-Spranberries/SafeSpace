@@ -87,6 +87,10 @@ export default function MyPostEdit() {
   const [mode, setMode] = useState<'date' | 'time'>('date');
   const [show, setShow] = useState<boolean>(false);
 
+  // All hooks must be called before any conditional returns
+  const insets = useSafeAreaInsets();
+  const locationDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Load report data from storage if id is provided
   useEffect(() => {
     const loadReportData = async () => {
@@ -316,9 +320,6 @@ export default function MyPostEdit() {
       .map((word) => capitalizeFirstLetter(word))
       .join(tag.includes('-') ? '-' : ' ');
   };
-
-  // Debounce timer for location autocomplete
-  const locationDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Handle location input with autocomplete
   const handleLocationChange = async (value: string) => {
@@ -595,8 +596,6 @@ export default function MyPostEdit() {
     }
   };
 
-  // All hooks must be called before any conditional returns
-  const insets = useSafeAreaInsets();
   const contentInsets = {
     top: insets.top,
     bottom: Platform.select({ ios: insets.bottom, android: insets.bottom + 24 }),

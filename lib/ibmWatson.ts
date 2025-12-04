@@ -150,7 +150,31 @@ async function httpPost(
     const text = await response.text();
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status} when POST ${url}: ${text || response.statusText}`);
+      // Try to parse error response as JSON if possible
+      let errorMessage = text || response.statusText;
+      try {
+        const errorJson = JSON.parse(text);
+        if (errorJson.error || errorJson.message) {
+          errorMessage = errorJson.error || errorJson.message;
+        }
+      } catch {
+        // Not JSON, use text as-is
+      }
+      throw new Error(`HTTP ${response.status} when POST ${url}: ${errorMessage}`);
+    }
+
+    // Check content type if available
+    const contentType = response.headers.get('content-type') || '';
+    if (
+      contentType &&
+      !contentType.includes('application/json') &&
+      !contentType.includes('text/json')
+    ) {
+      console.warn(
+        `Unexpected content type: ${contentType}. Response preview: ${text.substring(0, 200)}`
+      );
+      // If it's HTML or plain text, we might still want to try parsing it
+      // But log a warning
     }
 
     return text;
@@ -209,11 +233,78 @@ async function apiPost(
 
   const text = await httpPost(scoring_url, headers, payloadText);
 
+  // Check if response looks like JSON (starts with { or [)
+  const trimmedText = text.trim();
+  if (!trimmedText.startsWith('{') && !trimmedText.startsWith('[')) {
+    // Response is not JSON - might be HTML error page or plain text
+    console.error('Response is not JSON, received:', text.substring(0, 200));
+    throw new Error(
+      `API returned non-JSON response. This might be an error message: ${text.substring(0, 100)}`
+    );
+  }
+
   try {
     return JSON.parse(text);
   } catch (ex) {
+    // Try to extract valid JSON from the response if it's wrapped in extra text
+    try {
+      // Look for JSON object with balanced braces
+      const firstBrace = text.indexOf('{');
+      if (firstBrace !== -1) {
+        let braceCount = 0;
+        let inString = false;
+        let escapeNext = false;
+        let jsonEnd = -1;
+
+        for (let i = firstBrace; i < text.length; i++) {
+          const char = text[i];
+
+          if (escapeNext) {
+            escapeNext = false;
+            continue;
+          }
+
+          if (char === '\\') {
+            escapeNext = true;
+            continue;
+          }
+
+          if (char === '"') {
+            inString = !inString;
+            continue;
+          }
+
+          if (!inString) {
+            if (char === '{') braceCount++;
+            if (char === '}') braceCount--;
+
+            if (braceCount === 0) {
+              jsonEnd = i + 1;
+              break;
+            }
+          }
+        }
+
+        if (jsonEnd > firstBrace) {
+          const jsonStr = text.substring(firstBrace, jsonEnd);
+          return JSON.parse(jsonStr);
+        }
+      }
+
+      // Fallback: try regex match
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+    } catch (innerEx) {
+      // If that also fails, log the error and throw
+      console.error('Failed to parse scoring response. First 500 chars:', text.substring(0, 500));
+      throw new Error(
+        `Failed to parse scoring response. The API may have returned an error: ${text.substring(0, 150)}`
+      );
+    }
     throw new Error(
-      'Failed to parse scoring response: ' + (ex instanceof Error ? ex.message : String(ex))
+      `Failed to parse scoring response. The API may have returned an error: ${text.substring(0, 150)}`
     );
   }
 }
@@ -321,17 +412,65 @@ function extractNextQuestion(content: string): WatsonResult | null {
 
   try {
     parsed = JSON.parse(content);
-  } catch {
+  } catch (parseError) {
     // Try to extract JSON object from mixed content
-    // Look for the first complete JSON object
-    const jsonMatch = content.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
-    if (jsonMatch) {
-      try {
-        parsed = JSON.parse(jsonMatch[0]);
-      } catch {
+    // Look for the first complete JSON object with balanced braces
+    try {
+      const firstBrace = content.indexOf('{');
+      if (firstBrace !== -1) {
+        let braceCount = 0;
+        let inString = false;
+        let escapeNext = false;
+        let jsonEnd = -1;
+
+        for (let i = firstBrace; i < content.length; i++) {
+          const char = content[i];
+
+          if (escapeNext) {
+            escapeNext = false;
+            continue;
+          }
+
+          if (char === '\\') {
+            escapeNext = true;
+            continue;
+          }
+
+          if (char === '"') {
+            inString = !inString;
+            continue;
+          }
+
+          if (!inString) {
+            if (char === '{') braceCount++;
+            if (char === '}') braceCount--;
+
+            if (braceCount === 0) {
+              jsonEnd = i + 1;
+              break;
+            }
+          }
+        }
+
+        if (jsonEnd > firstBrace) {
+          const jsonStr = content.substring(firstBrace, jsonEnd);
+          parsed = JSON.parse(jsonStr);
+        } else {
+          // Fallback to regex if balanced brace extraction fails
+          const jsonMatch = content.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0]);
+          } else {
+            console.warn('Could not extract JSON from content:', content.substring(0, 200));
+            return null;
+          }
+        }
+      } else {
+        // No opening brace found
         return null;
       }
-    } else {
+    } catch (extractError) {
+      console.warn('JSON extraction failed:', extractError);
       return null;
     }
   }
