@@ -12,6 +12,23 @@ import MapView, { Marker, Region } from 'react-native-maps';
 import { MapPin } from 'lucide-react-native';
 import * as Location from 'expo-location';
 
+// Custom marker component: white pin with purple center dot
+const ReportMarker = ({ size = 38 }: { size?: number }) => (
+  <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+    <MapPin size={size} fill="#FFFFFF" color="#FFFFFF" strokeWidth={0} />
+    <View
+      style={{
+        position: 'absolute',
+        width: size * 0.35,
+        height: size * 0.35,
+        borderRadius: (size * 0.35) / 2,
+        backgroundColor: '#8449DF',
+        top: size * 0.25,
+      }}
+    />
+  </View>
+);
+
 const customMapStyle = [
   { elementType: 'geometry', stylers: [{ color: '#222222' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#cccccc' }] },
@@ -180,7 +197,7 @@ const MapOnHome = forwardRef<MapOnHomeImperativeHandle, MapOnHomeProps>(function
                   // Notify parent of marker press
                   onReportMarkerPress?.(report.id);
                 }}>
-                <MapPin size={38} fill="#eec8ffff" color="#8449DF" strokeWidth={0} />
+                <ReportMarker size={38} />
               </Marker>
             );
           })}

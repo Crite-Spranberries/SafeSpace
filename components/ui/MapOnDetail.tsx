@@ -5,6 +5,23 @@ import { MapPin } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import { AppText } from '@/components/ui/AppText';
 
+// Custom marker component: white pin with purple center dot
+const ReportMarker = ({ size = 38 }: { size?: number }) => (
+  <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+    <MapPin size={size} fill="#FFFFFF" color="#FFFFFF" strokeWidth={0} />
+    <View
+      style={{
+        position: 'absolute',
+        width: size * 0.35,
+        height: size * 0.35,
+        borderRadius: (size * 0.35) / 2,
+        backgroundColor: '#8449DF',
+        top: size * 0.15,
+      }}
+    />
+  </View>
+);
+
 const customMapStyle = [
   { elementType: 'geometry', stylers: [{ color: '#222222' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#cccccc' }] },
@@ -165,7 +182,7 @@ export default function MapOnDetail({
               title={coordinates ? 'Report Location' : 'You are here'}
               description={displayAddress}
               anchor={{ x: 0.5, y: 1 }}>
-              <MapPin size={38} fill="#eec8ffff" color="#8449DF" strokeWidth={0} />
+              <ReportMarker size={38} />
             </Marker>
           )}
         </MapView>
