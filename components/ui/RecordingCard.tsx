@@ -28,9 +28,11 @@ export default function RecordingCard({
         <View style={styles.card}>
           {tags.length > 0 && (
             <View style={styles.topBlock}>
-              <AppText style={styles.tags} numberOfLines={1}>
-                {tags.join(', ')}
-              </AppText>
+              <View style={styles.tagsContainer}>
+                <AppText style={styles.tags} numberOfLines={1} ellipsizeMode="tail">
+                  {tags.join(', ')}
+                </AppText>
+              </View>
               <AppText style={styles.duration}>{duration}</AppText>
             </View>
           )}
@@ -65,6 +67,13 @@ const styles = StyleSheet.create({
   topBlock: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  tagsContainer: {
+    flex: 1,
+    flexShrink: 1,
+    minWidth: 0, // Allows flexbox to shrink below content size
   },
   tags: {
     color: '#5E349E',
@@ -75,7 +84,7 @@ const styles = StyleSheet.create({
     color: '#5E349E',
     fontSize: 16,
     lineHeight: 20,
-    marginLeft: 8,
+    flexShrink: 0, // Prevent duration from shrinking
   },
   title: {
     color: '#000000',
