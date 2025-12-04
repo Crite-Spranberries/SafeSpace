@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet, ScrollView } from 'react-native';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import RecordingCard from '@/components/ui/RecordingCard';
 import ReportCard from '@/components/ui/ReportCard';
 import SearchSettings from '@/components/ui/SearchSettings';
@@ -19,12 +19,13 @@ export default function MylogsPage() {
   const [activeTab, setActiveTab] = useState<'recordings' | 'reports'>('recordings');
   const [recordings, setRecordings] = useState<StoredRecording[]>([]);
   const [reports, setReports] = useState<StoredReport[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
-      
+
       if (lockState.shouldUnlockMyLogs) {
         setIsLocked(false);
         lockState.shouldUnlockMyLogs = false; // Reset immediately
@@ -53,6 +54,79 @@ export default function MylogsPage() {
   const handleTabChange = (tab: 'recordings' | 'reports') => {
     setActiveTab(tab);
   };
+
+  // Filter recordings based on search query
+  const filteredRecordings = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return recordings;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    return recordings.filter((recording) => {
+      // Search in title
+      if (recording.title?.toLowerCase().includes(query)) return true;
+
+      // Search in location
+      if (recording.location?.toLowerCase().includes(query)) return true;
+
+      // Search in tags
+      if (recording.tags?.some((tag) => tag.toLowerCase().includes(query))) return true;
+
+      // Search in reportData fields if available
+      if (recording.reportData) {
+        if (recording.reportData.report_title?.toLowerCase().includes(query)) return true;
+        if (recording.reportData.location_name?.toLowerCase().includes(query)) return true;
+        if (recording.reportData.report_desc?.toLowerCase().includes(query)) return true;
+        if (recording.reportData.report_type?.some((tag) => tag.toLowerCase().includes(query)))
+          return true;
+        if (recording.reportData.trades_field?.some((tag) => tag.toLowerCase().includes(query)))
+          return true;
+      }
+
+      // Search in transcript
+      if (recording.transcript?.toLowerCase().includes(query)) return true;
+
+      return false;
+    });
+  }, [recordings, searchQuery]);
+
+  // Filter reports based on search query
+  const filteredReports = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return reports;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    return reports.filter((report) => {
+      // Search in title
+      if (report.title?.toLowerCase().includes(query)) return true;
+
+      // Search in excerpt/content
+      if (report.excerpt?.toLowerCase().includes(query)) return true;
+      if (report.content?.toLowerCase().includes(query)) return true;
+
+      // Search in location
+      if (report.location?.toLowerCase().includes(query)) return true;
+
+      // Search in tags
+      if (report.tags?.some((tag) => tag.toLowerCase().includes(query))) return true;
+      if (report.report_type?.some((tag) => tag.toLowerCase().includes(query))) return true;
+      if (report.trades_field?.some((tag) => tag.toLowerCase().includes(query))) return true;
+
+      // Search in reportData fields if available
+      if (report.reportData) {
+        if (report.reportData.report_title?.toLowerCase().includes(query)) return true;
+        if (report.reportData.location_name?.toLowerCase().includes(query)) return true;
+        if (report.reportData.report_desc?.toLowerCase().includes(query)) return true;
+        if (report.reportData.report_type?.some((tag) => tag.toLowerCase().includes(query)))
+          return true;
+        if (report.reportData.trades_field?.some((tag) => tag.toLowerCase().includes(query)))
+          return true;
+      }
+
+      return false;
+    });
+  }, [reports, searchQuery]);
 
   const onReportDetails = (report: StoredReport) => {
     router.push({
@@ -112,15 +186,21 @@ export default function MylogsPage() {
 
         <ScrollView contentContainerStyle={{ paddingBottom: 10 }}>
           <View style={styles.contentContainer}>
-            <SearchSettings style={styles.searchSettings} />
+            <SearchSettings
+              style={styles.searchSettings}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
             {activeTab === 'recordings' ? (
               <>
-                {recordings.length === 0 ? (
+                {filteredRecordings.length === 0 ? (
                   <AppText style={styles.emptyState}>
-                    You have not saved any recordings yet. Start a recording to see it listed here.
+                    {recordings.length === 0
+                      ? 'You have not saved any recordings yet. Start a recording to see it listed here.'
+                      : 'No recordings match your search.'}
                   </AppText>
                 ) : (
-                  recordings.map((item) => (
+                  filteredRecordings.map((item) => (
                     <RecordingCard
                       key={item.id}
                       tags={item.tags ?? ['Sexism']}
@@ -136,12 +216,14 @@ export default function MylogsPage() {
               </>
             ) : (
               <>
-                {reports.length === 0 ? (
+                {filteredReports.length === 0 ? (
                   <AppText style={styles.emptyState}>
-                    You have not generated any reports yet.
+                    {reports.length === 0
+                      ? 'You have not generated any reports yet.'
+                      : 'No reports match your search.'}
                   </AppText>
                 ) : (
-                  reports.map((item) => (
+                  filteredReports.map((item) => (
                     <ReportCard
                       key={item.id}
                       tags={item.tags ?? ['Sexism']}
