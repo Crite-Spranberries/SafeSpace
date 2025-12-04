@@ -11,7 +11,7 @@ import MapOnDetail from '@/components/ui/MapOnDetail';
 import { Badge } from '@/components/ui/Badge';
 import Recommendation from '@/components/ui/Recommendation';
 import { useConfirmation } from '@/components/ui/ConfirmationDialogContext';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { deleteReport, updateReportStatus } from '@/lib/reports';
 import { lockState } from '@/lib/lockState';
