@@ -97,6 +97,7 @@ export default function MyPostDetails() {
 
   // Extract display values from reportData or fall back to params
   // Prioritize reportData fields since they come from AI analysis
+
   const displayTitle = reportData?.report_title || params.title || 'Report Details';
   const displayDate = reportData
     ? formatDateFromReportData(reportData) || params.date || ''
@@ -282,7 +283,20 @@ export default function MyPostDetails() {
               <TouchableOpacity
                 style={styles.editIcon}
                 onPress={() => {
-                  router.push('/my_logs/myPostEdit');
+                  router.push({
+                    pathname: '/my_logs/myPostEdit',
+                    params: {
+                      id: idParam,
+                      title: displayTitle,
+                      date: displayDate,
+                      timestamp: displayTime,
+                      location: displayLocation,
+                      report_type: JSON.stringify(reportTypes),
+                      trades_field: JSON.stringify(tradesFields),
+                      // Add additional fields that might be stored elsewhere
+                      // description, witnesses, individualsInvolved, actionsTaken
+                    },
+                  });
                 }}>
                 <Icon as={PenLine} color="#5E349E" size={24} />
               </TouchableOpacity>
