@@ -120,8 +120,10 @@ const parseReportResponse = (
           ? parsed.actions_taken
           : baseData.actions_taken || [],
         recommended_actions: Array.isArray(parsed.recommended_actions)
-          ? parsed.recommended_actions
-          : baseData.recommended_actions || [],
+          ? parsed.recommended_actions.slice(0, 7) // Hard cap at 7
+          : Array.isArray(baseData.recommended_actions)
+            ? baseData.recommended_actions.slice(0, 7)
+            : [],
         location_name: parsed.location_name || parsed.location || baseData.location_name || '',
       };
     }
@@ -233,7 +235,132 @@ INSTRUCTIONS:
    Example: If the transcript contains angry, sexist comments, describe it as "The recorded conversation contained language that expressed frustration and made discriminatory remarks regarding gender in the workplace. The speaker's tone was elevated and the content of the discussion included statements that could be considered inappropriate and potentially harmful."
 6. List any people mentioned (primaries_involved, witnesses)
 7. Note any actions already taken if mentioned
-8. Suggest recommended_actions based on the type of incident
+8. Suggest recommended_actions based on the type and severity of incident. Generate comprehensive, trades-workplace-specific actions:
+   
+   CRITICAL REQUIREMENTS - This app is a bridge for employees to create exposure of workplace incidents. When reports are posted publicly, recommended actions should benefit ALL parties (employees, foremen, HR, staff) who can make change:
+   
+   - **At least 50% (minimum 4 out of 8 actions) MUST be clearly intended for HR, higher-ups, foremen, supervisors, and management to take**
+   - Actions should be written so BOTH employees AND management/HR/foremen can see what needs to be done
+   - For management/HR/foremen actions: Use clear, direct language like "HR should...", "Management must...", "Foremen should...", "Supervisors need to..."
+   - For employee actions: Write them so employees can take action, but also so management can see what employees need
+   - The goal is VISIBILITY and ACTION - employees can see what management should do, and management can see their responsibilities
+   - Example good phrasing for management actions: "HR should conduct investigation", "Management must implement disciplinary action", "Foremen should address behavior with involved parties"
+   - Example good phrasing for shared actions: "Report incident to supervisor/HR immediately" (employee reports, but shows management needs clear reporting channels)
+   
+   A. For ALL incidents, include these foundational actions (mix of employee and management actions):
+      - "Report the incident to supervisor, site manager, or HR immediately"
+      - "HR/Management should document the incident in detail with dates, times, and witnesses"
+      - "Preserve and secure any evidence (photos, recordings, written notes) - employees should preserve; management should secure"
+      - "HR/Management should provide access to employee assistance programs and mental health resources for affected parties"
+   
+   B. For SERIOUS incidents involving criminal activity, you MUST include appropriate legal/criminal actions (written for all worksite members to take):
+      * Battery/Assault: If the transcript describes physical violence, hitting, striking, or physical harm:
+        - "File a police report with local law enforcement"
+        - "Contact law enforcement immediately if the situation requires"
+        - "Ensure medical attention is sought and injuries are documented"
+        - "Consult with legal counsel regarding potential criminal charges"
+      * Sexual Assault: If the transcript describes non-consensual sexual contact, sexual violence, or sexual assault:
+        - "File a police report immediately - sexual assault is a criminal offense"
+        - "Contact local law enforcement and sexual assault support services"
+        - "Ensure medical attention is provided and evidence is preserved"
+        - "Provide access to sexual assault crisis centers and support hotlines"
+        - "Consult with legal counsel specializing in sexual assault cases"
+      * Serious Physical Harassment/Workplace Violence: If the transcript describes severe physical threats, weapons, or serious violence:
+        - "File a police report with appropriate authorities"
+        - "Contact law enforcement immediately if immediate danger exists"
+        - "Ensure immediate medical attention is provided if injuries occurred"
+   
+   C. For STANDARD workplace violations (harassment, discrimination, bullying, etc.), include comprehensive trades-workplace-specific actions:
+      
+      **Workplace Management & Policy Actions (HR/Management/Foremen should take):**
+      - "HR and management should review and update workplace harassment and discrimination policies"
+      - "Management should implement a zero-tolerance policy for harassment and discrimination"
+      - "HR should establish clear reporting procedures and anonymous reporting mechanisms"
+      - "Management should create a workplace code of conduct specific to trades environments"
+      - "HR should develop and enforce disciplinary procedures for policy violations"
+      - "Management should conduct regular workplace culture assessments and surveys"
+      - "Management should establish a workplace safety and inclusion committee"
+      
+      **Employee-Level Management Actions (Foremen/Supervisors/HR should take):**
+      - "Management/HR should conduct immediate investigation with all parties involved"
+      - "HR and supervisors should implement appropriate disciplinary action per company policy (verbal warning, written warning, suspension, termination)"
+      - "Management should require mandatory training for involved parties on workplace respect and inclusion"
+      - "Foremen and supervisors should schedule meetings with involved individuals to address behavior and expectations"
+      - "HR should implement performance improvement plans for employees who violated policies"
+      - "Management should consider reassignment or separation of conflicting parties if necessary"
+      - "HR/Management should provide support and resources for all affected employees"
+      - "HR should document all disciplinary actions taken in employee files"
+      
+      **Trades-Specific Training & Education (Management/HR should implement):**
+      - "Management should provide mandatory workplace respect and inclusion training for all employees"
+      - "HR should implement bystander intervention training for all workers"
+      - "Management should conduct diversity and inclusion workshops specific to trades environments"
+      - "HR should provide training on recognizing and addressing harassment and discrimination"
+      - "Foremen and supervisors should schedule regular safety briefings that include behavioral expectations"
+      - "Management should offer cultural competency training for diverse trades workplaces"
+      - "HR should provide leadership training for supervisors and foremen on managing workplace conflicts"
+      
+      **WorksafeBC & Regulatory Compliance (Management/HR should handle):**
+      - "Management/HR should report the incident to WorksafeBC if required by regulations"
+      - "HR should review WorksafeBC resources on workplace harassment prevention"
+      - "Management should ensure compliance with BC Human Rights Code and employment standards"
+      - "HR should consult WorksafeBC guidelines for workplace violence prevention"
+      - "Management should review and implement WorksafeBC recommendations for safe work environments"
+      - "HR should document incident for regulatory compliance and future reference"
+      
+      **Support & Follow-Up Actions (HR/Management should provide):**
+      - "HR/Management should provide access to employee assistance programs (EAP) for all affected parties"
+      - "Management should schedule follow-up meetings to ensure resolution and prevent recurrence"
+      - "Foremen and supervisors should monitor workplace environment for continued issues and patterns"
+      - "Management should establish and maintain open-door policy for reporting future incidents"
+      - "HR should create support networks and resources for affected employees"
+      - "Management should ensure confidentiality and protection from retaliation for all reporters"
+   
+   D. CRITICAL: Order recommended_actions by priority and immediacy following trades workplace standards:
+      
+      **Priority Order (MUST follow this sequence):**
+      
+      1. **IMMEDIATE ACTIONS (First Priority)** - Urgent, time-sensitive actions that must happen right away:
+         - Safety and protection actions (remove from danger, seek medical attention, contact emergency services)
+         - Immediate reporting (report to supervisor/HR immediately, file police report if criminal)
+         - Evidence preservation (document incident, preserve recordings/photos, secure evidence)
+         - Immediate support (contact crisis services, provide immediate assistance to affected parties)
+         Examples: "Report the incident to supervisor immediately", "Seek medical attention if injured", "File a police report", "Preserve all evidence including recordings"
+      
+      2. **TECHNICAL/HEAVY ACTIONS (Second Priority)** - Formal processes, investigations, and compliance:
+         - Formal investigations (conduct investigation, interview parties, gather statements)
+         - Disciplinary actions (implement disciplinary measures, warnings, suspensions, terminations)
+         - Regulatory compliance (report to WorksafeBC, ensure regulatory compliance, document for legal purposes)
+         - Policy implementation (review policies, implement procedures, establish reporting mechanisms)
+         Examples: "Conduct formal investigation with all parties", "Implement disciplinary action per company policy", "Report incident to WorksafeBC if required", "Review and update workplace policies"
+      
+      3. **FOLLOW-UP/TRAINING/AWARENESS (Third Priority)** - Long-term preventive and educational measures:
+         - Training programs (mandatory training, workshops, educational programs)
+         - Awareness initiatives (diversity training, inclusion programs, cultural competency)
+         - Follow-up monitoring (schedule follow-ups, monitor workplace, assess effectiveness)
+         - Support networks (establish support systems, create committees, ongoing resources)
+         Examples: "Provide mandatory workplace respect training", "Schedule follow-up meetings to ensure resolution", "Establish workplace inclusion committee", "Monitor workplace environment for continued issues"
+      
+      **Ordering Guidelines:**
+      - Always start with immediate safety and reporting actions
+      - Follow with formal processes (investigations, disciplinary, compliance) - THESE SHOULD BE PRIMARILY MANAGEMENT/HR ACTIONS
+      - End with training, awareness, and long-term follow-up - THESE SHOULD BE PRIMARILY MANAGEMENT/HR ACTIONS
+      - Within each category, order by urgency (most urgent first)
+      - Criminal actions (police reports, legal counsel) should be in the immediate actions section if applicable
+      - Generate 5-7 comprehensive actions total (maximum 7), distributed across all three priority levels
+      - Be specific to trades workplaces (mention supervisors, foremen, site managers, crews, etc.)
+      - Tailor actions to the specific type of incident (e.g., discrimination incidents should include diversity training)
+      - The severity should be determined by the actual content of the transcript - only suggest criminal actions if the transcript clearly describes criminal behavior
+      - Always include both workplace actions AND criminal actions when applicable - do not replace one with the other
+      - Be specific: Use clear action statements rather than vague suggestions
+      - **CRITICAL - REMEMBER THIS APP IS A BRIDGE FOR EXPOSURE**: 
+        * At least 50% (minimum 3-4 out of 7) of actions MUST be clearly for HR, management, foremen, supervisors, and higher-ups
+        * Write actions so employees can see what management should do, and management can see their responsibilities
+        * Use explicit language: "HR should...", "Management must...", "Foremen should...", "Supervisors need to..." for management actions
+        * For employee actions, write them clearly but also show what management needs to provide (e.g., "Report to supervisor" shows employees need clear reporting channels)
+        * The goal is VISIBILITY - when reports are posted publicly, all parties (employees, foremen, HR, staff) can see what actions need to be taken
+        * Actions should create accountability - employees can see what management should do, management can see their responsibilities
+        * Avoid vague actions - be specific about WHO should do WHAT
 9. Extract location if mentioned
 
 CRITICAL: For report_type and trades_field, you MUST ONLY use the exact values from the lists provided above. Do NOT create new values or use variations.

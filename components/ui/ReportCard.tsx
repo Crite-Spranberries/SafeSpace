@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ImageSourcePropType, Pressable } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
-import { Globe, EyeOff, PenLine } from 'lucide-react-native';
+import { Globe, EyeOff, PenLine, X } from 'lucide-react-native';
 import { AppText } from './AppText';
 
 type ReportCardProps = {
@@ -13,8 +13,10 @@ type ReportCardProps = {
   timestamp?: string;
   image?: ImageSourcePropType;
   onDetailsPress?: () => void;
-  /** Optional status in the top-right*/
+  /** Optional status in the top-right (for myLogs) */
   status?: 'Posted' | 'Private' | 'Draft';
+  /** Optional close button in the top-right (for home page map) */
+  onClose?: () => void;
 };
 
 export default function ReportCard({
@@ -26,6 +28,7 @@ export default function ReportCard({
   timestamp,
   onDetailsPress,
   status,
+  onClose,
 }: ReportCardProps) {
   return (
     <Pressable style={styles.wrapper} onPress={onDetailsPress}>
@@ -37,7 +40,16 @@ export default function ReportCard({
             </AppText>
           </View>
 
-          {status ? (
+          {onClose ? (
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation(); // Prevent triggering onDetailsPress
+                onClose();
+              }}
+              style={styles.closeButton}>
+              <Icon as={X} color="#5E349E" size={20} strokeWidth={2.5} />
+            </Pressable>
+          ) : status ? (
             <View style={styles.topRight}>
               <AppText style={styles.topRightText} numberOfLines={1} ellipsizeMode="tail">
                 {status}
@@ -128,6 +140,13 @@ const styles = StyleSheet.create({
   topRightText: {
     color: '#5E349E',
     fontSize: 14,
+  },
+  closeButton: {
+    flexShrink: 0,
+    marginLeft: 8,
+    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bottomRow: {
     marginTop: 10,

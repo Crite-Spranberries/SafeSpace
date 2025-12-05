@@ -78,7 +78,7 @@ export const reportDataToStoredReport = (
     excerpt:
       reportData.report_desc.substring(0, 100) + (reportData.report_desc.length > 100 ? '...' : ''),
     content: reportData.report_desc, // Legacy support
-    reportData: reportData,
+    reportData: reportData, // Include report_desc_filtered if it was already set
     recordingId,
   };
 };
@@ -243,13 +243,77 @@ export const getReportByRecordingId = async (recordingId: string) => {
   return existing.find((item) => item.recordingId === recordingId);
 };
 
+/**
+ * Loads all public reports from both default posts and user's posted reports
+ */
+export const loadAllPublicReports = async (): Promise<StoredReport[]> => {
+  const allReports = await loadReports();
+  const defaultPosts = require('@/assets/data/default_posts.json') as any[];
+
+  // Convert default posts to StoredReport format
+  const defaultPostReports: StoredReport[] = defaultPosts
+    .filter((post) => post.status === 'Posted' || post.reportData?.isPublic === true)
+    .map((post) => ({
+      id: post.id,
+      title: post.title,
+      date: post.date,
+      timestamp: post.timestamp,
+      location: post.location,
+      tags: post.report_type || post.tags || [],
+      report_type: post.report_type || post.tags || [],
+      trades_field: post.trades_field || [],
+      status: post.status || 'Posted',
+      excerpt: post.excerpt,
+      content: post.content || post.excerpt,
+      reportData: post.reportData,
+    }));
+
+  // Filter user reports to only public ones
+  const publicUserReports = allReports.filter(
+    (report) => report.status === 'Posted' || report.reportData?.isPublic === true
+  );
+
+  // Combine and deduplicate by id
+  const combined = [...defaultPostReports, ...publicUserReports];
+  const uniqueReports = combined.filter(
+    (report, index, self) => index === self.findIndex((r) => r.id === report.id)
+  );
+
+  return uniqueReports;
+};
+
 export const updateReportStatus = async (id: string, status: 'Posted' | 'Private') => {
+  const { filterReportForPublic, filterRecommendedActionsForPublic } = await import(
+    '@/lib/privacyFilter'
+  );
   const existing = await loadReports();
   const report = existing.find((item) => item.id === id);
   if (report) {
     report.status = status;
     if (report.reportData) {
       report.reportData.isPublic = status === 'Posted';
+      // Generate filtered description and actions when making public
+      if (status === 'Posted') {
+        if (report.reportData.report_desc) {
+          report.reportData.report_desc_filtered = filterReportForPublic(
+            report.reportData.report_desc,
+            report.reportData.primaries_involved
+          );
+        }
+        if (
+          report.reportData.recommended_actions &&
+          report.reportData.recommended_actions.length > 0
+        ) {
+          report.reportData.recommended_actions_filtered = filterRecommendedActionsForPublic(
+            report.reportData.recommended_actions,
+            report.reportData.primaries_involved
+          );
+        }
+      } else if (status === 'Private') {
+        // Clear filtered versions when making private (user should see full details)
+        report.reportData.report_desc_filtered = undefined;
+        report.reportData.recommended_actions_filtered = undefined;
+      }
     }
     await serializeReports(existing);
   }

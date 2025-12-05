@@ -1,4 +1,5 @@
 import { router, Stack } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   StyleSheet,
   View,
@@ -19,7 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
 import ChatTyping from '@/components/ui/ChatTyping';
 import * as Haptics from 'expo-haptics';
-import { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Asset } from 'expo-asset';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,6 +28,8 @@ import { sendMessage } from '@/lib/ibmWatson';
 import { Button } from '@/components/ui/Button';
 import { addReport, StoredReport } from '@/lib/reports';
 import * as Speech from 'expo-speech';
+import * as Location from 'expo-location';
+import { ReportData, createReportDataFromDate, mergeReportData } from '@/lib/reportData';
 
 const SCREEN_OPTIONS = {
   title: '',
@@ -81,6 +84,12 @@ export default function aiChat() {
   const [creatingReport, setCreatingReport] = useState(false);
   const [createdReport, setCreatedReport] = useState<StoredReport | null>(null);
   const [isAuto, setIsAuto] = useState(true);
+  const lastSpokenMessageId = useRef<string | null>(null); // Track which message was last spoken
+  const isMountedRef = useRef(true); // Track if component is mounted/focused
+  const [userLocation, setUserLocation] = useState<{
+    name: string;
+    coords: [number, number];
+  } | null>(null);
 
   const formatDate = (value: Date) =>
     value.toLocaleDateString(undefined, {
@@ -109,6 +118,42 @@ export default function aiChat() {
       }
     };
     preloadAsset();
+  }, []);
+
+  // Get user's current location on mount
+  useEffect(() => {
+    const getCurrentLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const location = await Location.getCurrentPositionAsync({});
+          const { latitude, longitude } = location.coords;
+
+          // Reverse geocode to get address
+          let locationName = '';
+          try {
+            const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
+            locationName = (geo as any).name
+              ? `${(geo as any).name}, ${(geo as any).city}, ${(geo as any).region}`
+              : (geo as any).city
+                ? `${(geo as any).city}, ${(geo as any).region}`
+                : '';
+          } catch (geoErr) {
+            console.warn('Failed to reverse geocode location', geoErr);
+          }
+
+          const userLoc = {
+            name: locationName || 'Current Location',
+            coords: [latitude, longitude] as [number, number],
+          };
+          setUserLocation(userLoc);
+        }
+      } catch (err) {
+        console.warn('Failed to get current location', err);
+      }
+    };
+
+    getCurrentLocation();
   }, []);
 
   // Auto-scroll to bottom when new messages arrive
@@ -230,6 +275,31 @@ export default function aiChat() {
             ];
             const title =
               data.report_title || (tags.length > 0 ? `Report: ${tags[0]}` : 'Incident Report');
+
+            // Create proper ReportData structure
+            const baseReportData = createReportDataFromDate(createdAt);
+            const reportData: ReportData = mergeReportData(
+              {
+                report_method: 'ai_chat',
+                report_title: title,
+                location_name: userLocation?.name || 'Current Location',
+                location_coords: userLocation?.coords || [0, 0],
+                report_type: Array.isArray(data.report_type) ? data.report_type : [],
+                trades_field: Array.isArray(data.trades_field) ? data.trades_field : [],
+                report_desc: description,
+                report_transcript: description,
+                primaries_involved: Array.isArray(data.parties_involved)
+                  ? data.parties_involved
+                  : [],
+                witnesses: Array.isArray(data.witnesses) ? data.witnesses : [],
+                actions_taken: [],
+                recommended_actions: [],
+                isPublic: false,
+              },
+              mergeReportData(baseReportData)
+            );
+
+            // Create StoredReport for backward compatibility
             const report: StoredReport = {
               id: `${createdAt.getTime()}_report`,
               title,
@@ -237,8 +307,8 @@ export default function aiChat() {
               timestamp: formatTime(createdAt),
               status: 'Private',
               tags,
-              report_type: Array.isArray(data.report_type) ? data.report_type : [],
-              trades_field: Array.isArray(data.trades_field) ? data.trades_field : [],
+              report_type: reportData.report_type,
+              trades_field: reportData.trades_field,
               primaries_involved: Array.isArray(data.parties_involved)
                 ? data.parties_involved.join(', ')
                 : '',
@@ -246,6 +316,8 @@ export default function aiChat() {
               actions_taken: '',
               excerpt: description.substring(0, 120) + (description.length > 120 ? '...' : ''),
               content: description,
+              location: reportData.location_name,
+              reportData: reportData, // Store the structured data
             };
             await addReport(report);
             await AsyncStorage.setItem('reportData', JSON.stringify(data)); // retain raw data if needed
@@ -258,9 +330,25 @@ export default function aiChat() {
         }
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      let errorMessage = 'Unknown error occurred';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+        // Check if it's a JSON parse error
+        if (err.message.includes('JSON') || err.message.includes('parse')) {
+          errorMessage = 'Sorry, I had trouble understanding the response. Please try again.';
+        }
+      }
       setError(errorMessage);
       console.error('Error sending message:', err);
+
+      // Add a user-friendly error message to the chat
+      const errorMessageObj: Message = {
+        id: (Date.now() + 2).toString(),
+        text: "I'm sorry, I encountered an error. Could you please try rephrasing your message?",
+        sender: 'safi',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessageObj]);
     } finally {
       setIsLoading(false);
     }
@@ -290,16 +378,55 @@ export default function aiChat() {
     };
   }, []);
 
+  // Track if page is focused to prevent TTS on other pages
+  useFocusEffect(
+    React.useCallback(() => {
+      // Page is focused - allow TTS
+      isMountedRef.current = true;
+
+      return () => {
+        // Page is unfocused - stop all speech immediately
+        isMountedRef.current = false;
+        Speech.stop();
+      };
+    }, [])
+  );
+
   useEffect(() => {
-    if (messages.length > 0 && isAuto) {
+    // Only speak if component is mounted, page is focused, auto is enabled, and we have messages
+    if (isMountedRef.current && messages.length > 0 && isAuto) {
       const lastMessage = messages[messages.length - 1];
-      if (lastMessage.sender === 'safi') {
-        Speech.speak(lastMessage.text);
+      // Only speak if this is a new Safi message that hasn't been spoken yet
+      if (lastMessage.sender === 'safi' && lastMessage.id !== lastSpokenMessageId.current) {
+        // Stop any ongoing speech before starting new speech
+        Speech.stop();
+        // Only speak if component is still mounted and focused
+        if (isMountedRef.current) {
+          Speech.speak(lastMessage.text);
+          lastSpokenMessageId.current = lastMessage.id;
+        }
       }
     }
-  }, [messages]);
+  }, [messages, isAuto]);
+
+  // Clean up speech when component unmounts
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      Speech.stop();
+    };
+  }, []);
+
+  // Stop speech when auto is disabled
+  useEffect(() => {
+    if (!isAuto) {
+      Speech.stop();
+    }
+  }, [isAuto]);
 
   function textSpeech(text: string) {
+    // Stop any ongoing speech before starting new speech
+    Speech.stop();
     Speech.speak(text);
   }
 
@@ -410,11 +537,18 @@ export default function aiChat() {
                   style={styles.submitButton}
                   disabled={creatingReport || !createdReport}
                   onPress={() => {
-                    if (createdReport) {
+                    if (createdReport && createdReport.reportData) {
+                      // Pass reportData as JSON, similar to form.tsx
                       router.push({
                         pathname: '/create_report/report',
                         params: {
-                          location: createdReport.location || 'No location provided',
+                          reportData: JSON.stringify(createdReport.reportData),
+                          // Keep legacy params for backward compatibility
+                          reportTitle: createdReport.title,
+                          location:
+                            createdReport.location ||
+                            createdReport.reportData.location_name ||
+                            'No location provided',
                           date: createdReport.date,
                           time: createdReport.timestamp,
                           reportType: createdReport.report_type
@@ -423,17 +557,21 @@ export default function aiChat() {
                           tradesField: createdReport.trades_field
                             ? JSON.stringify(createdReport.trades_field)
                             : JSON.stringify([]),
-                          description: createdReport.content || 'No description provided',
+                          description:
+                            createdReport.content ||
+                            createdReport.reportData.report_desc ||
+                            'No description provided',
                           witnesses:
-                            aiData.witnesses && Array.isArray(aiData.witnesses)
-                              ? aiData.witnesses.join(', ')
+                            createdReport.reportData.witnesses &&
+                            Array.isArray(createdReport.reportData.witnesses)
+                              ? createdReport.reportData.witnesses.join(', ')
                               : 'No witnesses provided.',
                           individualsInvolved:
-                            aiData.parties_involved && Array.isArray(aiData.parties_involved)
-                              ? aiData.parties_involved.join(', ')
+                            createdReport.reportData.primaries_involved &&
+                            Array.isArray(createdReport.reportData.primaries_involved)
+                              ? createdReport.reportData.primaries_involved.join(', ')
                               : 'No individuals involved provided.',
                           actionsTaken: 'No actions taken provided.',
-                          reportTitle: createdReport.title,
                         },
                       });
                     }

@@ -13,6 +13,7 @@ import Recommendation from '@/components/ui/Recommendation';
 import defaultPostsData from '@/assets/data/default_posts.json';
 import { ReportData, mergeReportData } from '@/lib/reportData';
 import { getResourceLinksForActions } from '@/lib/worksafebcResources';
+import { filterReportForPublic, filterRecommendedActionsForPublic } from '@/lib/privacyFilter';
 
 /**
  * Formats date from ReportData structure
@@ -39,24 +40,77 @@ const formatTimeFromReportData = (reportData?: Partial<ReportData>): string => {
 };
 
 export default function Details() {
-  const params = useLocalSearchParams<{ id?: string }>();
+  const params = useLocalSearchParams<{ id?: string; isUserReport?: string }>();
   const idParam = typeof params.id === 'string' ? params.id : null;
+  const isUserReport = params.isUserReport === 'true';
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load post data from JSON file on mount
+  // Load post data from JSON file or user reports on mount
   useEffect(() => {
-    const loadPost = () => {
+    const loadPost = async () => {
       if (idParam) {
         try {
           setIsLoading(true);
-          const post = (defaultPostsData as any[]).find((p) => p.id === idParam);
-          if (post && post.reportData) {
-            // Convert to full ReportData
-            const fullReportData = mergeReportData(post.reportData);
-            setReportData(fullReportData);
+          if (isUserReport) {
+            // Load from user reports
+            const { loadReports, reportToReportData } = await import('@/lib/reports');
+            const reports = await loadReports();
+            const report = reports.find((r) => r.id === idParam);
+            if (report) {
+              let fullReportData = reportToReportData(report);
+              // Generate filtered description and actions if they don't exist and report is public
+              if (fullReportData.isPublic) {
+                if (fullReportData.report_desc && !fullReportData.report_desc_filtered) {
+                  fullReportData.report_desc_filtered = filterReportForPublic(
+                    fullReportData.report_desc,
+                    fullReportData.primaries_involved
+                  );
+                }
+                if (
+                  fullReportData.recommended_actions &&
+                  fullReportData.recommended_actions.length > 0 &&
+                  !fullReportData.recommended_actions_filtered
+                ) {
+                  fullReportData.recommended_actions_filtered = filterRecommendedActionsForPublic(
+                    fullReportData.recommended_actions,
+                    fullReportData.primaries_involved
+                  );
+                }
+              }
+              setReportData(fullReportData);
+            } else {
+              console.warn('Report not found:', idParam);
+            }
           } else {
-            console.warn('Post not found:', idParam);
+            // Load from default posts
+            const post = (defaultPostsData as any[]).find((p) => p.id === idParam);
+            if (post && post.reportData) {
+              // Convert to full ReportData
+              let fullReportData = mergeReportData(post.reportData);
+              // Generate filtered description and actions if they don't exist and report is public
+              if (fullReportData.isPublic) {
+                if (fullReportData.report_desc && !fullReportData.report_desc_filtered) {
+                  fullReportData.report_desc_filtered = filterReportForPublic(
+                    fullReportData.report_desc,
+                    fullReportData.primaries_involved
+                  );
+                }
+                if (
+                  fullReportData.recommended_actions &&
+                  fullReportData.recommended_actions.length > 0 &&
+                  !fullReportData.recommended_actions_filtered
+                ) {
+                  fullReportData.recommended_actions_filtered = filterRecommendedActionsForPublic(
+                    fullReportData.recommended_actions,
+                    fullReportData.primaries_involved
+                  );
+                }
+              }
+              setReportData(fullReportData);
+            } else {
+              console.warn('Post not found:', idParam);
+            }
           }
         } catch (err) {
           console.error('Failed to load post', err);
@@ -68,7 +122,7 @@ export default function Details() {
       }
     };
     loadPost();
-  }, [idParam]);
+  }, [idParam, isUserReport]);
 
   const SCREEN_OPTIONS = {
     title: '',
@@ -102,8 +156,20 @@ export default function Details() {
   // Use reportData arrays directly
   const reportTypes = reportData?.report_type || [];
   const tradesFields = reportData?.trades_field || [];
-  const reportDescription = reportData?.report_desc || 'No report available.';
-  const recommendedActions = reportData?.recommended_actions || [];
+  // Use filtered description for public display (if available, otherwise filter on-the-fly)
+  const reportDescription = reportData?.report_desc
+    ? reportData.report_desc_filtered ||
+      filterReportForPublic(reportData.report_desc, reportData.primaries_involved)
+    : 'No report available.';
+  // Use filtered recommended actions for public display (if available, otherwise filter on-the-fly)
+  const recommendedActions =
+    reportData?.recommended_actions && reportData.recommended_actions.length > 0
+      ? reportData.recommended_actions_filtered ||
+        filterRecommendedActionsForPublic(
+          reportData.recommended_actions,
+          reportData.primaries_involved
+        )
+      : [];
 
   // Get resource links for recommended actions
   const actionsWithLinks = getResourceLinksForActions(recommendedActions, reportTypes);

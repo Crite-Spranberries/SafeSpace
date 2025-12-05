@@ -6,12 +6,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import SearchSettings from '@/components/ui/SearchSettings';
 import ReportCard from '@/components/ui/ReportCard';
 import SortButton, { SortOrder } from '@/components/ui/SortButton';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { Plus } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { AppText } from '@/components/ui/AppText';
 import defaultPostsData from '@/assets/data/default_posts.json';
+import { loadAllPublicReports, StoredReport } from '@/lib/reports';
+import { filterReportForPublic } from '@/lib/privacyFilter';
 
 type PostItem = {
   id: string;
@@ -23,21 +25,61 @@ type PostItem = {
   timestamp: string;
   status?: 'Posted' | 'Private' | 'Draft';
   report_type?: string[];
+  isUserReport?: boolean; // Flag to distinguish user reports from default posts
 };
 
 // Load posts from JSON file
 const loadDefaultPosts = (): PostItem[] => {
-  return defaultPostsData.map((post: any) => ({
-    id: post.id,
-    tags: post.report_type || post.tags || [],
-    title: post.title,
-    location: post.location,
-    excerpt: post.excerpt,
-    date: post.date,
-    timestamp: post.timestamp,
-    status: post.status || 'Posted',
-    report_type: post.report_type || post.tags || [],
-  }));
+  return defaultPostsData.map((post: any) => {
+    // Use report_desc if available (more complete), otherwise use excerpt
+    const rawText = post.reportData?.report_desc || post.excerpt || post.content || '';
+    // Filter for public display (remove names)
+    const filteredText = filterReportForPublic(rawText, post.reportData?.primaries_involved);
+    // Truncate to excerpt length if it's from report_desc
+    const filteredExcerpt =
+      post.reportData?.report_desc && filteredText.length > 150
+        ? filteredText.substring(0, 150) + '...'
+        : filteredText;
+
+    return {
+      id: post.id,
+      tags: post.report_type || post.tags || [],
+      title: post.title,
+      location: post.location,
+      excerpt: filteredExcerpt,
+      date: post.date,
+      timestamp: post.timestamp,
+      status: post.status || 'Posted',
+      report_type: post.report_type || post.tags || [],
+      isUserReport: false,
+    };
+  });
+};
+
+// Convert StoredReport to PostItem format
+const convertReportToPostItem = (report: StoredReport): PostItem => {
+  // Use report_desc if available (more complete), otherwise use excerpt/content
+  const rawText = report.reportData?.report_desc || report.excerpt || report.content || '';
+  // Filter for public display (remove names)
+  const filteredText = filterReportForPublic(rawText, report.reportData?.primaries_involved);
+  // Truncate to excerpt length if it's from report_desc
+  const filteredExcerpt =
+    report.reportData?.report_desc && filteredText.length > 150
+      ? filteredText.substring(0, 150) + '...'
+      : filteredText;
+
+  return {
+    id: report.id,
+    tags: report.report_type || report.tags || [],
+    title: report.title,
+    location: report.location || '',
+    excerpt: filteredExcerpt,
+    date: report.date,
+    timestamp: report.timestamp,
+    status: report.status,
+    report_type: report.report_type || report.tags || [],
+    isUserReport: true, // Mark as user report
+  };
 };
 
 // Robust parser for strings like "January 7, 2024" and time like "10:30".
@@ -81,17 +123,55 @@ export default function Posts() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Load posts from JSON file on mount
-  useEffect(() => {
-    const loadedPosts = loadDefaultPosts();
-    setPosts(loadedPosts);
+  // Load posts from both default posts and user's public reports
+  const loadAllPosts = useCallback(async () => {
+    try {
+      const defaultPosts = loadDefaultPosts();
+      const publicReports = await loadAllPublicReports();
+
+      // Convert user reports to PostItem format
+      const userPostItems = publicReports
+        .filter((report) => {
+          // Only include user reports (not default posts which are already loaded)
+          return !report.id.startsWith('post-');
+        })
+        .map(convertReportToPostItem);
+
+      // Combine default posts and user reports, deduplicate by id
+      const combined = [...defaultPosts, ...userPostItems];
+      const uniquePosts = combined.filter(
+        (post, index, self) => index === self.findIndex((p) => p.id === post.id)
+      );
+
+      setPosts(uniquePosts);
+    } catch (err) {
+      console.warn('Failed to load posts', err);
+      // Fallback to just default posts if loading fails
+      setPosts(loadDefaultPosts());
+    }
   }, []);
 
-  const onDetails = (postId: string) => {
-    router.push({
-      pathname: '/posts_browsing/postDetails',
-      params: { id: postId },
-    });
+  // Load posts on mount and when page is focused
+  useFocusEffect(
+    useCallback(() => {
+      loadAllPosts();
+    }, [loadAllPosts])
+  );
+
+  const onDetails = (post: PostItem) => {
+    // Navigate to appropriate detail page based on whether it's a user report
+    // For public reports, always use postDetails to show filtered version
+    if (post.isUserReport) {
+      router.push({
+        pathname: '/posts_browsing/postDetails',
+        params: { id: post.id, isUserReport: 'true' },
+      });
+    } else {
+      router.push({
+        pathname: '/posts_browsing/postDetails',
+        params: { id: post.id },
+      });
+    }
   };
 
   // Filter posts based on search query
@@ -160,10 +240,9 @@ export default function Posts() {
                 title={p.title}
                 location={p.location}
                 excerpt={p.excerpt}
-                onDetailsPress={() => onDetails(p.id)}
+                onDetailsPress={() => onDetails(p)}
                 date={p.date}
                 timestamp={p.timestamp}
-                status={p.status}
               />
             ))}
           </View>

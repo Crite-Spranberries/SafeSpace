@@ -19,11 +19,13 @@ export type ReportData = {
   report_type: string[];
   trades_field: string[];
   report_desc: string;
+  report_desc_filtered?: string; // Filtered version for public display (names anonymized)
   report_transcript: string;
   primaries_involved: string[];
   witnesses: string[];
   actions_taken: string[];
   recommended_actions: string[];
+  recommended_actions_filtered?: string[]; // Filtered version for public display (names anonymized)
   // Reference data (not stored per report, but used for validation/UI)
   worksafebcViolationTypes?: string[];
   tradeFields?: string[];
@@ -48,11 +50,13 @@ export const createEmptyReportData = (): ReportData => ({
   report_type: [],
   trades_field: [],
   report_desc: '',
+  report_desc_filtered: undefined,
   report_transcript: '',
   primaries_involved: [],
   witnesses: [],
   actions_taken: [],
   recommended_actions: [],
+  recommended_actions_filtered: undefined,
 });
 
 /**

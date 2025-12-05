@@ -26,16 +26,18 @@ export default function RecordingCard({
     <Pressable onPress={onDetailsPress}>
       <View style={styles.wrapper}>
         <View style={styles.card}>
-          {tags.length > 0 && (
-            <View style={styles.topBlock}>
+          <View style={styles.topBlock}>
+            {tags.length > 0 ? (
               <View style={styles.tagsContainer}>
                 <AppText style={styles.tags} numberOfLines={1} ellipsizeMode="tail">
                   {tags.join(', ')}
                 </AppText>
               </View>
-              <AppText style={styles.duration}>{duration}</AppText>
-            </View>
-          )}
+            ) : (
+              <View style={styles.tagsContainer} />
+            )}
+            <AppText style={styles.duration}>{duration}</AppText>
+          </View>
 
           <AppText numberOfLines={1} style={styles.title} weight="medium">
             {title}

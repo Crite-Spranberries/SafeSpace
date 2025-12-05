@@ -12,6 +12,23 @@ import MapView, { Marker, Region } from 'react-native-maps';
 import { MapPin } from 'lucide-react-native';
 import * as Location from 'expo-location';
 
+// Custom marker component: white pin with purple center dot
+const ReportMarker = ({ size = 38 }: { size?: number }) => (
+  <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+    <MapPin size={size} fill="#FFFFFF" color="#FFFFFF" strokeWidth={0} />
+    <View
+      style={{
+        position: 'absolute',
+        width: size * 0.35,
+        height: size * 0.35,
+        borderRadius: (size * 0.35) / 2,
+        backgroundColor: '#8449DF',
+        top: size * 0.25,
+      }}
+    />
+  </View>
+);
+
 const customMapStyle = [
   { elementType: 'geometry', stylers: [{ color: '#222222' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#cccccc' }] },
@@ -26,14 +43,24 @@ const customMapStyle = [
 
 export type MapOnHomeImperativeHandle = {
   centerOnUser: () => void;
+  centerOnReport: (latitude: number, longitude: number) => void;
+};
+
+type PublicReport = {
+  id: string;
+  title: string;
+  location?: string;
+  coordinates?: [number, number];
 };
 
 type MapOnHomeProps = ViewProps & {
   onAddressChange?: (address: string) => void;
+  publicReports?: PublicReport[];
+  onReportMarkerPress?: (reportId: string) => void;
 };
 
 const MapOnHome = forwardRef<MapOnHomeImperativeHandle, MapOnHomeProps>(function MapOnHome(
-  { style, onAddressChange },
+  { style, onAddressChange, publicReports = [], onReportMarkerPress },
   ref: ForwardedRef<MapOnHomeImperativeHandle>
 ) {
   const [userAddress, setUserAddress] = useState('');
@@ -55,6 +82,15 @@ const MapOnHome = forwardRef<MapOnHomeImperativeHandle, MapOnHomeProps>(function
         mapRef.current?.animateToRegion(targetRegion, 750);
       }
     },
+    centerOnReport(latitude: number, longitude: number) {
+      const targetRegion = {
+        latitude,
+        longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+      mapRef.current?.animateToRegion(targetRegion, 750);
+    },
   }));
 
   useEffect(() => {
@@ -72,6 +108,7 @@ const MapOnHome = forwardRef<MapOnHomeImperativeHandle, MapOnHomeProps>(function
       setUserAddress(address);
       onAddressChange?.(address);
 
+      // Set initial region only once, don't auto-update
       const initialRegion = {
         latitude,
         longitude,
@@ -81,6 +118,8 @@ const MapOnHome = forwardRef<MapOnHomeImperativeHandle, MapOnHomeProps>(function
       setRegion(initialRegion);
       setUserCoords({ latitude, longitude });
 
+      // Watch position only to update user marker, NOT the map region
+      // This allows the marker to move while user can pan/zoom freely
       Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.Highest,
@@ -89,12 +128,8 @@ const MapOnHome = forwardRef<MapOnHomeImperativeHandle, MapOnHomeProps>(function
         },
         (newLocation) => {
           const { latitude, longitude } = newLocation.coords;
+          // Only update marker position, not the map region
           setUserCoords({ latitude, longitude });
-          setRegion((prevRegion) => ({
-            ...prevRegion!,
-            latitude,
-            longitude,
-          }));
         }
       );
     })();
@@ -127,21 +162,45 @@ const MapOnHome = forwardRef<MapOnHomeImperativeHandle, MapOnHomeProps>(function
               <MapPin size={40} fill="#8449DF" color="#8449DF" strokeWidth={0} />
             </Marker>
           )}
-          <Marker
-            coordinate={{ latitude: 49.248134, longitude: -123.002985 }}
-            title="BCIT - Fairey Street"
-            description="Near Fairey St, Burnaby"
-            anchor={{ x: 0.5, y: 1 }}>
-            <MapPin size={38} fill="#eec8ffff" color="#FF6B00" strokeWidth={0} />
-          </Marker>
 
-          <Marker
-            coordinate={{ latitude: 49.250885, longitude: -123.001985 }}
-            title="BCIT - Lister Avenue"
-            description="Near Lister Ave, Burnaby"
-            anchor={{ x: 0.5, y: 1 }}>
-            <MapPin size={38} fill="#eec8ffff" color="#00CFFF" strokeWidth={0} />
-          </Marker>
+          {/* Public report markers */}
+          {publicReports.map((report) => {
+            if (!report.coordinates || report.coordinates.length !== 2) return null;
+            const [latitude, longitude] = report.coordinates;
+            // Validate coordinates
+            if (
+              isNaN(latitude) ||
+              isNaN(longitude) ||
+              latitude === 0 ||
+              longitude === 0 ||
+              Math.abs(latitude) > 90 ||
+              Math.abs(longitude) > 180
+            ) {
+              return null;
+            }
+            return (
+              <Marker
+                key={report.id}
+                coordinate={{ latitude, longitude }}
+                title={report.title}
+                description={report.location || 'Report Location'}
+                anchor={{ x: 0.5, y: 1 }}
+                onPress={() => {
+                  // Center map on marker
+                  const targetRegion = {
+                    latitude,
+                    longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  };
+                  mapRef.current?.animateToRegion(targetRegion, 750);
+                  // Notify parent of marker press
+                  onReportMarkerPress?.(report.id);
+                }}>
+                <ReportMarker size={38} />
+              </Marker>
+            );
+          })}
         </MapView>
       )}
     </View>
