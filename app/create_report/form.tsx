@@ -90,7 +90,7 @@ export default function Form() {
             coords: [latitude, longitude] as [number, number],
           };
           setUserLocation(userLoc);
-          // Set as default location if form location is empty
+          // Set as default location if the form location is empty
           if (!formData.location) {
             setFormData({
               ...formData,
