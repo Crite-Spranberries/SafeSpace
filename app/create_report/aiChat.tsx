@@ -42,7 +42,7 @@ const SCREEN_OPTIONS = {
         router.back();
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       }}>
-      <Icon as={ArrowLeft} size={24} />
+      <Icon as={ArrowLeft} size={16} />
     </TouchableOpacity>
   ),
 };
@@ -440,10 +440,10 @@ export default function aiChat() {
             <Button
               variant="purple"
               radius="full"
-              size="icon"
-              onPress={() => setIsAuto(!isAuto)}
-              style={{ marginRight: 16 }}>
-              <Icon as={isAuto ? Volume2 : VolumeOff} size={20} color="white" />
+              size="iconSmall"
+              className="h-9 w-9"
+              onPress={() => setIsAuto(!isAuto)}>
+              <Icon as={isAuto ? Volume2 : VolumeOff} size={18} color="white" />
             </Button>
           ),
         }}
