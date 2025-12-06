@@ -43,7 +43,7 @@ export default function CreateReport() {
               size="icon"
               radius="full"
               onPress={() => navigation.goBack()}>
-              <Icon as={ArrowLeft} size={24} />
+              <Icon as={ArrowLeft} size={16} />
             </Button>
           </View>
           <View style={styles.contentContainer}>

@@ -115,7 +115,7 @@ export default function Report() {
     headerTransparent: true,
     headerLeft: () => (
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Icon as={ArrowLeft} size={24} />
+        <Icon as={ArrowLeft} size={16} />
       </TouchableOpacity>
     ),
   };
