@@ -8,6 +8,7 @@ import {
   Pressable,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { Button } from '@/components/ui/Button';
@@ -58,6 +59,7 @@ export default function Form() {
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<{
     name: string;
     coords: [number, number];
@@ -67,6 +69,7 @@ export default function Form() {
   React.useEffect(() => {
     const getCurrentLocation = async () => {
       try {
+        setIsLoading(true);
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
           const location = await Location.getCurrentPositionAsync({});
@@ -101,6 +104,8 @@ export default function Form() {
         }
       } catch (err) {
         console.warn('Failed to get current location', err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -362,6 +367,24 @@ export default function Form() {
       setIsGeocoding(false);
     }
   };
+
+  // Show loading screen while fetching initial location
+  if (isLoading) {
+    return (
+      <>
+        <LinearGradient
+          colors={['#371F5E', '#000']}
+          locations={[0, 0.3]}
+          style={styles.background}
+        />
+        <Stack.Screen options={SCREEN_OPTIONS} />
+        <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#FF5656" />
+          <AppText style={{ color: '#FFFFFF', marginTop: 16, fontSize: 18 }}>Loading...</AppText>
+        </SafeAreaView>
+      </>
+    );
+  }
 
   return (
     <>
