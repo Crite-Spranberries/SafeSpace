@@ -692,7 +692,7 @@ export default function Report() {
             variant="reallyLightGrey"
             size="lg"
             radius="full"
-            style={{ flex: 1 }}
+            style={{ flex: 1, height: 52 }}
             onPress={onEdit}>
             <AppText weight="medium" style={{ color: '#5E349E', fontSize: 16 }}>
               Edit
@@ -702,19 +702,24 @@ export default function Report() {
             variant="purple"
             size="lg"
             radius="full"
-            style={{ flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 44 }}
+            style={{ flex: 1, height: 52, justifyContent: 'center', alignItems: 'center' }}
             onPress={onSave}>
-            <AppText
-              weight="medium"
-              style={{
-                color: '#FFFFFF',
-                fontSize: 16,
-                textAlign: 'center',
-                lineHeight: 20,
-                includeFontPadding: false,
-              }}>
-              Save Report
-            </AppText>
+            <View style={{ flex: 1, minWidth: 0, justifyContent: 'center', alignItems: 'center' }}>
+              <AppText
+                weight="medium"
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 16,
+                  lineHeight: 19,
+                  flexShrink: 1,
+                  width: '100%',
+                  textAlign: 'center',
+                }}>
+                Save Report
+              </AppText>
+            </View>
           </Button>
         </View>
       </SafeAreaView>
